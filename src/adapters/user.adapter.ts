@@ -1,0 +1,53 @@
+import type { UserResponse, Role } from "@/types/auth.model"
+
+// ─── Label maps ──────────────────────────────────────────────────────
+
+export const ROLE_LABELS: Record<Role, string> = {
+  SUPER_ADMIN: "Super Administrador",
+  ADMIN: "Administrador",
+  DOCTOR: "Doctor",
+  NURSE: "Enfermero/a",
+  PHARMACIST: "Farmacéutico/a",
+  CASHIER: "Cajero/a",
+}
+
+// ─── Domain type ─────────────────────────────────────────────────────
+
+export interface User {
+  id: string
+  organizationId: string | null
+  email: string
+  firstName: string
+  lastName: string
+  fullName: string
+  phone: string | null
+  roles: Role[]
+  roleLabels: string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Transformers ────────────────────────────────────────────────────
+
+export function toUser(raw: UserResponse): User {
+  const roles = raw.roles as Role[]
+  return {
+    id: raw.id,
+    organizationId: raw.organizationId,
+    email: raw.email,
+    firstName: raw.firstName,
+    lastName: raw.lastName,
+    fullName: raw.fullName,
+    phone: raw.phone ?? null,
+    roles,
+    roleLabels: roles.map((r) => ROLE_LABELS[r] ?? r),
+    isActive: raw.isActive,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  }
+}
+
+export function toUserList(raw: UserResponse[]): User[] {
+  return raw.map(toUser)
+}

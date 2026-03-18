@@ -4,7 +4,6 @@ import {
   forwardRequestToBackend,
   getSessionTokenFromRequest,
 } from '@/lib/bff/proxy';
-import { clearAuthSessionCookie } from '@/lib/bff/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +15,7 @@ async function handleRequest(request: NextRequest, context: RouteContext): Promi
   try {
     const { path } = await context.params;
     const upstreamPath = path.join('/');
-    const token = getSessionTokenFromRequest(request);
+    const token = await getSessionTokenFromRequest(request);
 
     const upstreamResponse = await forwardRequestToBackend({
       request,
@@ -24,19 +23,14 @@ async function handleRequest(request: NextRequest, context: RouteContext): Promi
       authToken: token,
     });
 
-    const response = await buildClientResponse(upstreamResponse);
-
-    if (upstreamResponse.status === 401 && token) {
-      clearAuthSessionCookie(response);
-    }
-
-    return response;
+    return await buildClientResponse(upstreamResponse);
   } catch (error) {
-    console.error('[BFF] Proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[BFF] Proxy error:', errorMessage, error);
     return NextResponse.json(
       {
         success: false,
-        message: 'Error interno del proxy BFF',
+        message: `Error interno del proxy BFF: ${errorMessage}`,
       },
       { status: 500 }
     );

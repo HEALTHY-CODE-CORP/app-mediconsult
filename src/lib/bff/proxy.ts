@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AUTH_COOKIE_NAME, getBackendApiBaseUrl } from './session';
+import { getToken } from 'next-auth/jwt';
+import { getBackendApiBaseUrl } from './session';
 
 const REQUEST_HEADERS_BLOCKLIST = new Set([
   'host',
@@ -121,8 +122,12 @@ export async function buildClientResponse(
   });
 }
 
-export function getSessionTokenFromRequest(request: NextRequest): string | null {
-  return request.cookies.get(AUTH_COOKIE_NAME)?.value ?? null;
+export async function getSessionTokenFromRequest(request: NextRequest): Promise<string | null> {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) return null;
+
+  const token = await getToken({ req: request, secret });
+  return (token?.backendToken as string) ?? null;
 }
 
 export function buildUnauthorizedResponse(message = 'No autenticado'): NextResponse {

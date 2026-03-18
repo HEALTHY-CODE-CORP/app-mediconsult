@@ -1,0 +1,375 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useConsultation } from "@/hooks/use-clinical"
+import { usePatient } from "@/hooks/use-patients"
+import { useCreateConsultationInvoice } from "@/hooks/use-billing"
+import {
+  ArrowLeft,
+  Receipt,
+  User,
+  Stethoscope,
+  DollarSign,
+} from "lucide-react"
+import { toast } from "sonner"
+import type { TipoIdentificacion } from "@/types/billing.model"
+
+function mapIdTypeToSri(idType: string): TipoIdentificacion {
+  switch (idType) {
+    case "RUC":
+      return "04"
+    case "CEDULA":
+      return "05"
+    case "PASSPORT":
+      return "06"
+    default:
+      return "07"
+  }
+}
+
+export function NewConsultationInvoiceContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const consultationId = searchParams.get("consultationId") ?? ""
+
+  const { data: consultation, isLoading: loadingConsultation } =
+    useConsultation(consultationId)
+  const { data: patient, isLoading: loadingPatient } = usePatient(
+    consultation?.patientId ?? ""
+  )
+
+  const createInvoiceMutation = useCreateConsultationInvoice()
+
+  // Form state
+  const [compradorTipoId, setCompradorTipoId] =
+    useState<TipoIdentificacion>("05")
+  const [compradorIdentificacion, setCompradorIdentificacion] = useState("")
+  const [compradorRazonSocial, setCompradorRazonSocial] = useState("")
+  const [compradorDireccion, setCompradorDireccion] = useState("")
+  const [compradorEmail, setCompradorEmail] = useState("")
+  const [compradorTelefono, setCompradorTelefono] = useState("")
+  const [formaPago, setFormaPago] = useState("01")
+
+  // Pre-fill from patient data
+  useEffect(() => {
+    if (patient) {
+      setCompradorTipoId(mapIdTypeToSri(patient.idType))
+      setCompradorIdentificacion(patient.idNumber)
+      setCompradorRazonSocial(patient.fullName)
+      setCompradorDireccion(patient.address ?? "")
+      setCompradorEmail(patient.email ?? "")
+      setCompradorTelefono(patient.phone ?? "")
+    }
+  }, [patient])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!compradorIdentificacion || !compradorRazonSocial) {
+      toast.error("Identificación y razón social son obligatorios")
+      return
+    }
+
+    try {
+      const result = await createInvoiceMutation.mutateAsync({
+        consultationId,
+        compradorTipoId,
+        compradorIdentificacion,
+        compradorRazonSocial,
+        compradorDireccion: compradorDireccion || undefined,
+        compradorEmail: compradorEmail || undefined,
+        compradorTelefono: compradorTelefono || undefined,
+        formaPago,
+      })
+      toast.success("Factura creada exitosamente")
+      router.push(`/dashboard/clinical/billing/${result.id}`)
+    } catch {
+      toast.error("Error al crear la factura")
+    }
+  }
+
+  if (!consultationId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-muted-foreground">No se especificó la consulta</p>
+        <Button
+          variant="link"
+          className="mt-2"
+          render={<Link href="/dashboard/clinical/consultations" />}
+        >
+          Ir a consultas
+        </Button>
+      </div>
+    )
+  }
+
+  if (loadingConsultation || loadingPatient) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    )
+  }
+
+  if (!consultation) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-muted-foreground">Consulta no encontrada</p>
+        <Button
+          variant="link"
+          className="mt-2"
+          render={<Link href="/dashboard/clinical/consultations" />}
+        >
+          Volver a consultas
+        </Button>
+      </div>
+    )
+  }
+
+  if (consultation.status !== "COMPLETED") {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-muted-foreground">
+          Solo se pueden facturar consultas completadas
+        </p>
+        <Button
+          variant="link"
+          className="mt-2"
+          render={
+            <Link
+              href={`/dashboard/clinical/consultations/${consultationId}`}
+            />
+          }
+        >
+          Volver a la consulta
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          render={
+            <Link
+              href={`/dashboard/clinical/consultations/${consultationId}`}
+            />
+          }
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Nueva Factura de Consulta
+          </h1>
+          <p className="text-muted-foreground">
+            Crear factura electrónica SRI para consulta médica
+          </p>
+        </div>
+      </div>
+
+      {/* Consultation summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5" />
+            Resumen de la consulta
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs text-muted-foreground">Paciente</p>
+              <p className="text-sm font-medium">{consultation.patientName}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Doctor</p>
+              <p className="text-sm font-medium">{consultation.doctorName}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Fecha</p>
+              <p className="text-sm font-medium">
+                {consultation.consultationDateFormatted}
+              </p>
+            </div>
+          </div>
+          {consultation.diagnosisDescription && (
+            <div>
+              <p className="text-xs text-muted-foreground">Diagnóstico</p>
+              <p className="text-sm">
+                {consultation.diagnosisCode && (
+                  <span className="font-mono mr-2">
+                    [{consultation.diagnosisCode}]
+                  </span>
+                )}
+                {consultation.diagnosisDescription}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Invoice form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Datos del comprador
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Tipo de identificación *</Label>
+                <Select
+                  value={compradorTipoId}
+                  onValueChange={(v) => {
+                    if (v) setCompradorTipoId(v as TipoIdentificacion)
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="04">RUC</SelectItem>
+                    <SelectItem value="05">Cédula</SelectItem>
+                    <SelectItem value="06">Pasaporte</SelectItem>
+                    <SelectItem value="07">Consumidor Final</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Identificación *</Label>
+                <Input
+                  value={compradorIdentificacion}
+                  onChange={(e) =>
+                    setCompradorIdentificacion(e.target.value)
+                  }
+                  placeholder="Número de identificación"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Razón social / Nombre *</Label>
+                <Input
+                  value={compradorRazonSocial}
+                  onChange={(e) => setCompradorRazonSocial(e.target.value)}
+                  placeholder="Nombre completo o razón social"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Dirección</Label>
+                <Input
+                  value={compradorDireccion}
+                  onChange={(e) => setCompradorDireccion(e.target.value)}
+                  placeholder="Dirección del comprador"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={compradorEmail}
+                  onChange={(e) => setCompradorEmail(e.target.value)}
+                  placeholder="email@ejemplo.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Teléfono</Label>
+                <Input
+                  value={compradorTelefono}
+                  onChange={(e) => setCompradorTelefono(e.target.value)}
+                  placeholder="Número de teléfono"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Forma de pago
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-sm space-y-2">
+              <Label>Método de pago</Label>
+              <Select
+                value={formaPago}
+                onValueChange={(v) => {
+                  if (v) setFormaPago(v)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="01">Efectivo</SelectItem>
+                  <SelectItem value="16">Tarjeta de débito</SelectItem>
+                  <SelectItem value="19">Tarjeta de crédito</SelectItem>
+                  <SelectItem value="20">Otros / Transferencia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            render={
+              <Link
+                href={`/dashboard/clinical/consultations/${consultationId}`}
+              />
+            }
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={createInvoiceMutation.isPending}
+          >
+            <Receipt className="mr-2 h-4 w-4" />
+            {createInvoiceMutation.isPending
+              ? "Creando factura..."
+              : "Crear factura"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
