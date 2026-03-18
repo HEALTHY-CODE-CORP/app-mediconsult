@@ -23,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ProductSearchInput } from "@/components/pharmacy/product-search-input"
 import { useProducts } from "@/hooks/use-inventory"
 import { useCreateSale, usePatientPurchaseSummary } from "@/hooks/use-sales"
 import { usePrescription } from "@/hooks/use-prescriptions"
@@ -74,11 +75,6 @@ function NewSaleContent() {
   const { data: prescription, isLoading: loadingPrescription } = usePrescription(prescriptionId)
   const { data: purchaseSummary } = usePatientPurchaseSummary(prescription?.patientId ?? "")
   const createMutation = useCreateSale()
-
-  const productItems = useMemo(
-    () => Object.fromEntries(products.map((p) => [p.id, `${p.name} — ${p.sellingPriceFormatted}`])),
-    [products]
-  )
 
   const [items, setItems] = useState<SaleItemForm[]>([
     { productId: "", productName: "", quantity: "1", unitPrice: 0, discountPercent: "0" },
@@ -313,71 +309,90 @@ function NewSaleContent() {
               )}
             </CardHeader>
             <CardContent className="space-y-4">
-              {items.map((item, index) => (
-                <div
-                  key={index}
-                  className="grid gap-3 rounded-lg border p-3 sm:grid-cols-12 items-end"
-                >
-                  <div className="sm:col-span-5 space-y-1">
-                    <Label className="text-xs">Producto *</Label>
-                    <Select
-                      value={item.productId}
-                      onValueChange={(v) => updateItem(index, "productId", v ?? "")}
-                      items={productItems}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} — {p.sellingPriceFormatted} (Stock: {p.currentStock})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="sm:col-span-2 space-y-1">
-                    <Label className="text-xs">Cantidad</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) => updateItem(index, "quantity", e.target.value)}
-                    />
-                  </div>
-                  <div className="sm:col-span-2 space-y-1">
-                    <Label className="text-xs">P. Unitario</Label>
-                    <Input
-                      value={`$${item.unitPrice.toFixed(2)}`}
-                      disabled
-                    />
-                  </div>
-                  <div className="sm:col-span-2 space-y-1">
-                    <Label className="text-xs">Desc. %</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={item.discountPercent}
-                      onChange={(e) => updateItem(index, "discountPercent", e.target.value)}
-                    />
-                  </div>
-                  <div className="sm:col-span-1">
-                    {items.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => removeItem(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+              {items.map((item, index) => {
+                const selectedItemIds = items
+                  .filter((_, i) => i !== index)
+                  .map((i) => i.productId)
+                  .filter(Boolean)
+
+                return (
+                  <div
+                    key={index}
+                    className="rounded-lg border p-3 space-y-3"
+                  >
+                    {/* Row 1: Product search — full width */}
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Producto *</Label>
+                        <ProductSearchInput
+                          products={products}
+                          value={item.productId}
+                          excludeIds={selectedItemIds}
+                          onSelect={(product) => {
+                            updateItem(index, "productId", product.id)
+                          }}
+                          onClear={() => {
+                            updateItem(index, "productId", "")
+                          }}
+                        />
+                      </div>
+                      {items.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="mt-5"
+                          onClick={() => removeItem(index)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Row 2: Quantity, Price, Discount — shown once product is selected */}
+                    {item.productId && (
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Cantidad</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">P. Unitario</Label>
+                          <Input
+                            value={`$${item.unitPrice.toFixed(2)}`}
+                            disabled
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Desc. %</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={item.discountPercent}
+                            onChange={(e) => updateItem(index, "discountPercent", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Line total when product selected */}
+                    {item.productId && (
+                      <div className="flex justify-end text-sm text-muted-foreground">
+                        Línea: <span className="font-semibold text-foreground ml-1">
+                          ${((parseInt(item.quantity) || 0) * item.unitPrice * (1 - (parseFloat(item.discountPercent) || 0) / 100)).toFixed(2)}
+                        </span>
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
 
               {/* Subtotal */}
               <div className="flex justify-end border-t pt-3">
