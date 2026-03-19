@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { DataTable } from "@/components/ui/data-table"
 import {
   Table,
   TableBody,
@@ -336,212 +336,195 @@ export default function SalesPage() {
       </Card>
 
       {/* Pending prescriptions */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Recetas pendientes
-                {pendingPrescriptions.length > 0 && (
-                  <Badge className="bg-amber-100 text-amber-800 ml-1">
-                    {pendingPrescriptions.length}
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Recetas médicas que necesitan ser despachadas
-              </CardDescription>
-            </div>
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Recetas pendientes
+            {pendingPrescriptions.length > 0 && (
+              <Badge className="bg-amber-100 text-amber-800">
+                {pendingPrescriptions.length}
+              </Badge>
+            )}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Recetas médicas que necesitan ser despachadas
+          </p>
+        </div>
+
+        <DataTable
+          isLoading={loadingPrescriptions}
+          isEmpty={pendingPrescriptions.length === 0}
+          loadingRows={2}
+          emptyIcon={<FileText className="h-8 w-8 text-muted-foreground" />}
+          emptyMessage="No hay recetas pendientes"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Receta</TableHead>
+                <TableHead>Paciente</TableHead>
+                <TableHead className="hidden md:table-cell">Doctor</TableHead>
+                <TableHead className="hidden sm:table-cell">Productos</TableHead>
+                <TableHead className="hidden lg:table-cell">Fecha</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pendingPrescriptions.map((rx) => (
+                <TableRow key={rx.id}>
+                  <TableCell className="font-mono text-sm font-medium">
+                    {rx.prescriptionNumber}
+                  </TableCell>
+                  <TableCell>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{rx.patientName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {rx.patientIdNumber}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-sm">
+                    {rx.doctorName}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <div className="flex items-center gap-1.5">
+                      <Pill className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-sm">
+                        {rx.pendingItems}/{rx.totalItems} pendientes
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell whitespace-nowrap text-sm">
+                    {rx.prescribedAtFormatted}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={rx.statusColor}>
+                      {rx.statusLabel}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        render={
+                          <Link href={`/dashboard/prescriptions/${rx.id}`} />
+                        }
+                        title="Ver receta"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMarkExternal(rx.id)}
+                        disabled={markExternalMutation.isPending}
+                        title="El paciente no compró aquí"
+                        className="text-muted-foreground"
+                      >
+                        <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                        <span className="hidden lg:inline">No compró aquí</span>
+                      </Button>
+                      {openSession && (
+                        <Button
+                          size="sm"
+                          render={
+                            <Link href={buildNewSaleUrl(rx.id)} />
+                          }
+                        >
+                          <ShoppingCart className="mr-1 h-3.5 w-3.5" />
+                          Vender
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DataTable>
+      </div>
+
+      {/* Sales list */}
+      {pharmacyId && (
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Ventas de la farmacia
+            </h2>
           </div>
-        </CardHeader>
-        <CardContent>
-          {loadingPrescriptions ? (
-            <div className="space-y-3">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : pendingPrescriptions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-6">
-              <FileText className="mb-2 h-8 w-8 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                No hay recetas pendientes
-              </p>
-            </div>
-          ) : (
+
+          <DataTable
+            isLoading={loadingSales}
+            isEmpty={sales.length === 0}
+            emptyIcon={<ShoppingCart className="h-8 w-8 text-muted-foreground" />}
+            emptyMessage="No hay ventas registradas"
+          >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Receta</TableHead>
+                  <TableHead>N° Venta</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Vendedor</TableHead>
                   <TableHead>Paciente</TableHead>
-                  <TableHead className="hidden md:table-cell">Doctor</TableHead>
-                  <TableHead className="hidden sm:table-cell">Productos</TableHead>
-                  <TableHead className="hidden lg:table-cell">Fecha</TableHead>
+                  <TableHead>Receta</TableHead>
+                  <TableHead>Pago</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingPrescriptions.map((rx) => (
-                  <TableRow key={rx.id}>
-                    <TableCell className="font-mono text-sm font-medium">
-                      {rx.prescriptionNumber}
+                {sales.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="font-mono text-sm">
+                      {s.saleNumber}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-sm">
+                      {s.createdAtFormatted}
+                    </TableCell>
+                    <TableCell>{s.sellerName}</TableCell>
+                    <TableCell>{s.patientName ?? "—"}</TableCell>
+                    <TableCell>
+                      {s.prescriptionNumber ? (
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {s.prescriptionNumber}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{rx.patientName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {rx.patientIdNumber}
-                        </p>
-                      </div>
+                      <Badge variant="outline">{s.paymentMethodLabel}</Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm">
-                      {rx.doctorName}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <div className="flex items-center gap-1.5">
-                        <Pill className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-sm">
-                          {rx.pendingItems}/{rx.totalItems} pendientes
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell whitespace-nowrap text-sm">
-                      {rx.prescribedAtFormatted}
+                    <TableCell className="text-right font-bold">
+                      {s.totalFormatted}
                     </TableCell>
                     <TableCell>
-                      <Badge className={rx.statusColor}>
-                        {rx.statusLabel}
+                      <Badge className={s.statusColor}>
+                        {s.statusLabel}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          render={
-                            <Link href={`/dashboard/prescriptions/${rx.id}`} />
-                          }
-                          title="Ver receta"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleMarkExternal(rx.id)}
-                          disabled={markExternalMutation.isPending}
-                          title="El paciente no compró aquí"
-                          className="text-muted-foreground"
-                        >
-                          <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                          <span className="hidden lg:inline">No compró aquí</span>
-                        </Button>
-                        {openSession && (
-                          <Button
-                            size="sm"
-                            render={
-                              <Link href={buildNewSaleUrl(rx.id)} />
-                            }
-                          >
-                            <ShoppingCart className="mr-1 h-3.5 w-3.5" />
-                            Vender
-                          </Button>
-                        )}
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        render={
+                          <Link href={`/dashboard/pharmacy/sales/${s.id}`} />
+                        }
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Sales list */}
-      {pharmacyId && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Ventas de la farmacia
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingSales ? (
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
-                ))}
-              </div>
-            ) : sales.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay ventas registradas
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>N° Venta</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Vendedor</TableHead>
-                    <TableHead>Paciente</TableHead>
-                    <TableHead>Receta</TableHead>
-                    <TableHead>Pago</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sales.map((s) => (
-                    <TableRow key={s.id}>
-                      <TableCell className="font-mono text-sm">
-                        {s.saleNumber}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-sm">
-                        {s.createdAtFormatted}
-                      </TableCell>
-                      <TableCell>{s.sellerName}</TableCell>
-                      <TableCell>{s.patientName ?? "—"}</TableCell>
-                      <TableCell>
-                        {s.prescriptionNumber ? (
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {s.prescriptionNumber}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{s.paymentMethodLabel}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        {s.totalFormatted}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={s.statusColor}>
-                          {s.statusLabel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          render={
-                            <Link href={`/dashboard/pharmacy/sales/${s.id}`} />
-                          }
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+          </DataTable>
+        </div>
       )}
     </div>
   )

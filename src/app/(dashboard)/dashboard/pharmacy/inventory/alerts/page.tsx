@@ -6,12 +6,6 @@ import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
   Table,
   TableBody,
   TableCell,
@@ -20,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DataTable } from "@/components/ui/data-table"
 import { PharmacySelector } from "@/components/inventory/pharmacy-selector"
 import {
   useLowStockAlerts,
@@ -99,177 +94,162 @@ function AlertsContent() {
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Low stock */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                Stock bajo
-                {!loadingLow && (
-                  <Badge variant="destructive">{lowStock.length}</Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingLow ? (
-                <Skeleton className="h-24 w-full" />
-              ) : lowStock.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No hay productos con stock bajo
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Producto</TableHead>
-                      <TableHead className="text-center">Stock actual</TableHead>
-                      <TableHead className="text-center">Stock mínimo</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {lowStock.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-medium">
-                          {p.displayName}
-                        </TableCell>
-                        <TableCell className="text-center font-bold text-red-600">
-                          {p.currentStock}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {p.minStock}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            render={
-                              <Link
-                                href={`/dashboard/pharmacy/inventory/products/${p.id}?pharmacyId=${pharmacyId}`}
-                              />
-                            }
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Stock bajo
+              {!loadingLow && (
+                <Badge variant="destructive">{lowStock.length}</Badge>
               )}
-            </CardContent>
-          </Card>
+            </h2>
+            <DataTable
+              isLoading={loadingLow}
+              isEmpty={lowStock.length === 0}
+              loadingRows={2}
+              emptyMessage="No hay productos con stock bajo"
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead className="text-center">Stock actual</TableHead>
+                    <TableHead className="text-center">Stock mínimo</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lowStock.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">
+                        {p.displayName}
+                      </TableCell>
+                      <TableCell className="text-center font-bold text-red-600">
+                        {p.currentStock}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {p.minStock}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          render={
+                            <Link
+                              href={`/dashboard/pharmacy/inventory/products/${p.id}?pharmacyId=${pharmacyId}`}
+                            />
+                          }
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </DataTable>
+          </div>
 
           {/* Expiring soon */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-yellow-500" />
-                Por vencer (30 días)
-                {!loadingExpiring && (
-                  <Badge className="bg-yellow-100 text-yellow-800">
-                    {expiring.length}
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingExpiring ? (
-                <Skeleton className="h-24 w-full" />
-              ) : expiring.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No hay lotes por vencer
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Producto</TableHead>
-                      <TableHead>Lote</TableHead>
-                      <TableHead className="text-center">Cantidad</TableHead>
-                      <TableHead>Vencimiento</TableHead>
-                      <TableHead>Días restantes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {expiring.map((lot) => (
-                      <TableRow key={lot.id}>
-                        <TableCell className="font-medium">
-                          {lot.productName}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {lot.lotNumber}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {lot.quantity}
-                        </TableCell>
-                        <TableCell>{lot.expirationDateFormatted}</TableCell>
-                        <TableCell>
-                          <Badge className={lot.expirationColor}>
-                            {lot.daysUntilExpiration}d
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Clock className="h-5 w-5 text-yellow-500" />
+              Por vencer (30 días)
+              {!loadingExpiring && (
+                <Badge className="bg-yellow-100 text-yellow-800">
+                  {expiring.length}
+                </Badge>
               )}
-            </CardContent>
-          </Card>
+            </h2>
+            <DataTable
+              isLoading={loadingExpiring}
+              isEmpty={expiring.length === 0}
+              loadingRows={2}
+              emptyMessage="No hay lotes por vencer"
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead>Lote</TableHead>
+                    <TableHead className="text-center">Cantidad</TableHead>
+                    <TableHead>Vencimiento</TableHead>
+                    <TableHead>Días restantes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expiring.map((lot) => (
+                    <TableRow key={lot.id}>
+                      <TableCell className="font-medium">
+                        {lot.productName}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {lot.lotNumber}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {lot.quantity}
+                      </TableCell>
+                      <TableCell>{lot.expirationDateFormatted}</TableCell>
+                      <TableCell>
+                        <Badge className={lot.expirationColor}>
+                          {lot.daysUntilExpiration}d
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </DataTable>
+          </div>
 
           {/* Expired */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-600" />
-                Vencidos
-                {!loadingExpired && (
-                  <Badge variant="destructive">{expired.length}</Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingExpired ? (
-                <Skeleton className="h-24 w-full" />
-              ) : expired.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No hay lotes vencidos
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Producto</TableHead>
-                      <TableHead>Lote</TableHead>
-                      <TableHead className="text-center">Cantidad</TableHead>
-                      <TableHead>Venció el</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {expired.map((lot) => (
-                      <TableRow key={lot.id}>
-                        <TableCell className="font-medium">
-                          {lot.productName}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {lot.lotNumber}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {lot.quantity}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-red-100 text-red-800">
-                            {lot.expirationDateFormatted}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-600" />
+              Vencidos
+              {!loadingExpired && (
+                <Badge variant="destructive">{expired.length}</Badge>
               )}
-            </CardContent>
-          </Card>
+            </h2>
+            <DataTable
+              isLoading={loadingExpired}
+              isEmpty={expired.length === 0}
+              loadingRows={2}
+              emptyMessage="No hay lotes vencidos"
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead>Lote</TableHead>
+                    <TableHead className="text-center">Cantidad</TableHead>
+                    <TableHead>Venció el</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expired.map((lot) => (
+                    <TableRow key={lot.id}>
+                      <TableCell className="font-medium">
+                        {lot.productName}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {lot.lotNumber}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {lot.quantity}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-red-100 text-red-800">
+                          {lot.expirationDateFormatted}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </DataTable>
+          </div>
         </div>
       )}
     </div>

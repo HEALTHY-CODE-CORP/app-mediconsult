@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
+import { DataTable } from "@/components/ui/data-table"
 import { useUsers, useToggleUserActive } from "@/hooks/use-users"
 import { ROLE_LABELS } from "@/adapters/user.adapter"
 import type { Role } from "@/types/auth.model"
@@ -153,93 +153,86 @@ export default function UsersPage() {
       )}
 
       {/* Table */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      ) : filteredUsers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-          <p className="text-sm text-muted-foreground">
-            {users.length === 0
-              ? "No hay usuarios registrados"
-              : "No se encontraron usuarios con los filtros aplicados"}
-          </p>
-          {users.length === 0 && (
+      <DataTable
+        isLoading={isLoading}
+        isEmpty={filteredUsers.length === 0}
+        emptyMessage={
+          users.length === 0
+            ? "No hay usuarios registrados"
+            : "No se encontraron usuarios con los filtros aplicados"
+        }
+        emptyAction={
+          users.length === 0 ? (
             <Button
               variant="link"
-              className="mt-2"
               render={<Link href="/dashboard/admin/users/new" />}
             >
               Crear primer usuario
             </Button>
-          )}
-        </div>
-      ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Teléfono</TableHead>
-                <TableHead>Roles</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+          ) : undefined
+        }
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Teléfono</TableHead>
+              <TableHead>Roles</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers.map((user) => (
+              <TableRow
+                key={user.id}
+                className={!user.isActive ? "opacity-60" : undefined}
+              >
+                <TableCell className="font-medium">
+                  {user.fullName}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {user.email}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {user.phone ?? "—"}
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {user.roles.map((role) => (
+                      <span
+                        key={role}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[role] ?? ""}`}
+                      >
+                        {ROLE_LABELS[role]}
+                      </span>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={user.isActive ? "default" : "secondary"}>
+                    {user.isActive ? "Activo" : "Inactivo"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={toggleMutation.isPending}
+                    onClick={() =>
+                      handleToggleActive(user.id, user.fullName, user.isActive)
+                    }
+                    title={user.isActive ? "Desactivar usuario" : "Activar usuario"}
+                  >
+                    <Power className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow
-                  key={user.id}
-                  className={!user.isActive ? "opacity-60" : undefined}
-                >
-                  <TableCell className="font-medium">
-                    {user.fullName}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {user.email}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {user.phone ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {user.roles.map((role) => (
-                        <span
-                          key={role}
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[role] ?? ""}`}
-                        >
-                          {ROLE_LABELS[role]}
-                        </span>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.isActive ? "default" : "secondary"}>
-                      {user.isActive ? "Activo" : "Inactivo"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={toggleMutation.isPending}
-                      onClick={() =>
-                        handleToggleActive(user.id, user.fullName, user.isActive)
-                      }
-                      title={user.isActive ? "Desactivar usuario" : "Activar usuario"}
-                    >
-                      <Power className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+            ))}
+          </TableBody>
+        </Table>
+      </DataTable>
     </div>
   )
 }

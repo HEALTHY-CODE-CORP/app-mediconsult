@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
+import { DataTable } from "@/components/ui/data-table"
 import { useCertificates } from "@/hooks/use-certificates"
 import { Plus, Eye, FileKey } from "lucide-react"
 
@@ -39,23 +39,14 @@ export default function CertificatesPage() {
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      ) : certificates.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-          <FileKey className="mb-3 h-10 w-10 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            No hay certificados registrados
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Sube un certificado P12 para empezar a firmar documentos
-          </p>
-        </div>
-      ) : (
+      <DataTable
+        isLoading={isLoading}
+        isEmpty={certificates.length === 0}
+        loadingRows={3}
+        emptyIcon={<FileKey className="h-10 w-10 text-muted-foreground" />}
+        emptyMessage="No hay certificados registrados"
+        emptyDescription="Sube un certificado P12 para empezar a firmar documentos"
+      >
         <Table>
           <TableHeader>
             <TableRow>
@@ -106,7 +97,7 @@ export default function CertificatesPage() {
             ))}
           </TableBody>
         </Table>
-      )}
+      </DataTable>
     </div>
   )
 }

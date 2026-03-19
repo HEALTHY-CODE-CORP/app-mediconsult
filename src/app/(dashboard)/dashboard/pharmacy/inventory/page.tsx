@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DataTable } from "@/components/ui/data-table"
 import { PharmacySelector } from "@/components/inventory/pharmacy-selector"
 import { useProducts, useSearchProductsByName } from "@/hooks/use-inventory"
 import {
@@ -130,24 +131,19 @@ function InventoryContent() {
           </div>
 
           {/* Products table */}
-          {activeQuery.isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full" />
-              ))}
-            </div>
-          ) : products.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-              <Package className="mb-3 h-10 w-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {isSearching
-                  ? "No se encontraron productos"
-                  : "No hay productos registrados"}
-              </p>
-              {!isSearching && (
+          <DataTable
+            isLoading={activeQuery.isLoading}
+            isEmpty={products.length === 0}
+            emptyIcon={<Package className="h-10 w-10 text-muted-foreground" />}
+            emptyMessage={
+              isSearching
+                ? "No se encontraron productos"
+                : "No hay productos registrados"
+            }
+            emptyAction={
+              !isSearching ? (
                 <Button
                   variant="link"
-                  className="mt-2"
                   render={
                     <Link
                       href={`/dashboard/pharmacy/inventory/products/new?pharmacyId=${pharmacyId}`}
@@ -156,9 +152,9 @@ function InventoryContent() {
                 >
                   Agregar primer producto
                 </Button>
-              )}
-            </div>
-          ) : (
+              ) : undefined
+            }
+          >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -243,7 +239,7 @@ function InventoryContent() {
                 ))}
               </TableBody>
             </Table>
-          )}
+          </DataTable>
         </>
       )}
     </div>

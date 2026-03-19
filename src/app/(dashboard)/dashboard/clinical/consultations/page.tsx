@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
+import { DataTable } from "@/components/ui/data-table"
 import {
   useMyConsultations,
   useOrganizationConsultations,
@@ -61,31 +61,26 @@ export default function ConsultationsPage() {
         )}
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      ) : consultations.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-          <ClipboardList className="mb-3 h-10 w-10 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            {isNurseOnly
-              ? "No hay consultas registradas"
-              : "No tienes consultas registradas"}
-          </p>
-          {canCreate && (
+      <DataTable
+        isLoading={isLoading}
+        isEmpty={consultations.length === 0}
+        emptyIcon={<ClipboardList className="h-10 w-10 text-muted-foreground" />}
+        emptyMessage={
+          isNurseOnly
+            ? "No hay consultas registradas"
+            : "No tienes consultas registradas"
+        }
+        emptyAction={
+          canCreate ? (
             <Button
               variant="link"
-              className="mt-2"
               render={<Link href="/dashboard/clinical/consultations/new" />}
             >
               Crear primera consulta
             </Button>
-          )}
-        </div>
-      ) : (
+          ) : undefined
+        }
+      >
         <Table>
           <TableHeader>
             <TableRow>
@@ -134,7 +129,7 @@ export default function ConsultationsPage() {
             ))}
           </TableBody>
         </Table>
-      )}
+      </DataTable>
     </div>
   )
 }

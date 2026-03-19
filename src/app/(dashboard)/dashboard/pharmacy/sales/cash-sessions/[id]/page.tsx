@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DataTable } from "@/components/ui/data-table"
 import {
   useCashSession,
   useCashSessionSummary,
@@ -165,70 +166,66 @@ export default function CashSessionDetailPage({
       </div>
 
       {/* Sales in session */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Ventas de la sesión ({sales.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingSales ? (
-            <Skeleton className="h-24 w-full" />
-          ) : sales.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay ventas en esta sesión
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>N° Venta</TableHead>
-                  <TableHead>Hora</TableHead>
-                  <TableHead>Pago</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5" />
+          Ventas de la sesión ({sales.length})
+        </h2>
+        <DataTable
+          isLoading={loadingSales}
+          isEmpty={sales.length === 0}
+          loadingRows={3}
+          emptyIcon={<ShoppingCart className="h-8 w-8 text-muted-foreground" />}
+          emptyMessage="No hay ventas en esta sesión"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>N° Venta</TableHead>
+                <TableHead>Hora</TableHead>
+                <TableHead>Pago</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sales.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-mono text-sm">
+                    {s.saleNumber}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {s.createdAtFormatted}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{s.paymentMethodLabel}</Badge>
+                  </TableCell>
+                  <TableCell>{s.totalItems}</TableCell>
+                  <TableCell className="text-right font-bold">
+                    {s.totalFormatted}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={s.statusColor}>{s.statusLabel}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      render={
+                        <Link href={`/dashboard/pharmacy/sales/${s.id}`} />
+                      }
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-mono text-sm">
-                      {s.saleNumber}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {s.createdAtFormatted}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{s.paymentMethodLabel}</Badge>
-                    </TableCell>
-                    <TableCell>{s.totalItems}</TableCell>
-                    <TableCell className="text-right font-bold">
-                      {s.totalFormatted}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={s.statusColor}>{s.statusLabel}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        render={
-                          <Link href={`/dashboard/pharmacy/sales/${s.id}`} />
-                        }
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              ))}
+            </TableBody>
+          </Table>
+        </DataTable>
+      </div>
     </div>
   )
 }

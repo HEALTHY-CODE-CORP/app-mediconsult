@@ -15,8 +15,6 @@ import {
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import {
   Table,
@@ -27,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DataTable } from "@/components/ui/data-table"
 import {
   useAllPlatformFees,
   usePlatformFeesByStatus,
@@ -37,7 +36,6 @@ import {
 } from "@/hooks/use-platform-fees"
 import {
   DollarSign,
-  Filter,
   Search,
   CheckCircle,
   XCircle,
@@ -156,185 +154,167 @@ export default function PlatformFeesPage() {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="space-y-1">
+          <Label className="text-xs">Filtrar por</Label>
+          <Select
+            value={filterMode}
+            onValueChange={(v) => {
+              setFilterMode((v as FilterMode) ?? "all")
+              setStatusFilter("")
+              setStartDate("")
+              setEndDate("")
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="status">Por estado</SelectItem>
+              <SelectItem value="dateRange">Por fecha</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {filterMode === "status" && (
+          <div className="space-y-1">
+            <Label className="text-xs">Estado</Label>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) =>
+                setStatusFilter((v as FeeStatus) ?? "")
+              }
+            >
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {(
+                  Object.entries(FEE_STATUS_LABELS) as [
+                    FeeStatus,
+                    string,
+                  ][]
+                ).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {filterMode === "dateRange" && (
+          <>
             <div className="space-y-1">
-              <Label className="text-xs">Filtrar por</Label>
-              <Select
-                value={filterMode}
-                onValueChange={(v) => {
-                  setFilterMode((v as FilterMode) ?? "all")
-                  setStatusFilter("")
-                  setStartDate("")
-                  setEndDate("")
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="status">Por estado</SelectItem>
-                  <SelectItem value="dateRange">Por fecha</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">Desde</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Hasta</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+      </div>
 
-            {filterMode === "status" && (
-              <div className="space-y-1">
-                <Label className="text-xs">Estado</Label>
-                <Select
-                  value={statusFilter}
-                  onValueChange={(v) =>
-                    setStatusFilter((v as FeeStatus) ?? "")
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(
-                      Object.entries(FEE_STATUS_LABELS) as [
-                        FeeStatus,
-                        string,
-                      ][]
-                    ).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por organización o N° factura..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-8"
+        />
+      </div>
 
-            {filterMode === "dateRange" && (
-              <>
-                <div className="space-y-1">
-                  <Label className="text-xs">Desde</Label>
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Hasta</Label>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="relative max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por organización o N° factura..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Summary */}
+      {!isLoading && (
+        <p className="text-sm text-muted-foreground">
+          {filtered.length} de {fees.length} tarifa{fees.length !== 1 ? "s" : ""}
+        </p>
+      )}
 
       {/* Fees table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Tarifas ({filtered.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full" />
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay tarifas para mostrar
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Organización</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>N° Factura</TableHead>
-                  <TableHead className="text-right">Tarifa</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((fee) => (
-                  <TableRow key={fee.id}>
-                    <TableCell className="whitespace-nowrap text-sm">
-                      {fee.createdAtFormatted}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {fee.organizationName}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {fee.planName ?? "—"}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      {fee.invoiceNumber}
-                    </TableCell>
-                    <TableCell className="text-right font-bold">
-                      {fee.feeAmountFormatted}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={fee.statusColor}>
-                        {fee.statusLabel}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {fee.status === "PENDING" && (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => handleCollect(fee.id)}
-                            disabled={collectMutation.isPending}
-                            title="Marcar como cobrada"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => handleWaive(fee.id)}
-                            disabled={waiveMutation.isPending}
-                            title="Exonerar"
-                          >
-                            <XCircle className="h-4 w-4 text-gray-500" />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable
+        isLoading={isLoading}
+        isEmpty={filtered.length === 0}
+        emptyIcon={<TrendingUp className="h-8 w-8 text-muted-foreground" />}
+        emptyMessage="No hay tarifas para mostrar"
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Organización</TableHead>
+              <TableHead>Plan</TableHead>
+              <TableHead>N° Factura</TableHead>
+              <TableHead className="text-right">Tarifa</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((fee) => (
+              <TableRow key={fee.id}>
+                <TableCell className="whitespace-nowrap text-sm">
+                  {fee.createdAtFormatted}
+                </TableCell>
+                <TableCell className="font-medium">
+                  {fee.organizationName}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {fee.planName ?? "—"}
+                </TableCell>
+                <TableCell className="font-mono text-sm">
+                  {fee.invoiceNumber}
+                </TableCell>
+                <TableCell className="text-right font-bold">
+                  {fee.feeAmountFormatted}
+                </TableCell>
+                <TableCell>
+                  <Badge className={fee.statusColor}>
+                    {fee.statusLabel}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {fee.status === "PENDING" && (
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleCollect(fee.id)}
+                        disabled={collectMutation.isPending}
+                        title="Marcar como cobrada"
+                      >
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleWaive(fee.id)}
+                        disabled={waiveMutation.isPending}
+                        title="Exonerar"
+                      >
+                        <XCircle className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </DataTable>
     </div>
   )
 }

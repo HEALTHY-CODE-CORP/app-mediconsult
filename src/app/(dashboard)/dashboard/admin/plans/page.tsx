@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
+import { DataTable } from "@/components/ui/data-table"
 import { usePlans } from "@/hooks/use-plans"
 import { Plus, Eye, Pencil } from "lucide-react"
 
@@ -33,19 +33,12 @@ export default function PlansPage() {
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      ) : plans.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-          <p className="text-sm text-muted-foreground">
-            No se encontraron planes
-          </p>
-        </div>
-      ) : (
+      <DataTable
+        isLoading={isLoading}
+        isEmpty={plans.length === 0}
+        loadingRows={3}
+        emptyMessage="No se encontraron planes"
+      >
         <Table>
           <TableHeader>
             <TableRow>
@@ -109,7 +102,7 @@ export default function PlansPage() {
             ))}
           </TableBody>
         </Table>
-      )}
+      </DataTable>
     </div>
   )
 }

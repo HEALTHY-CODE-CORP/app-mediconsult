@@ -5,11 +5,14 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useClinics } from "@/hooks/use-organizations"
+
+const NONE_VALUE = "__none__"
 
 interface ClinicSelectorProps {
   value: string
@@ -20,7 +23,10 @@ export function ClinicSelector({ value, onChange }: ClinicSelectorProps) {
   const { data: clinics = [], isLoading } = useClinics()
 
   const items = useMemo(
-    () => Object.fromEntries(clinics.map((c) => [c.id, c.name])),
+    () => ({
+      [NONE_VALUE]: "Todas las clínicas",
+      ...Object.fromEntries(clinics.map((c) => [c.id, c.name])),
+    }),
     [clinics]
   )
 
@@ -30,11 +36,19 @@ export function ClinicSelector({ value, onChange }: ClinicSelectorProps) {
 
   return (
     <div className="max-w-sm">
-      <Select value={value} onValueChange={(v) => onChange(v ?? "")} items={items}>
+      <Select
+        value={value || NONE_VALUE}
+        onValueChange={(v) => onChange(v === NONE_VALUE ? "" : v ?? "")}
+        items={items}
+      >
         <SelectTrigger>
           <SelectValue placeholder="Selecciona una clínica" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value={NONE_VALUE} className="text-muted-foreground">
+            Todas las clínicas
+          </SelectItem>
+          <SelectSeparator />
           {clinics.map((c) => (
             <SelectItem key={c.id} value={c.id}>
               {c.name}
