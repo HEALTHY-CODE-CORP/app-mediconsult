@@ -325,7 +325,7 @@ function NewSaleContent() {
       )}
 
       {/* Customer selector */}
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -336,7 +336,7 @@ function NewSaleContent() {
             Busca un cliente o paciente existente, o crea uno nuevo.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 overflow-visible">
           <CustomerSearchInput
             value={selectedCustomer}
             onSelect={setSelectedCustomer}
@@ -462,7 +462,7 @@ function NewSaleContent() {
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
           {/* Products */}
-          <Card>
+          <Card className="overflow-visible">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -480,7 +480,7 @@ function NewSaleContent() {
                 </CardDescription>
               )}
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 overflow-visible">
               {items.map((item, index) => {
                 const selectedItemIds = items
                   .filter((_, i) => i !== index)
