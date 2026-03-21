@@ -24,9 +24,12 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ProductSearchInput } from "@/components/pharmacy/product-search-input"
+import { CustomerSearchInput } from "@/components/pharmacy/customer-search-input"
 import { useProducts } from "@/hooks/use-inventory"
 import { useCreateSale, usePatientPurchaseSummary } from "@/hooks/use-sales"
+import { useCreateCustomer } from "@/hooks/use-customers"
 import { usePrescription } from "@/hooks/use-prescriptions"
+import type { CustomerSearchResult } from "@/adapters/customer.adapter"
 import {
   ArrowLeft,
   ShoppingCart,
@@ -34,6 +37,7 @@ import {
   Trash2,
   FileText,
   User,
+  UserPlus,
   Pill,
   Star,
 } from "lucide-react"
@@ -73,8 +77,19 @@ function NewSaleContent() {
 
   const { data: products = [] } = useProducts(pharmacyId)
   const { data: prescription, isLoading: loadingPrescription } = usePrescription(prescriptionId)
-  const { data: purchaseSummary } = usePatientPurchaseSummary(prescription?.patientId ?? "")
   const createMutation = useCreateSale()
+  const createCustomerMutation = useCreateCustomer()
+
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null)
+  const [showCreateCustomer, setShowCreateCustomer] = useState(false)
+  const [newCustomerFirstName, setNewCustomerFirstName] = useState("")
+  const [newCustomerLastName, setNewCustomerLastName] = useState("")
+  const [newCustomerPhone, setNewCustomerPhone] = useState("")
+  const [newCustomerIdNumber, setNewCustomerIdNumber] = useState("")
+
+  // Determine the effective patientId for purchase summary
+  const effectivePatientId = selectedCustomer?.patientId ?? prescription?.patientId ?? ""
+  const { data: purchaseSummary } = usePatientPurchaseSummary(effectivePatientId)
 
   const [items, setItems] = useState<SaleItemForm[]>([
     { productId: "", productName: "", quantity: "1", unitPrice: 0, discountPercent: "0" },
@@ -105,6 +120,21 @@ function NewSaleContent() {
     if (prescriptionItems.length > 0) {
       setItems(prescriptionItems)
       setNotes(`Receta ${prescription.prescriptionNumber}`)
+    }
+    // Auto-set customer from prescription patient
+    if (prescription.patientId) {
+      setSelectedCustomer({
+        id: `patient-${prescription.patientId}`,
+        type: "PATIENT",
+        customerId: null,
+        patientId: prescription.patientId,
+        idNumber: prescription.patientIdNumber ?? null,
+        firstName: prescription.patientName?.split(" ")[0] ?? "",
+        lastName: prescription.patientName?.split(" ").slice(1).join(" ") ?? "",
+        fullName: prescription.patientName ?? "",
+        phone: null,
+        email: null,
+      })
     }
     setPrescriptionLoaded(true)
   }, [prescription, products, prescriptionLoaded])
@@ -160,12 +190,19 @@ function NewSaleContent() {
       return
     }
 
+    // Resolve customer/patient IDs for the sale
+    const resolvedPatientId =
+      selectedCustomer?.patientId ?? prescription?.patientId ?? undefined
+    const resolvedCustomerId =
+      selectedCustomer?.type === "CUSTOMER" ? selectedCustomer.customerId ?? undefined : undefined
+
     try {
       await createMutation.mutateAsync({
         pharmacyId,
         cashSessionId: sessionId || undefined,
         prescriptionId: prescriptionId || undefined,
-        patientId: prescription?.patientId || undefined,
+        patientId: resolvedPatientId || undefined,
+        customerId: resolvedCustomerId || undefined,
         paymentMethod,
         paymentReference: paymentReference.trim() || undefined,
         notes: notes.trim() || undefined,
@@ -286,6 +323,141 @@ function NewSaleContent() {
           </Card>
         ) : null
       )}
+
+      {/* Customer selector */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Cliente
+            <span className="text-sm font-normal text-muted-foreground">(opcional)</span>
+          </CardTitle>
+          <CardDescription>
+            Busca un cliente o paciente existente, o crea uno nuevo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <CustomerSearchInput
+            value={selectedCustomer}
+            onSelect={setSelectedCustomer}
+            onClear={() => setSelectedCustomer(null)}
+            onCreateNew={() => setShowCreateCustomer(true)}
+            disabled={!!prescriptionId && !!prescription?.patientId}
+          />
+
+          {/* Purchase summary for selected customer */}
+          {purchaseSummary && purchaseSummary.totalPurchases > 0 && !prescriptionId && (
+            <div className="flex items-center gap-2 rounded-md bg-green-50 border border-green-200 px-3 py-1.5">
+              <Star className="h-3.5 w-3.5 text-green-600 shrink-0" />
+              <p className="text-xs text-green-800">
+                <span className="font-semibold">Cliente frecuente:</span>{" "}
+                {purchaseSummary.totalPurchases} compra(s) por{" "}
+                <span className="font-semibold">{purchaseSummary.totalSpentFormatted}</span>
+                {purchaseSummary.lastPurchaseAtFormatted && (
+                  <> · Última: {purchaseSummary.lastPurchaseAtFormatted}</>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Quick create customer form */}
+          {showCreateCustomer && (
+            <div className="rounded-lg border border-dashed p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium">Nuevo cliente</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Nombre *</Label>
+                  <Input
+                    value={newCustomerFirstName}
+                    onChange={(e) => setNewCustomerFirstName(e.target.value)}
+                    placeholder="Nombre"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Apellido *</Label>
+                  <Input
+                    value={newCustomerLastName}
+                    onChange={(e) => setNewCustomerLastName(e.target.value)}
+                    placeholder="Apellido"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Teléfono</Label>
+                  <Input
+                    value={newCustomerPhone}
+                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    placeholder="Teléfono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Cédula / ID</Label>
+                  <Input
+                    value={newCustomerIdNumber}
+                    onChange={(e) => setNewCustomerIdNumber(e.target.value)}
+                    placeholder="Opcional"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowCreateCustomer(false)
+                    setNewCustomerFirstName("")
+                    setNewCustomerLastName("")
+                    setNewCustomerPhone("")
+                    setNewCustomerIdNumber("")
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!newCustomerFirstName.trim() || !newCustomerLastName.trim() || createCustomerMutation.isPending}
+                  onClick={async () => {
+                    try {
+                      const created = await createCustomerMutation.mutateAsync({
+                        firstName: newCustomerFirstName.trim(),
+                        lastName: newCustomerLastName.trim(),
+                        phone: newCustomerPhone.trim() || undefined,
+                        idNumber: newCustomerIdNumber.trim() || undefined,
+                      })
+                      setSelectedCustomer({
+                        id: `customer-${created.id}`,
+                        type: "CUSTOMER",
+                        customerId: created.id,
+                        patientId: created.patientId,
+                        idNumber: created.idNumber,
+                        firstName: created.firstName,
+                        lastName: created.lastName,
+                        fullName: created.fullName,
+                        phone: created.phone,
+                        email: created.email,
+                      })
+                      setShowCreateCustomer(false)
+                      setNewCustomerFirstName("")
+                      setNewCustomerLastName("")
+                      setNewCustomerPhone("")
+                      setNewCustomerIdNumber("")
+                      toast.success("Cliente creado")
+                    } catch {
+                      toast.error("Error al crear el cliente")
+                    }
+                  }}
+                >
+                  {createCustomerMutation.isPending ? "Creando..." : "Crear cliente"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">

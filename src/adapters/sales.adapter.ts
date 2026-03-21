@@ -120,6 +120,8 @@ export interface Sale {
   prescriptionNumber: string | null
   patientId: string | null
   patientName: string | null
+  customerId: string | null
+  customerName: string | null
   sellerId: string
   sellerName: string
   saleNumber: string
@@ -263,6 +265,8 @@ export function toSale(raw: SaleResponse): Sale {
     prescriptionNumber: raw.prescriptionNumber ?? null,
     patientId: raw.patientId ?? null,
     patientName: raw.patientName ?? null,
+    customerId: raw.customerId ?? null,
+    customerName: raw.customerName ?? null,
     sellerId: raw.sellerId,
     sellerName: raw.sellerName,
     saleNumber: raw.saleNumber,

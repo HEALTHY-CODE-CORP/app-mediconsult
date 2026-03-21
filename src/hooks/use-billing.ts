@@ -48,6 +48,18 @@ export function useConsultationInvoice(consultationId: string) {
   })
 }
 
+export function useOrganizationInvoices() {
+  return useQuery({
+    queryKey: [...BILLING_KEY, "invoices", "organization"],
+    queryFn: async () => {
+      const { data } = await api.get<InvoiceResponse[]>(
+        "/billing/invoices/organization"
+      )
+      return toInvoiceList(data)
+    },
+  })
+}
+
 export function usePharmacyInvoices(pharmacyId: string) {
   return useQuery({
     queryKey: [...BILLING_KEY, "invoices", "pharmacy", pharmacyId],
@@ -106,6 +118,18 @@ export function useCustomerInvoices(identificacion: string) {
 }
 
 // === Consultation Billing Queries ===
+
+export function useOrganizationConsultationInvoices() {
+  return useQuery({
+    queryKey: [...BILLING_KEY, "invoices", "organization", "consultations"],
+    queryFn: async () => {
+      const { data } = await api.get<InvoiceResponse[]>(
+        "/billing/invoices/organization/consultations"
+      )
+      return toInvoiceList(data)
+    },
+  })
+}
 
 export function useClinicInvoices(clinicId: string) {
   return useQuery({

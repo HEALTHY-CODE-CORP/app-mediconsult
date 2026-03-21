@@ -60,6 +60,7 @@ export interface CreateSaleRequest {
   cashSessionId?: string
   prescriptionId?: string
   patientId?: string
+  customerId?: string
   paymentMethod: PaymentMethod
   paymentReference?: string
   taxAmount?: number
@@ -99,6 +100,8 @@ export interface SaleResponse {
   prescriptionNumber?: string
   patientId?: string
   patientName?: string
+  customerId?: string
+  customerName?: string
   sellerId: string
   sellerName: string
   saleNumber: string

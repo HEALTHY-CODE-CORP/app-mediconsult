@@ -28,6 +28,7 @@ import {
   useOpenCashSession,
   useCloseCashSession,
   usePharmacySales,
+  useOrganizationSales,
   useCashSessionSummary,
 } from "@/hooks/use-sales"
 import {
@@ -57,8 +58,11 @@ export default function SalesPage() {
   const closeSessionMutation = useCloseCashSession(openSession?.id ?? "")
   const { data: summary } = useCashSessionSummary(openSession?.id ?? "")
 
-  // Sales
-  const { data: sales = [], isLoading: loadingSales } = usePharmacySales(pharmacyId)
+  // Sales — by pharmacy or all org sales
+  const { data: pharmacySales = [], isLoading: loadingPharmacySales } = usePharmacySales(pharmacyId)
+  const { data: orgSales = [], isLoading: loadingOrgSales } = useOrganizationSales()
+  const sales = pharmacyId ? pharmacySales : orgSales
+  const loadingSales = pharmacyId ? loadingPharmacySales : loadingOrgSales
 
   // Pending prescriptions
   const { data: pendingPrescriptions = [], isLoading: loadingPrescriptions } =
@@ -448,84 +452,91 @@ export default function SalesPage() {
       </div>
 
       {/* Sales list */}
-      {pharmacyId && (
-        <div className="space-y-3">
-          <div>
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Ventas de la farmacia
-            </h2>
-          </div>
-
-          <DataTable
-            isLoading={loadingSales}
-            isEmpty={sales.length === 0}
-            emptyIcon={<ShoppingCart className="h-8 w-8 text-muted-foreground" />}
-            emptyMessage="No hay ventas registradas"
-          >
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>N° Venta</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Vendedor</TableHead>
-                  <TableHead>Paciente</TableHead>
-                  <TableHead>Receta</TableHead>
-                  <TableHead>Pago</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-mono text-sm">
-                      {s.saleNumber}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm">
-                      {s.createdAtFormatted}
-                    </TableCell>
-                    <TableCell>{s.sellerName}</TableCell>
-                    <TableCell>{s.patientName ?? "—"}</TableCell>
-                    <TableCell>
-                      {s.prescriptionNumber ? (
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {s.prescriptionNumber}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{s.paymentMethodLabel}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-bold">
-                      {s.totalFormatted}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={s.statusColor}>
-                        {s.statusLabel}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        render={
-                          <Link href={`/dashboard/pharmacy/sales/${s.id}`} />
-                        }
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </DataTable>
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            {pharmacyId ? "Ventas de la farmacia" : "Todas las ventas"}
+            {sales.length > 0 && (
+              <span className="text-sm font-normal text-muted-foreground">
+                ({sales.length})
+              </span>
+            )}
+          </h2>
         </div>
-      )}
+
+        <DataTable
+          isLoading={loadingSales}
+          isEmpty={sales.length === 0}
+          emptyIcon={<ShoppingCart className="h-8 w-8 text-muted-foreground" />}
+          emptyMessage="No hay ventas registradas"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>N° Venta</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Vendedor</TableHead>
+                <TableHead>Cliente</TableHead>
+                {!pharmacyId && <TableHead>Farmacia</TableHead>}
+                <TableHead>Receta</TableHead>
+                <TableHead>Pago</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sales.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-mono text-sm">
+                    {s.saleNumber}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">
+                    {s.createdAtFormatted}
+                  </TableCell>
+                  <TableCell>{s.sellerName}</TableCell>
+                  <TableCell>{s.customerName ?? s.patientName ?? "—"}</TableCell>
+                  {!pharmacyId && (
+                    <TableCell className="text-sm">{s.pharmacyName}</TableCell>
+                  )}
+                  <TableCell>
+                    {s.prescriptionNumber ? (
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {s.prescriptionNumber}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{s.paymentMethodLabel}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    {s.totalFormatted}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={s.statusColor}>
+                      {s.statusLabel}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      render={
+                        <Link href={`/dashboard/pharmacy/sales/${s.id}`} />
+                      }
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DataTable>
+      </div>
     </div>
   )
 }

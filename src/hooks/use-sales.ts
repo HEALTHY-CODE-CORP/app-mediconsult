@@ -143,6 +143,16 @@ export function usePharmacySales(pharmacyId: string) {
   })
 }
 
+export function useOrganizationSales() {
+  return useQuery({
+    queryKey: [...SALES_KEY, "organization"],
+    queryFn: async () => {
+      const { data } = await api.get<SaleResponse[]>("/sales/organization")
+      return toSaleList(data)
+    },
+  })
+}
+
 export function useMySales() {
   return useQuery({
     queryKey: [...SALES_KEY, "my"],
