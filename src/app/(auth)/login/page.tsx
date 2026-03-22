@@ -94,7 +94,7 @@ export default function LoginPage() {
               <Label>Organización</Label>
               <Select
                 value={selectedOrgId}
-                onValueChange={setSelectedOrgId}
+                onValueChange={(v) => setSelectedOrgId(v ?? "")}
                 items={orgItems}
                 disabled={isPending || isLoadingOrgs}
               >

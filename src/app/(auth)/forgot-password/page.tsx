@@ -128,7 +128,7 @@ export default function ForgotPasswordPage() {
               <Label>Organización</Label>
               <Select
                 value={selectedOrgId}
-                onValueChange={setSelectedOrgId}
+                onValueChange={(v) => setSelectedOrgId(v ?? "")}
                 items={orgItems}
                 disabled={isSubmitting || isLoadingOrgs}
               >

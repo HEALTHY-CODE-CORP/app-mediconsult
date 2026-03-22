@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,23 @@ import { Lock, CheckCircle, XCircle, Eye, EyeOff, Loader2 } from "lucide-react"
 type PageState = "loading" | "invalid" | "form" | "success"
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="mt-4 text-sm text-muted-foreground">Cargando...</p>
+          </CardContent>
+        </Card>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
+  )
+}
+
+function ResetPasswordContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token") ?? ""
 

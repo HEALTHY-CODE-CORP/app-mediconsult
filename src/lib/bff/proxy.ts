@@ -124,10 +124,22 @@ export async function buildClientResponse(
 
 export async function getSessionTokenFromRequest(request: NextRequest): Promise<string | null> {
   const secret = process.env.AUTH_SECRET;
-  if (!secret) return null;
+  if (!secret) {
+    console.error('[BFF] AUTH_SECRET is not set');
+    return null;
+  }
 
   const token = await getToken({ req: request, secret });
-  return (token?.backendToken as string) ?? null;
+  if (!token) {
+    console.warn('[BFF] No session token found — user may not be authenticated');
+    return null;
+  }
+  if (!token.backendToken) {
+    console.warn('[BFF] Session exists but backendToken is missing. Token keys:', Object.keys(token));
+    return null;
+  }
+
+  return token.backendToken as string;
 }
 
 export function buildUnauthorizedResponse(message = 'No autenticado'): NextResponse {
