@@ -163,13 +163,13 @@ export default function CertificateDetailPage({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileKey className="h-5 w-5" />
-              Informaci&oacute;n del certificado
+              Información del certificado
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <InfoRow label="Sujeto (CN)" value={cert.subjectCn} />
             <InfoRow label="Emisor (CN)" value={cert.issuerCn} />
-            <InfoRow label="N&uacute;mero de serie" value={cert.serialNumber} />
+            <InfoRow label="Número de serie" value={cert.serialNumber} />
           </CardContent>
         </Card>
 
@@ -182,11 +182,11 @@ export default function CertificateDetailPage({
           </CardHeader>
           <CardContent className="space-y-3">
             <InfoRow
-              label="V&aacute;lido desde"
+              label="Válido desde"
               value={cert.validFrom ? new Date(cert.validFrom).toLocaleDateString("es-EC") : null}
             />
             <InfoRow
-              label="V&aacute;lido hasta"
+              label="Válido hasta"
               value={cert.validUntil ? new Date(cert.validUntil).toLocaleDateString("es-EC") : null}
             />
             <div>

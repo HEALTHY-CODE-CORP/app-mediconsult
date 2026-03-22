@@ -144,9 +144,9 @@ export function OrganizationForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Informaci&oacute;n general</CardTitle>
+          <CardTitle>Información general</CardTitle>
           <CardDescription>
-            Datos principales de la organizaci&oacute;n
+            Datos principales de la organización
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -179,12 +179,12 @@ export function OrganizationForm({
             )}
             {mode === "create" && (
               <p className="text-xs text-muted-foreground">
-                Registro &Uacute;nico de Contribuyentes (13 d&iacute;gitos)
+                Registro Único de Contribuyentes (13 dígitos)
               </p>
             )}
           </div>
           <div className="col-span-full space-y-2">
-            <Label htmlFor="address">Direcci&oacute;n</Label>
+            <Label htmlFor="address">Dirección</Label>
             <Input
               id="address"
               value={formData.address}
@@ -193,7 +193,7 @@ export function OrganizationForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Tel&eacute;fono</Label>
+            <Label htmlFor="phone">Teléfono</Label>
             <Input
               id="phone"
               type="tel"
@@ -203,7 +203,7 @@ export function OrganizationForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Correo electr&oacute;nico</Label>
+            <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
               type="email"
@@ -229,9 +229,9 @@ export function OrganizationForm({
 
       <Card>
         <CardHeader>
-          <CardTitle>Suscripci&oacute;n</CardTitle>
+          <CardTitle>Suscripción</CardTitle>
           <CardDescription>
-            Plan y ciclo de facturaci&oacute;n
+            Plan y ciclo de facturación
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -240,6 +240,9 @@ export function OrganizationForm({
             <Select
               value={formData.planId}
               onValueChange={(value) => updateField("planId", value ?? "")}
+              items={Object.fromEntries(
+                plans.map((p) => [p.id, `${p.name} — ${p.monthlyPriceFormatted}/mes`])
+              )}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar plan" />
@@ -254,16 +257,17 @@ export function OrganizationForm({
             </Select>
             {selectedPlan && (
               <p className="text-xs text-muted-foreground">
-                {selectedPlan.maxClinics} cl&iacute;nicas, {selectedPlan.maxPharmacies} farmacias,{" "}
+                {selectedPlan.maxClinics} clínicas, {selectedPlan.maxPharmacies} farmacias,{" "}
                 {selectedPlan.maxUsers} usuarios, fee: {selectedPlan.consultationFeeFormatted}/consulta
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <Label>Ciclo de facturaci&oacute;n</Label>
+            <Label>Ciclo de facturación</Label>
             <Select
               value={formData.billingCycle}
               onValueChange={(value) => updateField("billingCycle", value ?? "MONTHLY")}
+              items={{ MONTHLY: "Mensual", ANNUAL: "Anual" }}
             >
               <SelectTrigger>
                 <SelectValue />

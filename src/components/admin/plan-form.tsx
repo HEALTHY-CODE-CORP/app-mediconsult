@@ -150,9 +150,9 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Informaci&oacute;n del plan</CardTitle>
+          <CardTitle>Información del plan</CardTitle>
           <CardDescription>
-            Nombre, c&oacute;digo y descripci&oacute;n del plan
+            Nombre, código y descripción del plan
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -170,7 +170,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="code">
-              C&oacute;digo {mode === "create" ? "*" : "(no editable)"}
+              Código {mode === "create" ? "*" : "(no editable)"}
             </Label>
             <Input
               id="code"
@@ -184,7 +184,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
             )}
           </div>
           <div className="col-span-full space-y-2">
-            <Label htmlFor="description">Descripci&oacute;n</Label>
+            <Label htmlFor="description">Descripción</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -194,7 +194,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="sortOrder">Orden de visualizaci&oacute;n</Label>
+            <Label htmlFor="sortOrder">Orden de visualización</Label>
             <Input
               id="sortOrder"
               type="number"
@@ -210,7 +210,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
         <CardHeader>
           <CardTitle>Precios</CardTitle>
           <CardDescription>
-            Configuraci&oacute;n de precios y tarifas
+            Configuración de precios y tarifas
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
@@ -264,14 +264,14 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>L&iacute;mites</CardTitle>
+          <CardTitle>Límites</CardTitle>
           <CardDescription>
-            L&iacute;mites de recursos por organizaci&oacute;n
+            Límites de recursos por organización
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
-            <Label htmlFor="maxClinics">M&aacute;x. cl&iacute;nicas *</Label>
+            <Label htmlFor="maxClinics">Máx. clínicas *</Label>
             <Input
               id="maxClinics"
               type="number"
@@ -285,7 +285,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="maxPharmacies">M&aacute;x. farmacias *</Label>
+            <Label htmlFor="maxPharmacies">Máx. farmacias *</Label>
             <Input
               id="maxPharmacies"
               type="number"
@@ -299,7 +299,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="maxUsers">M&aacute;x. usuarios *</Label>
+            <Label htmlFor="maxUsers">Máx. usuarios *</Label>
             <Input
               id="maxUsers"
               type="number"
@@ -313,7 +313,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="maxPatients">M&aacute;x. pacientes *</Label>
+            <Label htmlFor="maxPatients">Máx. pacientes *</Label>
             <Input
               id="maxPatients"
               type="number"

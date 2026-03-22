@@ -348,6 +348,7 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                           setRazonSocial("")
                         }
                       }}
+                      items={TIPO_ID_LABELS as Record<string, string>}
                     >
                       <SelectTrigger>
                         <SelectValue />

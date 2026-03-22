@@ -86,7 +86,7 @@ export default function UploadCertificatePage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Subir certificado</h1>
           <p className="text-muted-foreground">
-            Carga un certificado P12 para firma electr&oacute;nica
+            Carga un certificado P12 para firma electrónica
           </p>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function UploadCertificatePage() {
           <CardHeader>
             <CardTitle>Propietario</CardTitle>
             <CardDescription>
-              Selecciona qui&eacute;n usar&aacute; este certificado para firmar
+              Selecciona quién usará este certificado para firmar
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -108,6 +108,7 @@ export default function UploadCertificatePage() {
                   if (v) setOwnerType(v as OwnerType)
                   setOwnerId("")
                 }}
+                items={{ USER: "Doctor", PHARMACY: "Farmacia" }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -122,7 +123,15 @@ export default function UploadCertificatePage() {
               <Label>
                 {ownerType === "USER" ? "Doctor" : "Farmacia"} *
               </Label>
-              <Select value={ownerId} onValueChange={(v) => setOwnerId(v ?? "")}>
+              <Select
+                value={ownerId}
+                onValueChange={(v) => setOwnerId(v ?? "")}
+                items={Object.fromEntries(
+                  ownerType === "USER"
+                    ? doctors.map((u) => [u.id, `${u.fullName} (${u.email})`])
+                    : pharmacies.map((p) => [p.id, p.name])
+                )}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar..." />
                 </SelectTrigger>
@@ -151,7 +160,7 @@ export default function UploadCertificatePage() {
           <CardHeader>
             <CardTitle>Certificado P12</CardTitle>
             <CardDescription>
-              Archivo .p12 y contrase&ntilde;a para extraer la informaci&oacute;n
+              Archivo .p12 y contraseña para extraer la información
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
@@ -168,7 +177,7 @@ export default function UploadCertificatePage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contrase&ntilde;a del P12 *</Label>
+              <Label htmlFor="password">Contraseña del P12 *</Label>
               <Input
                 id="password"
                 type="password"
@@ -192,7 +201,7 @@ export default function UploadCertificatePage() {
                 <p className="text-xs text-destructive">{errors.file}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Formatos aceptados: .p12, .pfx (m&aacute;x. 10 MB)
+                Formatos aceptados: .p12, .pfx (máx. 10 MB)
               </p>
             </div>
           </CardContent>

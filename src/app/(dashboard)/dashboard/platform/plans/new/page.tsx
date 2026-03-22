@@ -23,7 +23,7 @@ export default function NewPlanPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Nuevo plan</h1>
           <p className="text-muted-foreground">
-            Crear un nuevo plan de suscripci&oacute;n
+            Crear un nuevo plan de suscripción
           </p>
         </div>
       </div>

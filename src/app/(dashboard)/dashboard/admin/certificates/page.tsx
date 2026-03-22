@@ -30,7 +30,7 @@ export default function CertificatesPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Certificados digitales</h1>
           <p className="text-muted-foreground">
-            Certificados P12 para firma electr&oacute;nica de recetas y facturas
+            Certificados P12 para firma electrónica de recetas y facturas
           </p>
         </div>
         <Button render={<Link href="/dashboard/admin/certificates/upload" />}>
@@ -53,7 +53,7 @@ export default function CertificatesPage() {
               <TableHead>Alias</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Sujeto</TableHead>
-              <TableHead>V&aacute;lido hasta</TableHead>
+              <TableHead>Válido hasta</TableHead>
               <TableHead>Archivo</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>

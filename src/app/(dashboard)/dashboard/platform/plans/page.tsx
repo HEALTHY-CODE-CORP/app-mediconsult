@@ -24,7 +24,7 @@ export default function PlansPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Planes</h1>
           <p className="text-muted-foreground">
-            Gesti&oacute;n de planes de suscripci&oacute;n de la plataforma
+            Gestión de planes de suscripción de la plataforma
           </p>
         </div>
         <Button render={<Link href="/dashboard/platform/plans/new" />}>
@@ -43,11 +43,11 @@ export default function PlansPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
-              <TableHead>C&oacute;digo</TableHead>
+              <TableHead>Código</TableHead>
               <TableHead className="text-right">Precio mensual</TableHead>
               <TableHead className="text-right">Precio anual</TableHead>
               <TableHead className="text-right">Fee consulta</TableHead>
-              <TableHead className="text-center">L&iacute;mites</TableHead>
+              <TableHead className="text-center">Límites</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>

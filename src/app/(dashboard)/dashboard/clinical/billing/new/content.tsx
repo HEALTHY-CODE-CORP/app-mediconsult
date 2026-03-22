@@ -251,6 +251,7 @@ export function NewConsultationInvoiceContent() {
                   onValueChange={(v) => {
                     if (v) setCompradorTipoId(v as TipoIdentificacion)
                   }}
+                  items={{ "04": "RUC", "05": "Cédula", "06": "Pasaporte", "07": "Consumidor Final" }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -332,6 +333,7 @@ export function NewConsultationInvoiceContent() {
                 onValueChange={(v) => {
                   if (v) setFormaPago(v)
                 }}
+                items={{ "01": "Efectivo", "16": "Tarjeta de débito", "19": "Tarjeta de crédito", "20": "Otros / Transferencia" }}
               >
                 <SelectTrigger>
                   <SelectValue />

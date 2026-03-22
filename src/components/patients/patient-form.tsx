@@ -109,6 +109,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
             <Select
               value={formData.idType}
               onValueChange={(v) => updateField("idType", v as IdType)}
+              items={ID_TYPE_LABELS as Record<string, string>}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -176,6 +177,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
             <Select
               value={formData.gender ?? ""}
               onValueChange={(v) => updateField("gender", (v || undefined) as Gender | undefined)}
+              items={GENDER_LABELS as Record<string, string>}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Seleccionar" />
@@ -196,6 +198,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               onValueChange={(v) =>
                 updateField("bloodType", (v || undefined) as BloodType | undefined)
               }
+              items={BLOOD_TYPE_LABELS as Record<string, string>}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Seleccionar" />

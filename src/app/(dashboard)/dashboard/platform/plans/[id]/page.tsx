@@ -119,7 +119,7 @@ export default function PlanDetailPage({
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Precio anual</span>
-              <span className="font-semibold">{plan.annualPriceFormatted}/a&ntilde;o</span>
+              <span className="font-semibold">{plan.annualPriceFormatted}/año</span>
             </div>
             <div className="flex justify-between border-t pt-4">
               <span className="text-sm text-muted-foreground">Fee por consulta</span>
@@ -132,15 +132,15 @@ export default function PlanDetailPage({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              L&iacute;mites
+              Límites
             </CardTitle>
-            <CardDescription>Recursos m&aacute;ximos por organizaci&oacute;n</CardDescription>
+            <CardDescription>Recursos máximos por organización</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Building2 className="h-4 w-4" />
-                Cl&iacute;nicas
+                Clínicas
               </span>
               <span className="font-semibold">{plan.maxClinics}</span>
             </div>
@@ -172,7 +172,7 @@ export default function PlanDetailPage({
       {plan.description && (
         <Card>
           <CardHeader>
-            <CardTitle>Descripci&oacute;n</CardTitle>
+            <CardTitle>Descripción</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">{plan.description}</p>

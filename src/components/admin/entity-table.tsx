@@ -38,8 +38,8 @@ export function EntityTable({ entities, isLoading, basePath, entityType }: Entit
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>
-            <TableHead>Direcci&oacute;n</TableHead>
-            <TableHead>Tel&eacute;fono</TableHead>
+            <TableHead>Dirección</TableHead>
+            <TableHead>Teléfono</TableHead>
             <TableHead>Email</TableHead>
             {isClinic && <TableHead className="text-right">Consulta</TableHead>}
             <TableHead>Estado</TableHead>

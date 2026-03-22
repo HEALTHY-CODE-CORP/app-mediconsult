@@ -87,6 +87,7 @@ export function AllergyDialog({
                 onValueChange={(v) =>
                   updateField("allergyType", v as AllergyType)
                 }
+                items={ALLERGY_TYPE_LABELS as Record<string, string>}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -107,6 +108,7 @@ export function AllergyDialog({
                 onValueChange={(v) =>
                   updateField("severity", v as AllergySeverity)
                 }
+                items={ALLERGY_SEVERITY_LABELS as Record<string, string>}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />

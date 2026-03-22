@@ -112,6 +112,7 @@ export default function ConsultationBillingPage() {
                 setStartDate("")
                 setEndDate("")
               }}
+              items={{ all: "Todas", status: "Por estado", dateRange: "Por fecha" }}
             >
               <SelectTrigger className="w-full sm:w-[160px]">
                 <SelectValue />
@@ -132,6 +133,7 @@ export default function ConsultationBillingPage() {
                 onValueChange={(v) =>
                   setStatusFilter((v as InvoiceStatus) ?? "")
                 }
+                items={INVOICE_STATUS_LABELS as Record<string, string>}
               >
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Seleccionar" />

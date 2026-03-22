@@ -117,6 +117,10 @@ export default function UsersPage() {
         <Select
           value={roleFilter}
           onValueChange={(v) => { if (v) setRoleFilter(v) }}
+          items={{
+            ALL: "Todos los roles",
+            ...Object.fromEntries(FILTERABLE_ROLES.map((r) => [r, ROLE_LABELS[r]])),
+          }}
         >
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filtrar por rol" />
@@ -133,6 +137,7 @@ export default function UsersPage() {
         <Select
           value={statusFilter}
           onValueChange={(v) => { if (v) setStatusFilter(v) }}
+          items={{ ALL: "Todos", ACTIVE: "Activos", INACTIVE: "Inactivos" }}
         >
           <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Estado" />

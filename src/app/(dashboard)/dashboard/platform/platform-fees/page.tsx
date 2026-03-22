@@ -165,6 +165,7 @@ export default function PlatformFeesPage() {
               setStartDate("")
               setEndDate("")
             }}
+            items={{ all: "Todas", status: "Por estado", dateRange: "Por fecha" }}
           >
             <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue />
@@ -185,6 +186,7 @@ export default function PlatformFeesPage() {
               onValueChange={(v) =>
                 setStatusFilter((v as FeeStatus) ?? "")
               }
+              items={FEE_STATUS_LABELS as Record<string, string>}
             >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Seleccionar" />

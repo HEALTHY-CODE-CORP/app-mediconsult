@@ -588,6 +588,7 @@ function NewSaleContent() {
                   <Select
                     value={paymentMethod}
                     onValueChange={(v) => setPaymentMethod((v as PaymentMethod) ?? "CASH")}
+                    items={{ CASH: "Efectivo", CARD: "Tarjeta", TRANSFER: "Transferencia", MIXED: "Mixto" }}
                   >
                     <SelectTrigger>
                       <SelectValue />

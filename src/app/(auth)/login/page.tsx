@@ -61,18 +61,18 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isPlatformLogin && (
             <div className="space-y-2">
-              <Label htmlFor="organizationId">ID de Organizaci&oacute;n</Label>
+              <Label htmlFor="organizationId">ID de Organización</Label>
               <Input
                 id="organizationId"
                 name="organizationId"
-                placeholder="ID de tu organizaci&oacute;n"
+                placeholder="ID de tu organización"
                 required={!isPlatformLogin}
                 disabled={isPending}
               />
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">Correo electr&oacute;nico</Label>
+            <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
               name="email"
@@ -83,12 +83,12 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Contrase&ntilde;a</Label>
+            <Label htmlFor="password">Contraseña</Label>
             <Input
               id="password"
               name="password"
               type="password"
-              placeholder="Tu contrase&ntilde;a"
+              placeholder="Tu contraseña"
               required
               disabled={isPending}
             />
