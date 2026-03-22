@@ -4,6 +4,31 @@ import type { RegisterRequest, UserResponse } from "@/types/auth.model"
 import { toUser, toUserList } from "@/adapters/user.adapter"
 
 const USERS_KEY = ["users"]
+const PROFILE_KEY = ["profile"]
+
+// ─── Current user profile ────────────────────────────────────────────
+export function useProfile() {
+  return useQuery({
+    queryKey: PROFILE_KEY,
+    queryFn: async () => {
+      const { data } = await api.get<UserResponse>("/auth/me")
+      return toUser(data)
+    },
+  })
+}
+
+// ─── Change password ─────────────────────────────────────────────────
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const { data: res } = await api.patch<{ message: string }>(
+        "/auth/change-password",
+        data
+      )
+      return res
+    },
+  })
+}
 
 // ─── List users (org admin — own org) ────────────────────────────────
 export function useUsers() {

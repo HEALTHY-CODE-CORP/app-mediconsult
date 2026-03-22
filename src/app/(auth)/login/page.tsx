@@ -1,10 +1,18 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { loginAction } from "@/actions/auth.actions"
+import { useState, useEffect, useTransition } from "react"
+import Link from "next/link"
+import { loginAction, getActiveOrganizations } from "@/actions/auth.actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Card,
   CardContent,
@@ -14,10 +22,29 @@ import {
 } from "@/components/ui/card"
 import { Stethoscope, Shield } from "lucide-react"
 
+interface OrgOption {
+  id: string
+  name: string
+}
+
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isPlatformLogin, setIsPlatformLogin] = useState(false)
+  const [organizations, setOrganizations] = useState<OrgOption[]>([])
+  const [selectedOrgId, setSelectedOrgId] = useState("")
+  const [isLoadingOrgs, setIsLoadingOrgs] = useState(true)
+
+  useEffect(() => {
+    getActiveOrganizations()
+      .then((orgs) => setOrganizations(orgs))
+      .finally(() => setIsLoadingOrgs(false))
+  }, [])
+
+  const orgItems = organizations.reduce<Record<string, string>>(
+    (acc, org) => ({ ...acc, [org.id]: org.name }),
+    {}
+  )
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -25,11 +52,14 @@ export default function LoginPage() {
 
     const formData = new FormData(e.currentTarget)
     const data = {
-      organizationId: isPlatformLogin
-        ? undefined
-        : (formData.get("organizationId") as string),
+      organizationId: isPlatformLogin ? undefined : selectedOrgId,
       email: formData.get("email") as string,
       password: formData.get("password") as string,
+    }
+
+    if (!isPlatformLogin && !selectedOrgId) {
+      setError("Selecciona una organización")
+      return
     }
 
     startTransition(async () => {
@@ -61,14 +91,30 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isPlatformLogin && (
             <div className="space-y-2">
-              <Label htmlFor="organizationId">ID de Organización</Label>
-              <Input
-                id="organizationId"
-                name="organizationId"
-                placeholder="ID de tu organización"
-                required={!isPlatformLogin}
-                disabled={isPending}
-              />
+              <Label>Organización</Label>
+              <Select
+                value={selectedOrgId}
+                onValueChange={setSelectedOrgId}
+                items={orgItems}
+                disabled={isPending || isLoadingOrgs}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      isLoadingOrgs
+                        ? "Cargando organizaciones..."
+                        : "Selecciona tu organización"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {organizations.map((org) => (
+                    <SelectItem key={org.id} value={org.id}>
+                      {org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
           <div className="space-y-2">
@@ -103,6 +149,15 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? "Ingresando..." : "Ingresar"}
           </Button>
+
+          <div className="text-center">
+            <Link
+              href="/forgot-password"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
 
           <div className="text-center">
             <button

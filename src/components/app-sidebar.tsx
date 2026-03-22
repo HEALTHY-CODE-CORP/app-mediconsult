@@ -43,6 +43,7 @@ import {
   FileKey,
   Coins,
   Activity,
+  User,
 } from "lucide-react"
 import { logoutAction } from "@/actions/auth.actions"
 import type { Role } from "@/types/auth.model"
@@ -330,6 +331,13 @@ export function AppSidebar() {
                   side="top"
                   className="w-(--anchor-width)"
                 >
+                  <DropdownMenuItem
+                    render={<Link href="/dashboard/profile" />}
+                    className="flex w-full items-center gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    Mi Perfil
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => logoutAction()}
                     className="flex w-full items-center gap-2"

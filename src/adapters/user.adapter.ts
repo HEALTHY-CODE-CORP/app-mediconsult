@@ -26,6 +26,7 @@ export interface User {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  createdAtFormatted: string
 }
 
 // ─── Transformers ────────────────────────────────────────────────────
@@ -45,6 +46,11 @@ export function toUser(raw: UserResponse): User {
     isActive: raw.isActive,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+    createdAtFormatted: new Date(raw.createdAt).toLocaleDateString("es-EC", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
   }
 }
 

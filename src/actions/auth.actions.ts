@@ -3,6 +3,22 @@
 import { signIn, signOut } from "@/lib/auth"
 import { AuthError } from "next-auth"
 import { isRedirectError } from "next/dist/client/components/redirect-error"
+import { getBackendApiBaseUrl } from "@/lib/bff/session"
+
+export async function getActiveOrganizations(): Promise<
+  { id: string; name: string }[]
+> {
+  try {
+    const backendUrl = getBackendApiBaseUrl()
+    const res = await fetch(`${backendUrl}/v1/organizations/active-list`, {
+      next: { revalidate: 60 },
+    })
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
+}
 
 export async function loginAction(data: {
   organizationId?: string
