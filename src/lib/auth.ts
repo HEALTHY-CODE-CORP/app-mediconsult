@@ -37,7 +37,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
 
           if (!res.ok) {
-            console.log({test: await res.json()})
             return null
           }
 

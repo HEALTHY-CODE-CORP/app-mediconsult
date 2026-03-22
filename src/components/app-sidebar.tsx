@@ -212,9 +212,10 @@ function hasAccess(userRoles: string[], requiredRoles: Role[]): boolean {
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const userRoles = session?.user?.roles ?? []
   const isSuperAdmin = userRoles.includes("SUPER_ADMIN")
+  const isLoading = status === "loading"
 
   const navigation = isSuperAdmin ? platformNavigation : orgNavigation
 
@@ -245,73 +246,100 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {navigation.map((group) => {
-          const visibleItems = group.items.filter((item) =>
-            hasAccess(userRoles, item.roles)
-          )
-          if (visibleItems.length === 0) return null
+        {isLoading ? (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SidebarMenuItem key={i}>
+                    <SidebarMenuButton disabled>
+                      <div className="h-4 w-4 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : (
+          navigation.map((group) => {
+            const visibleItems = group.items.filter((item) =>
+              hasAccess(userRoles, item.roles)
+            )
+            if (visibleItems.length === 0) return null
 
-          return (
-            <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {visibleItems.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
-                        tooltip={item.title}
-                        render={<Link href={item.href} />}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )
-        })}
+            return (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {visibleItems.map((item) => (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
+                          tooltip={item.title}
+                          render={<Link href={item.href} />}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )
+          })
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t">
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <SidebarMenuButton size="lg">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col gap-0.5 leading-none">
-                      <span className="text-sm font-medium">
-                        {session?.user?.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {session?.user?.email}
-                      </span>
-                    </div>
-                    <ChevronUp className="ml-auto h-4 w-4" />
-                  </SidebarMenuButton>
-                }
-              />
-              <DropdownMenuContent
-                side="top"
-                className="w-(--anchor-width)"
-              >
-                <DropdownMenuItem
-                  onClick={() => logoutAction()}
-                  className="flex w-full items-center gap-2"
+            {isLoading ? (
+              <SidebarMenuButton size="lg" disabled>
+                <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+                <div className="flex flex-col gap-1">
+                  <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+                  <div className="h-2 w-28 animate-pulse rounded bg-muted" />
+                </div>
+              </SidebarMenuButton>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <SidebarMenuButton size="lg">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col gap-0.5 leading-none">
+                        <span className="text-sm font-medium">
+                          {session?.user?.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {session?.user?.email}
+                        </span>
+                      </div>
+                      <ChevronUp className="ml-auto h-4 w-4" />
+                    </SidebarMenuButton>
+                  }
+                />
+                <DropdownMenuContent
+                  side="top"
+                  className="w-(--anchor-width)"
                 >
-                  <LogOut className="h-4 w-4" />
-                  Cerrar sesión
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem
+                    onClick={() => logoutAction()}
+                    className="flex w-full items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

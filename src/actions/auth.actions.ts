@@ -14,7 +14,7 @@ export async function loginAction(data: {
       organizationId: data.organizationId || "",
       email: data.email,
       password: data.password,
-      redirectTo: "/",
+      redirectTo: "/dashboard",
     })
   } catch (error) {
     if (isRedirectError(error)) throw error
