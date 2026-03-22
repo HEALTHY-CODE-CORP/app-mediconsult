@@ -86,7 +86,7 @@ export default function CreateOrgAdminPage({ params }: Props) {
         roles: ["ADMIN"],
       })
       toast.success("Administrador creado exitosamente")
-      router.push(`/dashboard/admin/organizations/${organizationId}`)
+      router.push(`/dashboard/platform/organizations/${organizationId}`)
     } catch {
       toast.error("Error al crear el administrador")
     }
@@ -108,7 +108,7 @@ export default function CreateOrgAdminPage({ params }: Props) {
         <Button
           variant="link"
           className="mt-2"
-          render={<Link href="/dashboard/admin/organizations" />}
+          render={<Link href="/dashboard/platform/organizations" />}
         >
           Volver a organizaciones
         </Button>
@@ -122,7 +122,7 @@ export default function CreateOrgAdminPage({ params }: Props) {
         <Button
           variant="ghost"
           size="icon-sm"
-          render={<Link href={`/dashboard/admin/organizations/${organizationId}`} />}
+          render={<Link href={`/dashboard/platform/organizations/${organizationId}`} />}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

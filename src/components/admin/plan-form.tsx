@@ -60,31 +60,31 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
     if (!formData.name.trim()) newErrors.name = "El nombre es requerido"
     if (mode === "create") {
       if (!formData.code.trim()) {
-        newErrors.code = "El c\u00f3digo es requerido"
+        newErrors.code = "El código es requerido"
       } else if (!/^[A-Z_]+$/.test(formData.code)) {
-        newErrors.code = "Solo may\u00fasculas y guiones bajos (ej: BASIC, PRO_PLUS)"
+        newErrors.code = "Solo mayúsculas y guiones bajos (ej: BASIC, PRO_PLUS)"
       }
     }
     if (!formData.monthlyPrice || Number(formData.monthlyPrice) < 0) {
-      newErrors.monthlyPrice = "Precio mensual inv\u00e1lido"
+      newErrors.monthlyPrice = "Precio mensual inválido"
     }
     if (!formData.annualPrice || Number(formData.annualPrice) < 0) {
-      newErrors.annualPrice = "Precio anual inv\u00e1lido"
+      newErrors.annualPrice = "Precio anual inválido"
     }
     if (formData.consultationFee === "" || Number(formData.consultationFee) < 0) {
-      newErrors.consultationFee = "Fee de consulta inv\u00e1lido"
+      newErrors.consultationFee = "Fee de consulta inválido"
     }
     if (!formData.maxClinics || Number(formData.maxClinics) < 1) {
-      newErrors.maxClinics = "M\u00ednimo 1"
+      newErrors.maxClinics = "Mínimo 1"
     }
     if (!formData.maxPharmacies || Number(formData.maxPharmacies) < 1) {
-      newErrors.maxPharmacies = "M\u00ednimo 1"
+      newErrors.maxPharmacies = "Mínimo 1"
     }
     if (!formData.maxUsers || Number(formData.maxUsers) < 1) {
-      newErrors.maxUsers = "M\u00ednimo 1"
+      newErrors.maxUsers = "Mínimo 1"
     }
     if (!formData.maxPatients || Number(formData.maxPatients) < 1) {
-      newErrors.maxPatients = "M\u00ednimo 1"
+      newErrors.maxPatients = "Mínimo 1"
     }
 
     setErrors(newErrors)
@@ -133,9 +133,9 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
           : "Plan actualizado exitosamente"
       )
       if (mode === "create") {
-        router.push(`/dashboard/admin/plans/${result.id}`)
+        router.push(`/dashboard/platform/plans/${result.id}`)
       } else {
-        router.push(`/dashboard/admin/plans/${plan!.id}`)
+        router.push(`/dashboard/platform/plans/${plan!.id}`)
       }
     } catch {
       toast.error(
@@ -162,7 +162,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
               id="name"
               value={formData.name}
               onChange={(e) => updateField("name", e.target.value)}
-              placeholder="Plan B\u00e1sico"
+              placeholder="Plan Básico"
             />
             {errors.name && (
               <p className="text-xs text-destructive">{errors.name}</p>
@@ -189,7 +189,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
               id="description"
               value={formData.description}
               onChange={(e) => updateField("description", e.target.value)}
-              placeholder="Descripci\u00f3n del plan..."
+              placeholder="Descripción del plan..."
               rows={3}
             />
           </div>

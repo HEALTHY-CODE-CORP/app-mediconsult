@@ -9,6 +9,8 @@ import type {
   PharmacyResponse,
   CreatePharmacyRequest,
   ClinicPharmacyResponse,
+  ClinicStaffResponse,
+  AssignStaffRequest,
 } from "@/types/organization.model"
 import {
   toOrganization,
@@ -18,6 +20,7 @@ import {
   toPharmacy,
   toPharmacyList,
   toClinicPharmacyList,
+  toClinicStaffList,
 } from "@/adapters/organization.adapter"
 
 const ORGS_KEY = ["organizations"]
@@ -202,6 +205,65 @@ export function useSetPrimaryPharmacy(clinicId: string) {
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: [...CLINICS_KEY, clinicId, "pharmacies"] }),
+  })
+}
+
+// ─── Clinic ↔ Staff assignment ───────────────────────────────────────
+
+export function useClinicStaff(clinicId: string) {
+  return useQuery({
+    queryKey: [...CLINICS_KEY, clinicId, "staff"],
+    queryFn: async () => {
+      const { data } = await api.get<ClinicStaffResponse[]>(
+        `/clinics/${clinicId}/staff`
+      )
+      return toClinicStaffList(data)
+    },
+    enabled: !!clinicId,
+  })
+}
+
+export function useAssignStaffToClinic(clinicId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: AssignStaffRequest) => {
+      const { data } = await api.post(`/clinics/${clinicId}/staff`, body)
+      return data
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...CLINICS_KEY, clinicId, "staff"] }),
+  })
+}
+
+export function useUnassignStaffFromClinic(clinicId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      await api.delete(`/clinics/${clinicId}/staff/${userId}`)
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...CLINICS_KEY, clinicId, "staff"] }),
+  })
+}
+
+export function useSetPrimaryClinic(clinicId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      await api.patch(`/clinics/${clinicId}/staff/${userId}/primary`)
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...CLINICS_KEY, clinicId, "staff"] }),
+  })
+}
+
+export function useMyClinics() {
+  return useQuery({
+    queryKey: [...CLINICS_KEY, "my-clinics"],
+    queryFn: async () => {
+      const { data } = await api.get<ClinicResponse[]>("/clinics/my-clinics")
+      return toClinicList(data)
+    },
   })
 }
 

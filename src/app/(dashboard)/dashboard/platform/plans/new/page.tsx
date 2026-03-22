@@ -16,7 +16,7 @@ export default function NewPlanPage() {
         <Button
           variant="ghost"
           size="icon-sm"
-          render={<Link href="/dashboard/admin/plans" />}
+          render={<Link href="/dashboard/platform/plans" />}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

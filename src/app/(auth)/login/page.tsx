@@ -114,7 +114,7 @@ export default function LoginPage() {
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               {isPlatformLogin
-                ? "Iniciar sesi\u00f3n como usuario de organizaci\u00f3n"
+                ? "Iniciar sesión como usuario de organización"
                 : "Acceso de plataforma"}
             </button>
           </div>

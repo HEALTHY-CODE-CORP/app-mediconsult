@@ -3,8 +3,10 @@ import type {
   ClinicResponse,
   PharmacyResponse,
   ClinicPharmacyResponse,
+  ClinicStaffResponse,
 } from "@/types/organization.model"
 import { toPlan, type Plan } from "@/adapters/plan.adapter"
+import { toUser, type User } from "@/adapters/user.adapter"
 
 // ─── Domain Types ────────────────────────────────────────────────────
 
@@ -155,4 +157,30 @@ export function toClinicPharmacy(r: ClinicPharmacyResponse): ClinicPharmacy {
 
 export function toClinicPharmacyList(rs: ClinicPharmacyResponse[]): ClinicPharmacy[] {
   return rs.map(toClinicPharmacy)
+}
+
+// ─── Clinic Staff ───────────────────────────────────────────────────
+
+export interface ClinicStaff {
+  id: string
+  clinicId: string
+  user: User
+  isPrimary: boolean
+  isActive: boolean
+  assignedAt: string
+}
+
+export function toClinicStaff(r: ClinicStaffResponse): ClinicStaff {
+  return {
+    id: r.id,
+    clinicId: r.clinicId,
+    user: toUser(r.user),
+    isPrimary: r.isPrimary,
+    isActive: r.isActive,
+    assignedAt: r.assignedAt,
+  }
+}
+
+export function toClinicStaffList(rs: ClinicStaffResponse[]): ClinicStaff[] {
+  return rs.map(toClinicStaff)
 }

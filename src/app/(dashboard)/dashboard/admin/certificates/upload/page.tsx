@@ -48,7 +48,7 @@ export default function UploadCertificatePage() {
     const newErrors: Record<string, string> = {}
     if (!ownerId) newErrors.ownerId = "Selecciona un propietario"
     if (!alias.trim()) newErrors.alias = "El alias es requerido"
-    if (!password) newErrors.password = "La contrase\u00f1a del P12 es requerida"
+    if (!password) newErrors.password = "La contraseña del P12 es requerida"
     if (!file) newErrors.file = "Selecciona un archivo P12"
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -69,7 +69,7 @@ export default function UploadCertificatePage() {
       toast.success("Certificado subido exitosamente")
       router.push(`/dashboard/admin/certificates/${result.id}`)
     } catch {
-      toast.error("Error al subir el certificado. Verifica la contrase\u00f1a del P12.")
+      toast.error("Error al subir el certificado. Verifica la contraseña del P12.")
     }
   }
 
@@ -161,7 +161,7 @@ export default function UploadCertificatePage() {
                 id="alias"
                 value={alias}
                 onChange={(e) => setAlias(e.target.value)}
-                placeholder="Ej: Firma Dr. P\u00e9rez 2026"
+                placeholder="Ej: Firma Dr. Pérez 2026"
               />
               {errors.alias && (
                 <p className="text-xs text-destructive">{errors.alias}</p>
@@ -174,7 +174,7 @@ export default function UploadCertificatePage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Contrase\u00f1a del archivo P12"
+                placeholder="Contraseña del archivo P12"
               />
               {errors.password && (
                 <p className="text-xs text-destructive">{errors.password}</p>

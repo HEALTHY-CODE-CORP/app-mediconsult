@@ -28,12 +28,12 @@ export default function PlanDetailPage({
   const deletePlan = useDeletePlan()
 
   async function handleDelete() {
-    if (!confirm("\u00bfEst\u00e1s seguro de eliminar este plan? Las organizaciones con este plan quedar\u00e1n sin plan asignado."))
+    if (!confirm("¿Estás seguro de eliminar este plan? Las organizaciones con este plan quedarán sin plan asignado."))
       return
     try {
       await deletePlan.mutateAsync(id)
       toast.success("Plan eliminado exitosamente")
-      router.push("/dashboard/admin/plans")
+      router.push("/dashboard/platform/plans")
     } catch {
       toast.error("Error al eliminar el plan")
     }
@@ -55,7 +55,7 @@ export default function PlanDetailPage({
         <Button
           variant="outline"
           className="mt-4"
-          render={<Link href="/dashboard/admin/plans" />}
+          render={<Link href="/dashboard/platform/plans" />}
         >
           Volver a planes
         </Button>
@@ -70,7 +70,7 @@ export default function PlanDetailPage({
           <Button
             variant="ghost"
             size="icon-sm"
-            render={<Link href="/dashboard/admin/plans" />}
+            render={<Link href="/dashboard/platform/plans" />}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -87,7 +87,7 @@ export default function PlanDetailPage({
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            render={<Link href={`/dashboard/admin/plans/${plan.id}/edit`} />}
+            render={<Link href={`/dashboard/platform/plans/${plan.id}/edit`} />}
           >
             <Pencil className="mr-2 h-4 w-4" />
             Editar

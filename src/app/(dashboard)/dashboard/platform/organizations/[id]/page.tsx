@@ -72,7 +72,7 @@ export default function OrganizationDetailPage({
     try {
       await deleteMutation.mutateAsync(id)
       toast.success("Organización eliminada")
-      router.push("/dashboard/admin/organizations")
+      router.push("/dashboard/platform/organizations")
     } catch {
       toast.error("Error al eliminar la organización")
     }
@@ -116,7 +116,7 @@ export default function OrganizationDetailPage({
         <Button
           variant="link"
           className="mt-2"
-          render={<Link href="/dashboard/admin/organizations" />}
+          render={<Link href="/dashboard/platform/organizations" />}
         >
           Volver a organizaciones
         </Button>
@@ -131,7 +131,7 @@ export default function OrganizationDetailPage({
           <Button
             variant="ghost"
             size="icon-sm"
-            render={<Link href="/dashboard/admin/organizations" />}
+            render={<Link href="/dashboard/platform/organizations" />}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -152,7 +152,7 @@ export default function OrganizationDetailPage({
           <Button
             variant="outline"
             size="sm"
-            render={<Link href={`/dashboard/admin/organizations/${id}/create-admin`} />}
+            render={<Link href={`/dashboard/platform/organizations/${id}/create-admin`} />}
           >
             <UserPlus className="mr-1 h-4 w-4" />
             Crear Admin
@@ -160,7 +160,7 @@ export default function OrganizationDetailPage({
           <Button
             variant="outline"
             size="sm"
-            render={<Link href={`/dashboard/admin/organizations/${id}/edit`} />}
+            render={<Link href={`/dashboard/platform/organizations/${id}/edit`} />}
           >
             <Pencil className="mr-1 h-4 w-4" />
             Editar
@@ -328,7 +328,7 @@ export default function OrganizationDetailPage({
           </div>
           <Button
             size="sm"
-            render={<Link href={`/dashboard/admin/organizations/${id}/create-admin`} />}
+            render={<Link href={`/dashboard/platform/organizations/${id}/create-admin`} />}
           >
             <UserPlus className="mr-1 h-4 w-4" />
             Nuevo usuario
@@ -350,7 +350,7 @@ export default function OrganizationDetailPage({
                 variant="link"
                 size="sm"
                 className="mt-1"
-                render={<Link href={`/dashboard/admin/organizations/${id}/create-admin`} />}
+                render={<Link href={`/dashboard/platform/organizations/${id}/create-admin`} />}
               >
                 Crear el primer administrador
               </Button>

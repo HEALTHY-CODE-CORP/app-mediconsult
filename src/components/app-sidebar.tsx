@@ -78,7 +78,7 @@ const orgNavigation: NavGroup[] = [
     ],
   },
   {
-    label: "Cl\u00ednica",
+    label: "Clínica",
     items: [
       {
         title: "Pacientes",
@@ -99,7 +99,7 @@ const orgNavigation: NavGroup[] = [
         roles: CLINICAL_STAFF,
       },
       {
-        title: "Historias Cl\u00ednicas",
+        title: "Historias Clínicas",
         href: "/dashboard/clinical/records",
         icon: FileHeart,
         roles: CLINICAL_STAFF,
@@ -134,7 +134,7 @@ const orgNavigation: NavGroup[] = [
         roles: PHARMACY_STAFF,
       },
       {
-        title: "Facturaci\u00f3n",
+        title: "Facturación",
         href: "/dashboard/pharmacy/billing",
         icon: Receipt,
         roles: PHARMACY_STAFF,
@@ -142,7 +142,7 @@ const orgNavigation: NavGroup[] = [
     ],
   },
   {
-    label: "Administraci\u00f3n",
+    label: "Administración",
     items: [
       {
         title: "Usuarios",
@@ -151,7 +151,7 @@ const orgNavigation: NavGroup[] = [
         roles: ["ADMIN"],
       },
       {
-        title: "Cl\u00ednicas",
+        title: "Clínicas",
         href: "/dashboard/admin/clinics",
         icon: Building2,
         roles: ["ADMIN"],
@@ -186,19 +186,19 @@ const platformNavigation: NavGroup[] = [
       },
       {
         title: "Organizaciones",
-        href: "/dashboard/admin/organizations",
+        href: "/dashboard/platform/organizations",
         icon: Building,
         roles: ["SUPER_ADMIN"],
       },
       {
         title: "Planes",
-        href: "/dashboard/admin/plans",
+        href: "/dashboard/platform/plans",
         icon: CreditCard,
         roles: ["SUPER_ADMIN"],
       },
       {
         title: "Tarifas de Plataforma",
-        href: "/dashboard/admin/platform-fees",
+        href: "/dashboard/platform/platform-fees",
         icon: Coins,
         roles: ["SUPER_ADMIN"],
       },

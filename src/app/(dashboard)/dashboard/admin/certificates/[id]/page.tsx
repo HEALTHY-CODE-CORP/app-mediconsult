@@ -41,7 +41,7 @@ export default function CertificateDetailPage({
   const deleteCert = useDeleteCertificate()
 
   async function handleDeactivate() {
-    if (!confirm("\u00bfDesactivar este certificado? Ya no se usar\u00e1 para firmar.")) return
+    if (!confirm("¿Desactivar este certificado? Ya no se usará para firmar.")) return
     try {
       await deactivate.mutateAsync(id)
       toast.success("Certificado desactivado")
@@ -51,7 +51,7 @@ export default function CertificateDetailPage({
   }
 
   async function handleDelete() {
-    if (!confirm("\u00bfEliminar este certificado? Se eliminar\u00e1 tambi\u00e9n del almacenamiento.")) return
+    if (!confirm("¿Eliminar este certificado? Se eliminará también del almacenamiento.")) return
     try {
       await deleteCert.mutateAsync(id)
       toast.success("Certificado eliminado")
@@ -195,10 +195,10 @@ export default function CertificateDetailPage({
                 <Shield className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">
                   {cert.isExpired
-                    ? "Certificado expirado \u2014 no v\u00e1lido para firmar"
+                    ? "Certificado expirado — no válido para firmar"
                     : cert.isActive
                       ? "Listo para firmar documentos"
-                      : "Desactivado \u2014 no se usa para firmar"}
+                      : "Desactivado — no se usa para firmar"}
                 </span>
               </div>
             </div>
@@ -213,7 +213,7 @@ function InfoRow({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium">{value ?? "\u2014"}</p>
+      <p className="text-sm font-medium">{value ?? "—"}</p>
     </div>
   )
 }

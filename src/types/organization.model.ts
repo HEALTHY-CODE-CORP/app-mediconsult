@@ -1,4 +1,5 @@
 import type { PlanResponse } from "@/types/plan.model"
+import type { UserResponse } from "@/types/auth.model"
 
 export interface CreateOrganizationRequest {
   name: string
@@ -87,4 +88,18 @@ export interface ClinicPharmacyResponse {
   canPrescribe: boolean
   isActive: boolean
   linkedAt: string
+}
+
+export interface ClinicStaffResponse {
+  id: string
+  clinicId: string
+  user: UserResponse
+  isPrimary: boolean
+  isActive: boolean
+  assignedAt: string
+}
+
+export interface AssignStaffRequest {
+  userId: string
+  isPrimary?: boolean
 }

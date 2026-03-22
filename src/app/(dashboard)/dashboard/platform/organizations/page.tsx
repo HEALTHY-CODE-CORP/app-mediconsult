@@ -27,7 +27,7 @@ export default function OrganizationsPage() {
             Gestión de organizaciones del sistema
           </p>
         </div>
-        <Button render={<Link href="/dashboard/admin/organizations/new" />}>
+        <Button render={<Link href="/dashboard/platform/organizations/new" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nueva organización
         </Button>
@@ -71,14 +71,14 @@ export default function OrganizationsPage() {
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      render={<Link href={`/dashboard/admin/organizations/${org.id}`} />}
+                      render={<Link href={`/dashboard/platform/organizations/${org.id}`} />}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      render={<Link href={`/dashboard/admin/organizations/${org.id}/edit`} />}
+                      render={<Link href={`/dashboard/platform/organizations/${org.id}/edit`} />}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>

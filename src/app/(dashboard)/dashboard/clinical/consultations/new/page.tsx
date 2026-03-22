@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
@@ -25,7 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { usePatients } from "@/hooks/use-patients"
-import { useClinics } from "@/hooks/use-organizations"
+import { useMyClinics } from "@/hooks/use-organizations"
 import {
   usePatientOrgMedicalRecord,
   useCreateMedicalRecord,
@@ -42,25 +41,24 @@ import {
   Heart,
   Thermometer,
   Activity,
-  CheckCircle2,
 } from "lucide-react"
 
 export default function NewConsultationPage() {
   const router = useRouter()
   const { data: patients = [], isLoading: loadingPatients } = usePatients()
-  const { data: clinics = [], isLoading: loadingClinics } = useClinics()
+  const { data: clinics = [], isLoading: loadingClinics } = useMyClinics()
   const createRecord = useCreateMedicalRecord()
   const createConsultation = useCreateConsultation()
 
   const [search, setSearch] = useState("")
   const [selectedPatientId, setSelectedPatientId] = useState("")
-  const [selectedClinicId, setSelectedClinicId] = useState("")
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null)
   const [step, setStep] = useState<"select" | "form">("select")
   const [medicalRecordId, setMedicalRecordId] = useState("")
   const [isNewRecord, setIsNewRecord] = useState(false)
 
   // Auto-select clinic if only one
-  const effectiveClinicId = clinics.length === 1 ? clinics[0].id : selectedClinicId
+  const effectiveClinicId = clinics.length === 1 ? clinics[0].id : (selectedClinicId ?? "")
 
   useEffect(() => {
     if (clinics.length === 1 && !selectedClinicId) {
@@ -177,7 +175,7 @@ export default function NewConsultationPage() {
   const canProceed = selectedPatientId && effectiveClinicId && !isPending && !loadingRecord
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -187,40 +185,19 @@ export default function NewConsultationPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Nueva consulta</h1>
-          <p className="text-muted-foreground">
-            {step === "select"
-              ? "Selecciona el paciente para iniciar la consulta"
-              : "Completa los datos de la consulta"}
-          </p>
-        </div>
-      </div>
-
-      {/* Step indicator */}
-      <div className="flex items-center gap-3">
-        <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${
-          step === "select"
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground"
-        }`}>
-          {step === "form" ? <CheckCircle2 className="h-4 w-4" /> : <span className="font-bold">1</span>}
-          <span>Paciente</span>
-        </div>
-        <div className="h-px flex-1 bg-border" />
-        <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${
-          step === "form"
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground"
-        }`}>
-          <span className="font-bold">2</span>
-          <span>Consulta</span>
+          <h1 className="text-2xl font-bold">Nueva consulta</h1>
+          {step === "form" && selectedPatient && (
+            <p className="text-sm text-muted-foreground">
+              Completa los datos de la consulta
+            </p>
+          )}
         </div>
       </div>
 
       {step === "select" ? (
         <div className="space-y-6">
           {/* Patient search */}
-          <Card>
+          <Card className="overflow-visible">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserRound className="h-5 w-5" />
@@ -230,7 +207,7 @@ export default function NewConsultationPage() {
                 Busca al paciente por nombre o número de cédula
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-visible">
               {loadingPatients ? (
                 <Skeleton className="h-10 w-full" />
               ) : selectedPatient ? (
@@ -297,67 +274,40 @@ export default function NewConsultationPage() {
           </Card>
 
           {/* Clinic selector */}
-          {clinics.length > 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Consultorio
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingClinics ? (
-                  <Skeleton className="h-10 w-full" />
-                ) : (
-                  <Select
-                    value={selectedClinicId}
-                    onValueChange={(v) => { if (v) setSelectedClinicId(v) }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un consultorio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clinics.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Clinic auto-selected info */}
-          {clinics.length === 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Consultorio
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{clinics[0].name}</p>
-                    {clinics[0].address && (
-                      <p className="text-sm text-muted-foreground">
-                        {clinics[0].address}
-                      </p>
-                    )}
-                  </div>
-                  <Badge variant="secondary" className="ml-auto">
-                    Único consultorio
-                  </Badge>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Consultorio
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingClinics ? (
+                <Skeleton className="h-10 w-full" />
+              ) : clinics.length === 1 ? (
+                <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                  <span className="font-medium">{clinics[0].name}</span>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <Select
+                  value={selectedClinicId}
+                  onValueChange={(v) => setSelectedClinicId(v)}
+                  items={Object.fromEntries(clinics.map((c) => [c.id, c.name]))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un consultorio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clinics.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Latest vital signs preview */}
           {selectedPatientId && effectiveClinicId && latestVitals && (

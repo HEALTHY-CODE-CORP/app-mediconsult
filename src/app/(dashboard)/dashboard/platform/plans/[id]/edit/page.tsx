@@ -34,7 +34,7 @@ export default function EditPlanPage({
         <Button
           variant="outline"
           className="mt-4"
-          render={<Link href="/dashboard/admin/plans" />}
+          render={<Link href="/dashboard/platform/plans" />}
         >
           Volver a planes
         </Button>
@@ -48,7 +48,7 @@ export default function EditPlanPage({
         <Button
           variant="ghost"
           size="icon-sm"
-          render={<Link href={`/dashboard/admin/plans/${id}`} />}
+          render={<Link href={`/dashboard/platform/plans/${id}`} />}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

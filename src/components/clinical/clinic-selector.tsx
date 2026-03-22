@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useClinics } from "@/hooks/use-organizations"
+import { useMyClinics } from "@/hooks/use-organizations"
 
 const NONE_VALUE = "__none__"
 const STORAGE_KEY = "mediconsult:selected-clinic"
@@ -21,7 +21,7 @@ interface ClinicSelectorProps {
 }
 
 export function ClinicSelector({ value, onChange }: ClinicSelectorProps) {
-  const { data: clinics = [], isLoading } = useClinics()
+  const { data: clinics = [], isLoading } = useMyClinics()
   const initialized = useRef(false)
 
   const items = useMemo(

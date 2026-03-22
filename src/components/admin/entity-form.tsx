@@ -29,7 +29,7 @@ interface EntityFormProps {
 }
 
 const ENTITY_LABELS: Record<EntityType, { singular: string; article: string }> = {
-  clinic: { singular: "Cl\u00ednica", article: "la cl\u00ednica" },
+  clinic: { singular: "Clínica", article: "la clínica" },
   pharmacy: { singular: "Farmacia", article: "la farmacia" },
 }
 
@@ -105,7 +105,7 @@ export function EntityForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Informaci\u00f3n general</CardTitle>
+          <CardTitle>Información general</CardTitle>
           <CardDescription>
             Datos principales de {labels.article}
           </CardDescription>
@@ -122,16 +122,16 @@ export function EntityForm({
             />
           </div>
           <div className="col-span-full space-y-2">
-            <Label htmlFor="address">Direcci\u00f3n</Label>
+            <Label htmlFor="address">Dirección</Label>
             <Input
               id="address"
               value={formData.address}
               onChange={(e) => updateField("address", e.target.value)}
-              placeholder="Direcci\u00f3n completa"
+              placeholder="Dirección completa"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Tel\u00e9fono</Label>
+            <Label htmlFor="phone">Teléfono</Label>
             <Input
               id="phone"
               type="tel"
@@ -141,7 +141,7 @@ export function EntityForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Correo electr\u00f3nico</Label>
+            <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
               type="email"
@@ -156,9 +156,9 @@ export function EntityForm({
       {isClinic && (
         <Card>
           <CardHeader>
-            <CardTitle>Configuraci\u00f3n de consultas</CardTitle>
+            <CardTitle>Configuración de consultas</CardTitle>
             <CardDescription>
-              Precio que se cobra por cada consulta m\u00e9dica en esta cl\u00ednica
+              Precio que se cobra por cada consulta médica en esta clínica
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -174,7 +174,7 @@ export function EntityForm({
                 placeholder="0.00"
               />
               <p className="text-xs text-muted-foreground">
-                Este valor se usar\u00e1 para calcular las ganancias del m\u00e9dico por consulta
+                Este valor se usará para calcular las ganancias del médico por consulta
               </p>
             </div>
           </CardContent>

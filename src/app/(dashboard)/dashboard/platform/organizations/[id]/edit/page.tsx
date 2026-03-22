@@ -36,7 +36,7 @@ export default function EditOrganizationPage({
         <Button
           variant="link"
           className="mt-2"
-          render={<Link href="/dashboard/admin/organizations" />}
+          render={<Link href="/dashboard/platform/organizations" />}
         >
           Volver a organizaciones
         </Button>
@@ -50,7 +50,7 @@ export default function EditOrganizationPage({
         <Button
           variant="ghost"
           size="icon-sm"
-          render={<Link href={`/dashboard/admin/organizations/${id}`} />}
+          render={<Link href={`/dashboard/platform/organizations/${id}`} />}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

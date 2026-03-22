@@ -79,11 +79,11 @@ export function OrganizationForm({
       if (!formData.ruc.trim()) {
         newErrors.ruc = "El RUC es requerido"
       } else if (!/^\d{13}$/.test(formData.ruc)) {
-        newErrors.ruc = "El RUC debe tener 13 d\u00edgitos"
+        newErrors.ruc = "El RUC debe tener 13 dígitos"
       }
     }
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Correo electr\u00f3nico inv\u00e1lido"
+      newErrors.email = "Correo electrónico inválido"
     }
 
     setErrors(newErrors)
@@ -121,19 +121,19 @@ export function OrganizationForm({
       const result = await onSubmit(toPayload())
       toast.success(
         mode === "create"
-          ? "Organizaci\u00f3n creada exitosamente"
-          : "Organizaci\u00f3n actualizada exitosamente"
+          ? "Organización creada exitosamente"
+          : "Organización actualizada exitosamente"
       )
       if (mode === "create") {
-        router.push(`/dashboard/admin/organizations/${result.id}`)
+        router.push(`/dashboard/platform/organizations/${result.id}`)
       } else {
-        router.push(`/dashboard/admin/organizations/${organization!.id}`)
+        router.push(`/dashboard/platform/organizations/${organization!.id}`)
       }
     } catch {
       toast.error(
         mode === "create"
-          ? "Error al crear la organizaci\u00f3n"
-          : "Error al actualizar la organizaci\u00f3n"
+          ? "Error al crear la organización"
+          : "Error al actualizar la organización"
       )
     }
   }
@@ -156,7 +156,7 @@ export function OrganizationForm({
               id="name"
               value={formData.name}
               onChange={(e) => updateField("name", e.target.value)}
-              placeholder="Nombre de la organizaci\u00f3n"
+              placeholder="Nombre de la organización"
             />
             {errors.name && (
               <p className="text-xs text-destructive">{errors.name}</p>
@@ -189,7 +189,7 @@ export function OrganizationForm({
               id="address"
               value={formData.address}
               onChange={(e) => updateField("address", e.target.value)}
-              placeholder="Direcci\u00f3n completa"
+              placeholder="Dirección completa"
             />
           </div>
           <div className="space-y-2">
@@ -292,7 +292,7 @@ export function OrganizationForm({
               ? "Creando..."
               : "Guardando..."
             : mode === "create"
-              ? "Crear organizaci\u00f3n"
+              ? "Crear organización"
               : "Guardar cambios"}
         </Button>
       </div>

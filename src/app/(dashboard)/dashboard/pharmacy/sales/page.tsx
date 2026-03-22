@@ -46,8 +46,10 @@ import {
   FileText,
   Pill,
   ExternalLink,
+  TrendingUp,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useSalesEarnings } from "@/hooks/use-dashboard"
 
 export default function SalesPage() {
   const [pharmacyId, setPharmacyId] = useState("")
@@ -63,6 +65,9 @@ export default function SalesPage() {
   const { data: orgSales = [], isLoading: loadingOrgSales } = useOrganizationSales()
   const sales = pharmacyId ? pharmacySales : orgSales
   const loadingSales = pharmacyId ? loadingPharmacySales : loadingOrgSales
+
+  // Sales earnings
+  const { data: earnings } = useSalesEarnings()
 
   // Pending prescriptions
   const { data: pendingPrescriptions = [], isLoading: loadingPrescriptions } =
@@ -154,6 +159,109 @@ export default function SalesPage() {
       </div>
 
       <PharmacySelector value={pharmacyId} onChange={setPharmacyId} />
+
+      {/* Earnings Summary */}
+      {earnings && (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ventas hoy</p>
+                    <p className="text-2xl font-bold">{earnings.todayCount}</p>
+                  </div>
+                  <ShoppingCart className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ingreso hoy</p>
+                    <p className="text-2xl font-bold">{earnings.todayRevenueFormatted}</p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ventas del mes</p>
+                    <p className="text-2xl font-bold">{earnings.monthCount}</p>
+                  </div>
+                  <ShoppingCart className="h-8 w-8 text-green-400" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ingreso del mes</p>
+                    <p className="text-2xl font-bold">{earnings.monthRevenueFormatted}</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment method breakdown + pharmacy breakdown */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {earnings.salesByPaymentMethod.length > 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="mb-3 text-sm font-medium">Ventas por método de pago (mes)</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {earnings.salesByPaymentMethod.map((pm) => (
+                      <div
+                        key={pm.method}
+                        className="flex items-center justify-between rounded-md border p-3"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{pm.methodLabel}</p>
+                          <p className="text-xs text-muted-foreground">{pm.count} ventas</p>
+                        </div>
+                        <p className="text-sm font-bold">{pm.totalFormatted}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {earnings.salesByPharmacy.length > 1 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="mb-3 text-sm font-medium">Ventas por farmacia (mes)</p>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Farmacia</TableHead>
+                        <TableHead className="text-right">Ventas</TableHead>
+                        <TableHead className="text-right">Ingreso</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {earnings.salesByPharmacy.map((p) => (
+                        <TableRow key={p.pharmacyId}>
+                          <TableCell className="font-medium">{p.pharmacyName}</TableCell>
+                          <TableCell className="text-right">{p.count}</TableCell>
+                          <TableCell className="text-right font-bold">{p.revenueFormatted}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Cash session card */}
       <Card>

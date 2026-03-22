@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClinicPharmaciesCard } from "@/components/admin/clinic-pharmacies"
+import { ClinicStaffCard } from "@/components/admin/clinic-staff-card"
 import { useClinic, useDeleteClinic } from "@/hooks/use-organizations"
 import {
   ArrowLeft,
@@ -128,6 +129,7 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
         </Card>
 
         <ClinicPharmaciesCard clinicId={id} />
+        <ClinicStaffCard clinicId={id} />
       </div>
     </div>
   )

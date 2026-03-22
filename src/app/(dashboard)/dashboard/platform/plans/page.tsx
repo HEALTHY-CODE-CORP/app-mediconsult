@@ -27,7 +27,7 @@ export default function PlansPage() {
             Gesti&oacute;n de planes de suscripci&oacute;n de la plataforma
           </p>
         </div>
-        <Button render={<Link href="/dashboard/admin/plans/new" />}>
+        <Button render={<Link href="/dashboard/platform/plans/new" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nuevo plan
         </Button>
@@ -85,14 +85,14 @@ export default function PlansPage() {
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      render={<Link href={`/dashboard/admin/plans/${plan.id}`} />}
+                      render={<Link href={`/dashboard/platform/plans/${plan.id}`} />}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      render={<Link href={`/dashboard/admin/plans/${plan.id}/edit`} />}
+                      render={<Link href={`/dashboard/platform/plans/${plan.id}/edit`} />}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
