@@ -75,6 +75,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.roles = token.roles as string[]
       session.user.firstName = token.firstName as string
       session.user.lastName = token.lastName as string
+      session.backendToken = (token.backendToken as string) ?? null
       return session
     },
   },

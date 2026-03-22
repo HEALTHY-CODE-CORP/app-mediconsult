@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { auth } from '@/lib/auth';
 import { getBackendApiBaseUrl } from './session';
 
 const REQUEST_HEADERS_BLOCKLIST = new Set([
@@ -122,24 +122,17 @@ export async function buildClientResponse(
   });
 }
 
-export async function getSessionTokenFromRequest(request: NextRequest): Promise<string | null> {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) {
-    console.error('[BFF] AUTH_SECRET is not set');
+export async function getSessionTokenFromRequest(_request: NextRequest): Promise<string | null> {
+  const session = await auth();
+  if (!session) {
+    console.warn('[BFF] No session found — user may not be authenticated');
     return null;
   }
-
-  const token = await getToken({ req: request, secret });
-  if (!token) {
-    console.warn('[BFF] No session token found — user may not be authenticated');
+  if (!session.backendToken) {
+    console.warn('[BFF] Session exists but backendToken is missing');
     return null;
   }
-  if (!token.backendToken) {
-    console.warn('[BFF] Session exists but backendToken is missing. Token keys:', Object.keys(token));
-    return null;
-  }
-
-  return token.backendToken as string;
+  return session.backendToken;
 }
 
 export function buildUnauthorizedResponse(message = 'No autenticado'): NextResponse {
