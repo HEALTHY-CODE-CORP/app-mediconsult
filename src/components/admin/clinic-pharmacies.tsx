@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import {
   useClinicPharmacies,
   useLinkPharmacyToClinic,
@@ -60,7 +61,6 @@ export function ClinicPharmaciesCard({ clinicId }: ClinicPharmaciesCardProps) {
   }
 
   async function handleUnlink(pharmacyId: string) {
-    if (!confirm("¿Desvincular esta farmacia?")) return
     try {
       await unlinkMutation.mutateAsync(pharmacyId)
       toast.success("Farmacia desvinculada")
@@ -135,15 +135,19 @@ export function ClinicPharmaciesCard({ clinicId }: ClinicPharmaciesCardProps) {
                       <Star className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button
+                  <ConfirmButton
                     variant="ghost"
                     size="icon-sm"
-                    onClick={() => handleUnlink(lp.pharmacy.id)}
+                    title="Desvincular farmacia"
+                    description="La farmacia dejará de estar vinculada a esta clínica."
+                    confirmLabel="Desvincular"
+                    loadingLabel="Desvinculando..."
+                    onConfirm={() => handleUnlink(lp.pharmacy.id)}
                     disabled={unlinkMutation.isPending}
-                    title="Desvincular"
+                    titleAttribute="Desvincular"
                   >
                     <Unlink className="h-4 w-4 text-destructive" />
-                  </Button>
+                  </ConfirmButton>
                 </div>
               </div>
             ))}
@@ -161,7 +165,10 @@ export function ClinicPharmaciesCard({ clinicId }: ClinicPharmaciesCardProps) {
                 onValueChange={(v) => setSelectedPharmacyId(v ?? "")}
                 items={pharmacyItems}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  className="w-full"
+                  aria-label="Seleccionar farmacia para vincular"
+                >
                   <SelectValue placeholder="Seleccionar farmacia..." />
                 </SelectTrigger>
                 <SelectContent>

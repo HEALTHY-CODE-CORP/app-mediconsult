@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import type { AxiosError } from "axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,9 +30,10 @@ import {
   User,
   Stethoscope,
   DollarSign,
+  Building2,
 } from "lucide-react"
 import { toast } from "sonner"
-import type { TipoIdentificacion } from "@/types/billing.model"
+import type { ConsultationIssuerType, TipoIdentificacion } from "@/types/billing.model"
 
 function mapIdTypeToSri(idType: string): TipoIdentificacion {
   switch (idType) {
@@ -59,27 +61,46 @@ export function NewConsultationInvoiceContent() {
 
   const createInvoiceMutation = useCreateConsultationInvoice()
 
-  // Form state
-  const [compradorTipoId, setCompradorTipoId] =
-    useState<TipoIdentificacion>("05")
-  const [compradorIdentificacion, setCompradorIdentificacion] = useState("")
-  const [compradorRazonSocial, setCompradorRazonSocial] = useState("")
-  const [compradorDireccion, setCompradorDireccion] = useState("")
-  const [compradorEmail, setCompradorEmail] = useState("")
-  const [compradorTelefono, setCompradorTelefono] = useState("")
+  const [buyerOverrides, setBuyerOverrides] = useState<{
+    tipoId?: TipoIdentificacion
+    identificacion?: string
+    razonSocial?: string
+    direccion?: string
+    email?: string
+    telefono?: string
+  }>({})
   const [formaPago, setFormaPago] = useState("01")
+  const [issuerType, setIssuerType] = useState<ConsultationIssuerType>("CLINIC")
 
-  // Pre-fill from patient data
-  useEffect(() => {
-    if (patient) {
-      setCompradorTipoId(mapIdTypeToSri(patient.idType))
-      setCompradorIdentificacion(patient.idNumber)
-      setCompradorRazonSocial(patient.fullName)
-      setCompradorDireccion(patient.address ?? "")
-      setCompradorEmail(patient.email ?? "")
-      setCompradorTelefono(patient.phone ?? "")
+  function getApiErrorMessage(error: unknown): string | null {
+    const axiosError = error as AxiosError<{ message?: string; error?: string }>
+    const data = axiosError.response?.data
+    if (typeof data?.message === "string" && data.message.trim().length > 0) {
+      return data.message
     }
-  }, [patient])
+    if (typeof data?.error === "string" && data.error.trim().length > 0) {
+      return data.error
+    }
+    return null
+  }
+
+  const pacienteDefault = {
+    tipoId: (patient ? mapIdTypeToSri(patient.idType) : "05") as TipoIdentificacion,
+    identificacion: patient?.idNumber ?? "",
+    razonSocial: patient?.fullName ?? "",
+    direccion: patient?.address ?? "",
+    email: patient?.email ?? "",
+    telefono: patient?.phone ?? "",
+  }
+
+  const compradorTipoId = buyerOverrides.tipoId ?? pacienteDefault.tipoId
+  const compradorIdentificacion =
+    buyerOverrides.identificacion ?? pacienteDefault.identificacion
+  const compradorRazonSocial =
+    buyerOverrides.razonSocial ?? pacienteDefault.razonSocial
+  const compradorDireccion = buyerOverrides.direccion ?? pacienteDefault.direccion
+  const compradorEmail = buyerOverrides.email ?? pacienteDefault.email
+  const compradorTelefono = buyerOverrides.telefono ?? pacienteDefault.telefono
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -91,6 +112,7 @@ export function NewConsultationInvoiceContent() {
     try {
       const result = await createInvoiceMutation.mutateAsync({
         consultationId,
+        issuerType,
         compradorTipoId,
         compradorIdentificacion,
         compradorRazonSocial,
@@ -101,8 +123,8 @@ export function NewConsultationInvoiceContent() {
       })
       toast.success("Factura creada exitosamente")
       router.push(`/dashboard/clinical/billing/${result.id}`)
-    } catch {
-      toast.error("Error al crear la factura")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) ?? "Error al crear la factura")
     }
   }
 
@@ -238,6 +260,40 @@ export function NewConsultationInvoiceContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Emisor de la factura
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="max-w-md space-y-2">
+              <Label htmlFor="consultation-invoice-issuer-type">
+                Facturar a nombre de
+              </Label>
+              <Select
+                value={issuerType}
+                onValueChange={(v) => {
+                  if (v) setIssuerType(v as ConsultationIssuerType)
+                }}
+                items={{ CLINIC: "Consultorio / Clínica", DOCTOR: "Médico tratante" }}
+              >
+                <SelectTrigger id="consultation-invoice-issuer-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CLINIC">Consultorio / Clínica</SelectItem>
+                  <SelectItem value="DOCTOR">Médico tratante</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Debe existir perfil tributario completo y certificado P12 activo para el emisor seleccionado.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
               Datos del comprador
             </CardTitle>
@@ -245,15 +301,22 @@ export function NewConsultationInvoiceContent() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Tipo de identificación *</Label>
+                <Label htmlFor="consultation-invoice-id-type">
+                  Tipo de identificación *
+                </Label>
                 <Select
                   value={compradorTipoId}
                   onValueChange={(v) => {
-                    if (v) setCompradorTipoId(v as TipoIdentificacion)
+                    if (v) {
+                      setBuyerOverrides((prev) => ({
+                        ...prev,
+                        tipoId: v as TipoIdentificacion,
+                      }))
+                    }
                   }}
                   items={{ "04": "RUC", "05": "Cédula", "06": "Pasaporte", "07": "Consumidor Final" }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="consultation-invoice-id-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -270,7 +333,10 @@ export function NewConsultationInvoiceContent() {
                 <Input
                   value={compradorIdentificacion}
                   onChange={(e) =>
-                    setCompradorIdentificacion(e.target.value)
+                    setBuyerOverrides((prev) => ({
+                      ...prev,
+                      identificacion: e.target.value,
+                    }))
                   }
                   placeholder="Número de identificación"
                   required
@@ -281,7 +347,12 @@ export function NewConsultationInvoiceContent() {
                 <Label>Razón social / Nombre *</Label>
                 <Input
                   value={compradorRazonSocial}
-                  onChange={(e) => setCompradorRazonSocial(e.target.value)}
+                  onChange={(e) =>
+                    setBuyerOverrides((prev) => ({
+                      ...prev,
+                      razonSocial: e.target.value,
+                    }))
+                  }
                   placeholder="Nombre completo o razón social"
                   required
                 />
@@ -291,7 +362,12 @@ export function NewConsultationInvoiceContent() {
                 <Label>Dirección</Label>
                 <Input
                   value={compradorDireccion}
-                  onChange={(e) => setCompradorDireccion(e.target.value)}
+                  onChange={(e) =>
+                    setBuyerOverrides((prev) => ({
+                      ...prev,
+                      direccion: e.target.value,
+                    }))
+                  }
                   placeholder="Dirección del comprador"
                 />
               </div>
@@ -301,7 +377,12 @@ export function NewConsultationInvoiceContent() {
                 <Input
                   type="email"
                   value={compradorEmail}
-                  onChange={(e) => setCompradorEmail(e.target.value)}
+                  onChange={(e) =>
+                    setBuyerOverrides((prev) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
                   placeholder="email@ejemplo.com"
                 />
               </div>
@@ -310,7 +391,12 @@ export function NewConsultationInvoiceContent() {
                 <Label>Teléfono</Label>
                 <Input
                   value={compradorTelefono}
-                  onChange={(e) => setCompradorTelefono(e.target.value)}
+                  onChange={(e) =>
+                    setBuyerOverrides((prev) => ({
+                      ...prev,
+                      telefono: e.target.value,
+                    }))
+                  }
                   placeholder="Número de teléfono"
                 />
               </div>
@@ -327,7 +413,9 @@ export function NewConsultationInvoiceContent() {
           </CardHeader>
           <CardContent>
             <div className="max-w-sm space-y-2">
-              <Label>Método de pago</Label>
+              <Label htmlFor="consultation-invoice-payment-method">
+                Método de pago
+              </Label>
               <Select
                 value={formaPago}
                 onValueChange={(v) => {
@@ -335,7 +423,7 @@ export function NewConsultationInvoiceContent() {
                 }}
                 items={{ "01": "Efectivo", "16": "Tarjeta de débito", "19": "Tarjeta de crédito", "20": "Otros / Transferencia" }}
               >
-                <SelectTrigger>
+                <SelectTrigger id="consultation-invoice-payment-method">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

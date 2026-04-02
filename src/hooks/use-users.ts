@@ -1,10 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/axios"
-import type { RegisterRequest, UserResponse } from "@/types/auth.model"
+import type {
+  RegisterRequest,
+  UpdateUserRequest,
+  UpdateMyBillingProfileRequest,
+  UserResponse,
+} from "@/types/auth.model"
 import { toUser, toUserList } from "@/adapters/user.adapter"
 
 const USERS_KEY = ["users"]
 const PROFILE_KEY = ["profile"]
+const userKey = (userId: string | undefined) => ["users", userId]
 
 // ─── Current user profile ────────────────────────────────────────────
 export function useProfile() {
@@ -30,6 +36,24 @@ export function useChangePassword() {
   })
 }
 
+// ─── Update my billing profile ─────────────────────────────────────
+export function useUpdateMyBillingProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: UpdateMyBillingProfileRequest) => {
+      const { data: raw } = await api.patch<UserResponse>(
+        "/auth/me/billing-profile",
+        data
+      )
+      return toUser(raw)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PROFILE_KEY })
+      queryClient.invalidateQueries({ queryKey: USERS_KEY })
+    },
+  })
+}
+
 // ─── List users (org admin — own org) ────────────────────────────────
 export function useUsers() {
   return useQuery({
@@ -38,6 +62,18 @@ export function useUsers() {
       const { data } = await api.get<UserResponse[]>("/auth/users")
       return toUserList(data)
     },
+  })
+}
+
+// ─── Get single user (org admin — own org) ──────────────────────────
+export function useUser(userId: string | undefined) {
+  return useQuery({
+    queryKey: userKey(userId),
+    queryFn: async () => {
+      const { data } = await api.get<UserResponse>(`/auth/users/${userId}`)
+      return toUser(data)
+    },
+    enabled: !!userId,
   })
 }
 
@@ -66,6 +102,21 @@ export function useRegisterUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USERS_KEY })
       queryClient.invalidateQueries({ queryKey: ["users", "organization"] })
+    },
+  })
+}
+
+// ─── Update user (org admin — own org) ───────────────────────────────
+export function useUpdateUser(userId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: UpdateUserRequest) => {
+      const { data: raw } = await api.put<UserResponse>(`/auth/users/${userId}`, data)
+      return toUser(raw)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: USERS_KEY })
+      queryClient.invalidateQueries({ queryKey: userKey(userId) })
     },
   })
 }

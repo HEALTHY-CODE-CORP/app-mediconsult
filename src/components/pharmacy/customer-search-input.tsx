@@ -40,17 +40,18 @@ export function CustomerSearchInput({
 
   const { data: results = [], isLoading } = useSearchCustomers(debouncedQuery)
 
-  // Reset highlight when results change
-  useEffect(() => {
-    setHighlightIndex(0)
-  }, [results])
+  const canShowCreate = Boolean(onCreateNew && query.length >= 2 && !isLoading)
+
+  // Total interactive items (results + create button when visible)
+  const totalItems = results.length + (canShowCreate ? 1 : 0)
+  const activeHighlightIndex = totalItems === 0 ? 0 : Math.min(highlightIndex, totalItems - 1)
 
   // Scroll highlighted item into view
   useEffect(() => {
     if (!listRef.current) return
     const items = listRef.current.querySelectorAll("[data-result-item]")
-    items[highlightIndex]?.scrollIntoView({ block: "nearest" })
-  }, [highlightIndex])
+    items[activeHighlightIndex]?.scrollIntoView({ block: "nearest" })
+  }, [activeHighlightIndex, totalItems])
 
   // Close on click outside
   useEffect(() => {
@@ -72,9 +73,6 @@ export function CustomerSearchInput({
     [onSelect]
   )
 
-  // Total interactive items (results + create button if present)
-  const totalItems = results.length + (onCreateNew ? 1 : 0)
-
   function handleKeyDown(e: React.KeyboardEvent) {
     if (!isOpen || totalItems === 0) {
       if (e.key === "ArrowDown" && query.length >= 2) {
@@ -94,9 +92,12 @@ export function CustomerSearchInput({
         break
       case "Enter":
         e.preventDefault()
-        if (highlightIndex < results.length && results[highlightIndex]) {
-          handleSelect(results[highlightIndex])
-        } else if (onCreateNew && highlightIndex === results.length) {
+        if (
+          activeHighlightIndex < results.length &&
+          results[activeHighlightIndex]
+        ) {
+          handleSelect(results[activeHighlightIndex])
+        } else if (onCreateNew && activeHighlightIndex === results.length) {
           onCreateNew()
           setIsOpen(false)
         }
@@ -161,6 +162,7 @@ export function CustomerSearchInput({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
+            setHighlightIndex(0)
             setIsOpen(e.target.value.length >= 2)
           }}
           onFocus={() => {
@@ -177,7 +179,7 @@ export function CustomerSearchInput({
       {isOpen && (
         <div
           ref={listRef}
-          className="absolute z-50 mt-1 w-full rounded-md border bg-white shadow-lg max-h-72 overflow-y-auto"
+          className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md"
         >
           {isLoading && query.length >= 2 && (
             <div className="px-3 py-4 text-center text-sm text-muted-foreground">
@@ -199,8 +201,8 @@ export function CustomerSearchInput({
               data-result-item
               onClick={() => handleSelect(result)}
               onMouseEnter={() => setHighlightIndex(index)}
-              className={`w-full text-left px-3 py-2 flex items-start gap-2.5 border-b last:border-b-0 transition-colors ${
-                index === highlightIndex ? "bg-muted/70" : "hover:bg-muted/40"
+              className={`flex w-full items-start gap-2.5 border-b border-border px-3 py-2 text-left transition-colors last:border-b-0 ${
+                index === activeHighlightIndex ? "bg-muted/70" : "hover:bg-muted/40"
               }`}
             >
               {result.type === "PATIENT" ? (
@@ -240,17 +242,17 @@ export function CustomerSearchInput({
             </button>
           ))}
 
-          {onCreateNew && query.length >= 2 && !isLoading && (
+          {canShowCreate && (
             <button
               type="button"
               data-result-item
               onClick={() => {
-                onCreateNew()
+                onCreateNew?.()
                 setIsOpen(false)
               }}
               onMouseEnter={() => setHighlightIndex(results.length)}
-              className={`w-full text-left px-3 py-2.5 flex items-center gap-2.5 border-t transition-colors ${
-                highlightIndex === results.length ? "bg-muted/70" : "hover:bg-muted/40"
+              className={`flex w-full items-center gap-2.5 border-t border-border px-3 py-2.5 text-left transition-colors ${
+                activeHighlightIndex === results.length ? "bg-muted/70" : "hover:bg-muted/40"
               }`}
             >
               <Plus className="h-4 w-4 text-primary shrink-0" />

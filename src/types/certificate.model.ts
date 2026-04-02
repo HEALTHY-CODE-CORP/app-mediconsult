@@ -1,6 +1,6 @@
 // ─── Certificate API Types ──────────────────────────────────────────
 
-export type OwnerType = "USER" | "PHARMACY"
+export type OwnerType = "USER" | "PHARMACY" | "CLINIC"
 
 export interface CertificateResponse {
   id: string

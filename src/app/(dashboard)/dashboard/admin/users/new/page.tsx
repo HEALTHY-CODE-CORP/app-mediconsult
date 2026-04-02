@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner"
 import { useRegisterUser } from "@/hooks/use-users"
 import { ROLE_LABELS } from "@/adapters/user.adapter"
+import type { ApiError } from "@/types/api"
 import type { Role } from "@/types/auth.model"
 import { ArrowLeft, X } from "lucide-react"
 
@@ -122,8 +123,9 @@ export default function NewUserPage() {
       })
       toast.success("Usuario creado exitosamente")
       router.push("/dashboard/admin/users")
-    } catch {
-      toast.error("Error al crear el usuario")
+    } catch (error) {
+      const apiError = error as ApiError | undefined
+      toast.error(apiError?.message ?? "Error al crear el usuario")
     }
   }
 

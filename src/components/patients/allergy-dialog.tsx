@@ -81,7 +81,7 @@ export function AllergyDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Tipo de alergia *</Label>
+              <Label htmlFor="allergy-type-select">Tipo de alergia *</Label>
               <Select
                 value={formData.allergyType}
                 onValueChange={(v) =>
@@ -89,7 +89,7 @@ export function AllergyDialog({
                 }
                 items={ALLERGY_TYPE_LABELS as Record<string, string>}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="allergy-type-select" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -102,7 +102,7 @@ export function AllergyDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Severidad *</Label>
+              <Label htmlFor="allergy-severity-select">Severidad *</Label>
               <Select
                 value={formData.severity}
                 onValueChange={(v) =>
@@ -110,7 +110,7 @@ export function AllergyDialog({
                 }
                 items={ALLERGY_SEVERITY_LABELS as Record<string, string>}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="allergy-severity-select" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

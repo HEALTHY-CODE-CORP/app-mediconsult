@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
 import { ClinicSelector } from "@/components/clinical/clinic-selector"
 import {
@@ -33,6 +34,8 @@ import {
   FileText,
   Eye,
   Search,
+  SlidersHorizontal,
+  X,
 } from "lucide-react"
 import type { InvoiceStatus } from "@/types/billing.model"
 import { INVOICE_STATUS_LABELS } from "@/adapters/billing.adapter"
@@ -46,33 +49,65 @@ export default function ConsultationBillingPage() {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [search, setSearch] = useState("")
+  const shouldQueryAll = Boolean(clinicId && filterMode === "all")
+  const shouldQueryStatus = Boolean(
+    clinicId && filterMode === "status" && statusFilter
+  )
+  const shouldQueryDate = Boolean(
+    clinicId && filterMode === "dateRange" && startDate && endDate
+  )
+  const isFilterIncomplete = Boolean(
+    clinicId &&
+      ((filterMode === "status" && !statusFilter) ||
+        (filterMode === "dateRange" && (!startDate || !endDate)))
+  )
 
   // Queries — org-level when no clinic selected
   const orgQuery = useOrganizationConsultationInvoices()
-  const clinicQuery = useClinicInvoices(
-    filterMode === "all" ? clinicId : ""
-  )
+  const clinicQuery = useClinicInvoices(shouldQueryAll ? clinicId : "")
   const statusQuery = useClinicInvoicesByStatus(
-    filterMode === "status" ? clinicId : "",
+    shouldQueryStatus ? clinicId : "",
     statusFilter
   )
   const dateQuery = useClinicInvoicesByDateRange(
-    filterMode === "dateRange" ? clinicId : "",
+    shouldQueryDate ? clinicId : "",
     startDate,
     endDate
   )
 
   const isLoading = clinicId
-    ? (clinicQuery.isLoading || statusQuery.isLoading || dateQuery.isLoading)
+    ? shouldQueryAll
+      ? clinicQuery.isLoading
+      : shouldQueryStatus
+        ? statusQuery.isLoading
+        : shouldQueryDate
+          ? dateQuery.isLoading
+          : false
     : orgQuery.isLoading
 
   const invoices = !clinicId
     ? orgQuery.data ?? []
-    : filterMode === "status"
+    : shouldQueryStatus
       ? statusQuery.data ?? []
-      : filterMode === "dateRange"
+      : shouldQueryDate
         ? dateQuery.data ?? []
-        : clinicQuery.data ?? []
+        : shouldQueryAll
+          ? clinicQuery.data ?? []
+          : []
+  const incompleteFilterMessage =
+    filterMode === "status"
+      ? "Selecciona un estado para consultar facturas."
+      : "Completa fecha de inicio y fin para aplicar el filtro."
+  const hasCriteria =
+    filterMode !== "all" || Boolean(statusFilter) || Boolean(startDate) || Boolean(endDate) || Boolean(search)
+
+  function clearCriteria() {
+    setFilterMode("all")
+    setStatusFilter("")
+    setStartDate("")
+    setEndDate("")
+    setSearch("")
+  }
 
   // Client-side search
   const filtered = search
@@ -97,98 +132,165 @@ export default function ConsultationBillingPage() {
         </p>
       </div>
 
-      <ClinicSelector value={clinicId} onChange={setClinicId} />
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">Clínica</p>
+                <ClinicSelector value={clinicId} onChange={setClinicId} />
+              </div>
 
-      {/* Filters — only when a clinic is selected */}
-      {clinicId && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="space-y-1">
-            <Label className="text-xs">Filtrar por</Label>
-            <Select
-              value={filterMode}
-              onValueChange={(v) => {
-                setFilterMode((v as FilterMode) ?? "all")
-                setStatusFilter("")
-                setStartDate("")
-                setEndDate("")
-              }}
-              items={{ all: "Todas", status: "Por estado", dateRange: "Por fecha" }}
-            >
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="status">Por estado</SelectItem>
-                <SelectItem value="dateRange">Por fecha</SelectItem>
-              </SelectContent>
-            </Select>
+              {clinicId && (
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs" htmlFor="consultation-billing-filter-mode">
+                      Filtrar por
+                    </Label>
+                    <Select
+                      value={filterMode}
+                      onValueChange={(v) => {
+                        setFilterMode((v as FilterMode) ?? "all")
+                        setStatusFilter("")
+                        setStartDate("")
+                        setEndDate("")
+                      }}
+                      items={{ all: "Todas", status: "Por estado", dateRange: "Por fecha" }}
+                    >
+                      <SelectTrigger
+                        id="consultation-billing-filter-mode"
+                        className="w-full sm:w-[180px]"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="status">Por estado</SelectItem>
+                        <SelectItem value="dateRange">Por fecha</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {filterMode === "status" && (
+                    <div className="space-y-1">
+                      <Label className="text-xs" htmlFor="consultation-billing-status-filter">
+                        Estado
+                      </Label>
+                      <Select
+                        value={statusFilter}
+                        onValueChange={(v) =>
+                          setStatusFilter((v as InvoiceStatus) ?? "")
+                        }
+                        items={INVOICE_STATUS_LABELS as Record<string, string>}
+                      >
+                        <SelectTrigger
+                          id="consultation-billing-status-filter"
+                          className="w-full sm:w-[220px]"
+                        >
+                          <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(
+                            Object.entries(INVOICE_STATUS_LABELS) as [
+                              InvoiceStatus,
+                              string,
+                            ][]
+                          ).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {filterMode === "dateRange" && (
+                    <>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Desde</Label>
+                        <Input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Hasta</Label>
+                        <Input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {hasCriteria && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearCriteria}
+                      className="h-8"
+                    >
+                      <X className="mr-1 h-3.5 w-3.5" />
+                      Limpiar
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="relative w-full xl:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por N° factura, cliente, doctor..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 pr-8"
+              />
+              {search && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute top-1.5 right-1 h-6 w-6"
+                  onClick={() => setSearch("")}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
 
-          {filterMode === "status" && (
-            <div className="space-y-1">
-              <Label className="text-xs">Estado</Label>
-              <Select
-                value={statusFilter}
-                onValueChange={(v) =>
-                  setStatusFilter((v as InvoiceStatus) ?? "")
-                }
-                items={INVOICE_STATUS_LABELS as Record<string, string>}
-              >
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Seleccionar" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(
-                    Object.entries(INVOICE_STATUS_LABELS) as [
-                      InvoiceStatus,
-                      string,
-                    ][]
-                  ).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {clinicId && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="gap-1 text-xs">
+                <SlidersHorizontal className="h-3 w-3" />
+                {filterMode === "all"
+                  ? "Todas"
+                  : filterMode === "status"
+                    ? "Por estado"
+                    : "Por fecha"}
+              </Badge>
+              {statusFilter && (
+                <Badge variant="outline" className="text-xs">
+                  Estado: {INVOICE_STATUS_LABELS[statusFilter]}
+                </Badge>
+              )}
+              {startDate && endDate && (
+                <Badge variant="outline" className="text-xs">
+                  {startDate} - {endDate}
+                </Badge>
+              )}
             </div>
           )}
-
-          {filterMode === "dateRange" && (
-            <>
-              <div className="space-y-1">
-                <Label className="text-xs">Desde</Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Hasta</Label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      <div className="relative max-w-sm">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por N° factura, cliente, doctor..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-8"
-        />
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Summary */}
-      {!isLoading && (
+      {!isLoading && !isFilterIncomplete && (
         <p className="text-sm text-muted-foreground">
           {filtered.length} de {invoices.length} factura{invoices.length !== 1 ? "s" : ""}
         </p>
@@ -197,9 +299,14 @@ export default function ConsultationBillingPage() {
       {/* Invoice list */}
       <DataTable
         isLoading={isLoading}
-        isEmpty={filtered.length === 0}
+        isEmpty={isFilterIncomplete || filtered.length === 0}
         emptyIcon={<FileText className="h-8 w-8 text-muted-foreground" />}
-        emptyMessage="No hay facturas de consultas para mostrar"
+        emptyMessage={
+          isFilterIncomplete
+            ? "Falta completar filtros"
+            : "No hay facturas de consultas para mostrar"
+        }
+        emptyDescription={isFilterIncomplete ? incompleteFilterMessage : undefined}
       >
         <Table>
           <TableHeader>

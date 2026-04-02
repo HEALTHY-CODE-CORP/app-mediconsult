@@ -110,7 +110,7 @@ export default function PrescriptionsPage() {
                 onValueChange={(v) => setSelectedPharmacyId(v ?? "")}
                 items={pharmacyItems}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Seleccionar farmacia para ver recetas pendientes">
                   <SelectValue placeholder="Selecciona una farmacia" />
                 </SelectTrigger>
                 <SelectContent>

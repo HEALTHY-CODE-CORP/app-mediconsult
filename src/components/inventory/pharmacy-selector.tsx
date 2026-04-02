@@ -87,7 +87,7 @@ export function PharmacySelector({ value, onChange }: PharmacySelectorProps) {
         onValueChange={handleChange}
         items={items}
       >
-        <SelectTrigger>
+        <SelectTrigger aria-label="Seleccionar farmacia">
           <SelectValue placeholder="Selecciona una farmacia" />
         </SelectTrigger>
         <SelectContent>

@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState, useEffect } from "react"
+import { use, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -17,9 +17,26 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { useMedicalRecord, useUpdateMedicalRecord } from "@/hooks/use-clinical"
 import { ArrowLeft } from "lucide-react"
+import type { MedicalRecord } from "@/adapters/clinical.adapter"
 
 interface EditMedicalRecordPageProps {
   params: Promise<{ id: string }>
+}
+
+interface MedicalRecordFormData {
+  personalHistory: string
+  familyHistory: string
+  surgicalHistory: string
+  currentMedications: string
+}
+
+function toFormData(record: MedicalRecord): MedicalRecordFormData {
+  return {
+    personalHistory: record.personalHistory ?? "",
+    familyHistory: record.familyHistory ?? "",
+    surgicalHistory: record.surgicalHistory ?? "",
+    currentMedications: record.currentMedications ?? "",
+  }
 }
 
 export default function EditMedicalRecordPage({
@@ -30,30 +47,7 @@ export default function EditMedicalRecordPage({
   const { data: record, isLoading } = useMedicalRecord(id)
   const mutation = useUpdateMedicalRecord(id)
 
-  const [formData, setFormData] = useState({
-    personalHistory: "",
-    familyHistory: "",
-    surgicalHistory: "",
-    currentMedications: "",
-  })
-
-  useEffect(() => {
-    if (record) {
-      setFormData({
-        personalHistory: record.personalHistory ?? "",
-        familyHistory: record.familyHistory ?? "",
-        surgicalHistory: record.surgicalHistory ?? "",
-        currentMedications: record.currentMedications ?? "",
-      })
-    }
-  }, [record])
-
-  function updateField(key: keyof typeof formData, value: string) {
-    setFormData((prev) => ({ ...prev, [key]: value }))
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSave(formData: MedicalRecordFormData) {
     try {
       await mutation.mutateAsync({
         personalHistory: formData.personalHistory || undefined,
@@ -112,80 +106,117 @@ export default function EditMedicalRecordPage({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Antecedentes médicos</CardTitle>
-            <CardDescription>
-              Actualiza el historial médico del paciente
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="personalHistory">Antecedentes personales</Label>
-              <Textarea
-                id="personalHistory"
-                value={formData.personalHistory}
-                onChange={(e) =>
-                  updateField("personalHistory", e.target.value)
-                }
-                placeholder="Enfermedades previas, condiciones crónicas, hábitos..."
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="familyHistory">Antecedentes familiares</Label>
-              <Textarea
-                id="familyHistory"
-                value={formData.familyHistory}
-                onChange={(e) =>
-                  updateField("familyHistory", e.target.value)
-                }
-                placeholder="Enfermedades hereditarias, condiciones familiares..."
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="surgicalHistory">Antecedentes quirúrgicos</Label>
-              <Textarea
-                id="surgicalHistory"
-                value={formData.surgicalHistory}
-                onChange={(e) =>
-                  updateField("surgicalHistory", e.target.value)
-                }
-                placeholder="Cirugías previas, procedimientos..."
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="currentMedications">Medicamentos actuales</Label>
-              <Textarea
-                id="currentMedications"
-                value={formData.currentMedications}
-                onChange={(e) =>
-                  updateField("currentMedications", e.target.value)
-                }
-                placeholder="Medicamentos que el paciente toma actualmente..."
-                rows={3}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex items-center justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={mutation.isPending}
-          >
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? "Guardando..." : "Guardar cambios"}
-          </Button>
-        </div>
-      </form>
+      <EditMedicalRecordForm
+        key={record.id}
+        record={record}
+        isPending={mutation.isPending}
+        onSave={handleSave}
+        onCancel={() => router.back()}
+      />
     </div>
+  )
+}
+
+interface EditMedicalRecordFormProps {
+  record: MedicalRecord
+  isPending: boolean
+  onSave: (formData: MedicalRecordFormData) => Promise<void>
+  onCancel: () => void
+}
+
+function EditMedicalRecordForm({
+  record,
+  isPending,
+  onSave,
+  onCancel,
+}: EditMedicalRecordFormProps) {
+  const [formData, setFormData] = useState<MedicalRecordFormData>(() =>
+    toFormData(record)
+  )
+
+  function updateField(key: keyof MedicalRecordFormData, value: string) {
+    setFormData((prev) => ({ ...prev, [key]: value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    await onSave(formData)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Antecedentes médicos</CardTitle>
+          <CardDescription>
+            Actualiza el historial médico del paciente
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="personalHistory">Antecedentes personales</Label>
+            <Textarea
+              id="personalHistory"
+              value={formData.personalHistory}
+              onChange={(e) =>
+                updateField("personalHistory", e.target.value)
+              }
+              placeholder="Enfermedades previas, condiciones crónicas, hábitos..."
+              rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="familyHistory">Antecedentes familiares</Label>
+            <Textarea
+              id="familyHistory"
+              value={formData.familyHistory}
+              onChange={(e) =>
+                updateField("familyHistory", e.target.value)
+              }
+              placeholder="Enfermedades hereditarias, condiciones familiares..."
+              rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="surgicalHistory">Antecedentes quirúrgicos</Label>
+            <Textarea
+              id="surgicalHistory"
+              value={formData.surgicalHistory}
+              onChange={(e) =>
+                updateField("surgicalHistory", e.target.value)
+              }
+              placeholder="Cirugías previas, procedimientos..."
+              rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="currentMedications">Medicamentos actuales</Label>
+            <Textarea
+              id="currentMedications"
+              value={formData.currentMedications}
+              onChange={(e) =>
+                updateField("currentMedications", e.target.value)
+              }
+              placeholder="Medicamentos que el paciente toma actualmente..."
+              rows={3}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center justify-end gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isPending}
+        >
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Guardando..." : "Guardar cambios"}
+        </Button>
+      </div>
+    </form>
   )
 }

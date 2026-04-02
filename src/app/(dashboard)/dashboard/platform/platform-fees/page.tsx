@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DataTable } from "@/components/ui/data-table"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import {
   useAllPlatformFees,
   usePlatformFeesByStatus,
@@ -39,6 +40,7 @@ import {
   Search,
   CheckCircle,
   XCircle,
+  X,
   TrendingUp,
   Clock,
   Ban,
@@ -55,29 +57,58 @@ export default function PlatformFeesPage() {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [search, setSearch] = useState("")
+  const shouldQueryAll = filterMode === "all"
+  const shouldQueryStatus = filterMode === "status" && Boolean(statusFilter)
+  const shouldQueryDate =
+    filterMode === "dateRange" && Boolean(startDate) && Boolean(endDate)
+  const isFilterIncomplete = Boolean(
+    (filterMode === "status" && !statusFilter) ||
+      (filterMode === "dateRange" && (!startDate || !endDate))
+  )
 
   const { data: summary, isLoading: loadingSummary } = usePlatformFeeSummary()
 
   const allQuery = useAllPlatformFees()
   const statusQuery = usePlatformFeesByStatus(
-    filterMode === "status" ? statusFilter : ""
+    shouldQueryStatus ? statusFilter : ""
   )
   const dateQuery = usePlatformFeesByDateRange(
-    filterMode === "dateRange" ? startDate : "",
-    filterMode === "dateRange" ? endDate : ""
+    shouldQueryDate ? startDate : "",
+    shouldQueryDate ? endDate : ""
   )
 
   const collectMutation = useCollectFee()
   const waiveMutation = useWaiveFee()
 
-  const isLoading = allQuery.isLoading || statusQuery.isLoading || dateQuery.isLoading
+  const isLoading = shouldQueryAll
+    ? allQuery.isLoading
+    : shouldQueryStatus
+      ? statusQuery.isLoading
+      : shouldQueryDate
+        ? dateQuery.isLoading
+        : false
 
-  const fees =
+  const fees = shouldQueryStatus
+    ? statusQuery.data ?? []
+    : shouldQueryDate
+      ? dateQuery.data ?? []
+      : shouldQueryAll
+        ? allQuery.data ?? []
+        : []
+  const incompleteFilterMessage =
     filterMode === "status"
-      ? statusQuery.data ?? []
-      : filterMode === "dateRange"
-        ? dateQuery.data ?? []
-        : allQuery.data ?? []
+      ? "Selecciona un estado para consultar tarifas."
+      : "Completa fecha de inicio y fin para aplicar el filtro."
+  const hasCriteria =
+    filterMode !== "all" || Boolean(statusFilter) || Boolean(startDate) || Boolean(endDate) || Boolean(search)
+
+  function clearCriteria() {
+    setFilterMode("all")
+    setStatusFilter("")
+    setStartDate("")
+    setEndDate("")
+    setSearch("")
+  }
 
   const filtered = search
     ? fees.filter(
@@ -97,7 +128,6 @@ export default function PlatformFeesPage() {
   }
 
   async function handleWaive(feeId: string) {
-    if (!confirm("¿Deseas exonerar esta tarifa?")) return
     try {
       await waiveMutation.mutateAsync({ feeId })
       toast.success("Tarifa exonerada")
@@ -153,94 +183,153 @@ export default function PlatformFeesPage() {
         ) : null}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="space-y-1">
-          <Label className="text-xs">Filtrar por</Label>
-          <Select
-            value={filterMode}
-            onValueChange={(v) => {
-              setFilterMode((v as FilterMode) ?? "all")
-              setStatusFilter("")
-              setStartDate("")
-              setEndDate("")
-            }}
-            items={{ all: "Todas", status: "Por estado", dateRange: "Por fecha" }}
-          >
-            <SelectTrigger className="w-full sm:w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="status">Por estado</SelectItem>
-              <SelectItem value="dateRange">Por fecha</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs" htmlFor="platform-fees-filter-mode">
+                  Filtrar por
+                </Label>
+                <Select
+                  value={filterMode}
+                  onValueChange={(v) => {
+                    setFilterMode((v as FilterMode) ?? "all")
+                    setStatusFilter("")
+                    setStartDate("")
+                    setEndDate("")
+                  }}
+                  items={{ all: "Todas", status: "Por estado", dateRange: "Por fecha" }}
+                >
+                  <SelectTrigger
+                    id="platform-fees-filter-mode"
+                    className="w-full sm:w-[180px]"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="status">Por estado</SelectItem>
+                    <SelectItem value="dateRange">Por fecha</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {filterMode === "status" && (
-          <div className="space-y-1">
-            <Label className="text-xs">Estado</Label>
-            <Select
-              value={statusFilter}
-              onValueChange={(v) =>
-                setStatusFilter((v as FeeStatus) ?? "")
-              }
-              items={FEE_STATUS_LABELS as Record<string, string>}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Seleccionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {(
-                  Object.entries(FEE_STATUS_LABELS) as [
-                    FeeStatus,
-                    string,
-                  ][]
-                ).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {filterMode === "status" && (
+                <div className="space-y-1">
+                  <Label className="text-xs" htmlFor="platform-fees-status-filter">
+                    Estado
+                  </Label>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) =>
+                      setStatusFilter((v as FeeStatus) ?? "")
+                    }
+                    items={FEE_STATUS_LABELS as Record<string, string>}
+                  >
+                    <SelectTrigger
+                      id="platform-fees-status-filter"
+                      className="w-full sm:w-[220px]"
+                    >
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(
+                        Object.entries(FEE_STATUS_LABELS) as [
+                          FeeStatus,
+                          string,
+                        ][]
+                      ).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {filterMode === "dateRange" && (
+                <>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Desde</Label>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Hasta</Label>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {hasCriteria && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearCriteria}
+                  className="h-8"
+                >
+                  <X className="mr-1 h-3.5 w-3.5" />
+                  Limpiar
+                </Button>
+              )}
+            </div>
+
+            <div className="relative w-full xl:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por organización o N° factura..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 pr-8"
+              />
+              {search && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute top-1.5 right-1 h-6 w-6"
+                  onClick={() => setSearch("")}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
-        )}
 
-        {filterMode === "dateRange" && (
-          <>
-            <div className="space-y-1">
-              <Label className="text-xs">Desde</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Hasta</Label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="relative max-w-sm">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por organización o N° factura..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-8"
-        />
-      </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              {filterMode === "all"
+                ? "Todas"
+                : filterMode === "status"
+                  ? "Por estado"
+                  : "Por fecha"}
+            </Badge>
+            {statusFilter && (
+              <Badge variant="outline" className="text-xs">
+                Estado: {FEE_STATUS_LABELS[statusFilter]}
+              </Badge>
+            )}
+            {startDate && endDate && (
+              <Badge variant="outline" className="text-xs">
+                {startDate} - {endDate}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary */}
-      {!isLoading && (
+      {!isLoading && !isFilterIncomplete && (
         <p className="text-sm text-muted-foreground">
           {filtered.length} de {fees.length} tarifa{fees.length !== 1 ? "s" : ""}
         </p>
@@ -249,9 +338,14 @@ export default function PlatformFeesPage() {
       {/* Fees table */}
       <DataTable
         isLoading={isLoading}
-        isEmpty={filtered.length === 0}
+        isEmpty={isFilterIncomplete || filtered.length === 0}
         emptyIcon={<TrendingUp className="h-8 w-8 text-muted-foreground" />}
-        emptyMessage="No hay tarifas para mostrar"
+        emptyMessage={
+          isFilterIncomplete
+            ? "Falta completar filtros"
+            : "No hay tarifas para mostrar"
+        }
+        emptyDescription={isFilterIncomplete ? incompleteFilterMessage : undefined}
       >
         <Table>
           <TableHeader>
@@ -300,15 +394,19 @@ export default function PlatformFeesPage() {
                       >
                         <CheckCircle className="h-4 w-4 text-green-600" />
                       </Button>
-                      <Button
+                      <ConfirmButton
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => handleWaive(fee.id)}
+                        title="Exonerar tarifa"
+                        description="La tarifa se marcará como exonerada."
+                        confirmLabel="Exonerar"
+                        loadingLabel="Exonerando..."
+                        onConfirm={() => handleWaive(fee.id)}
                         disabled={waiveMutation.isPending}
-                        title="Exonerar"
+                        titleAttribute="Exonerar"
                       >
                         <XCircle className="h-4 w-4 text-gray-500" />
-                      </Button>
+                      </ConfirmButton>
                     </div>
                   )}
                 </TableCell>

@@ -6,6 +6,8 @@ import type {
   CreateConsultationInvoiceRequest,
   SriAuthorizationResponse,
   SriInvoiceRequest,
+  SriSubmitResult,
+  SriAuthorizeResult,
 } from "@/types/billing.model"
 import { toInvoice, toInvoiceList } from "@/adapters/billing.adapter"
 
@@ -267,6 +269,48 @@ export function useCancelInvoice() {
         `/billing/invoices/${invoiceId}/cancel`
       )
       return toInvoice(data)
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: BILLING_KEY }),
+  })
+}
+
+// === SRI Electronic Invoicing ===
+
+/**
+ * Submit an invoice to the SRI for electronic signing and reception.
+ * The backend handles P12 certificate resolution, signing via external API,
+ * and SRI submission automatically.
+ */
+export function useSriSubmit() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (params: { invoiceId: string; isProduction?: boolean }) => {
+      const { data } = await api.post<SriSubmitResult>(
+        `/billing/invoices/${params.invoiceId}/sri-submit`,
+        null,
+        { params: { isProduction: params.isProduction ?? false } }
+      )
+      return data
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: BILLING_KEY }),
+  })
+}
+
+/**
+ * Check the authorization status of a previously submitted invoice at the SRI.
+ */
+export function useSriAuthorize() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (params: { invoiceId: string; isProduction?: boolean }) => {
+      const { data } = await api.post<SriAuthorizeResult>(
+        `/billing/invoices/${params.invoiceId}/sri-authorize`,
+        null,
+        { params: { isProduction: params.isProduction ?? false } }
+      )
+      return data
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: BILLING_KEY }),

@@ -27,7 +27,7 @@ export interface CreatePatientRequest {
   notes?: string
 }
 
-export interface UpdatePatientRequest extends Partial<CreatePatientRequest> {}
+export type UpdatePatientRequest = Partial<CreatePatientRequest>
 
 export interface PatientResponse {
   id: string

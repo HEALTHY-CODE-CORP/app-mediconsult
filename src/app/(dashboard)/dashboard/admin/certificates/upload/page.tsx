@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,17 +24,60 @@ import { ArrowLeft, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { useUploadCertificate } from "@/hooks/use-certificates"
 import { useUsers } from "@/hooks/use-users"
-import { usePharmacies } from "@/hooks/use-organizations"
+import { usePharmacies, useClinics } from "@/hooks/use-organizations"
 import type { OwnerType } from "@/types/certificate.model"
+
+const MAX_P12_FILE_SIZE_BYTES = 10 * 1024 * 1024
+const ALLOWED_CERT_EXTENSIONS = [".p12", ".pfx"] as const
+
+const OWNER_TYPE_LABELS: Record<OwnerType, string> = {
+  USER: "Doctor",
+  PHARMACY: "Farmacia",
+  CLINIC: "Clínica",
+}
+
+function isOwnerType(value: string | null): value is OwnerType {
+  return value === "USER" || value === "PHARMACY" || value === "CLINIC"
+}
+
+function validateP12File(file: File | null): string | null {
+  if (!file) return "Selecciona un archivo P12"
+
+  const lowerName = file.name.toLowerCase()
+  const hasAllowedExtension = ALLOWED_CERT_EXTENSIONS.some((ext) =>
+    lowerName.endsWith(ext)
+  )
+  if (!hasAllowedExtension) {
+    return "Formato inválido. Usa un archivo .p12 o .pfx"
+  }
+
+  if (file.size > MAX_P12_FILE_SIZE_BYTES) {
+    return "El archivo excede el tamaño máximo permitido (10 MB)"
+  }
+
+  return null
+}
 
 export default function UploadCertificatePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const uploadMutation = useUploadCertificate()
   const { data: users = [] } = useUsers()
   const { data: pharmacies = [] } = usePharmacies()
+  const { data: clinics = [] } = useClinics()
 
-  const [ownerType, setOwnerType] = useState<OwnerType>("USER")
-  const [ownerId, setOwnerId] = useState("")
+  const ownerTypeParam = searchParams.get("ownerType")
+  const preselectedOwnerType = isOwnerType(ownerTypeParam)
+    ? ownerTypeParam
+    : null
+  const preselectedOwnerId = searchParams.get("ownerId") ?? ""
+  const backHref = searchParams.get("back") ?? "/dashboard/admin/pharmacies"
+  const isOwnerLocked = !!preselectedOwnerType && !!preselectedOwnerId
+
+  const [ownerType, setOwnerType] = useState<OwnerType>(
+    preselectedOwnerType ?? "USER"
+  )
+  const [ownerId, setOwnerId] = useState(preselectedOwnerId)
   const [alias, setAlias] = useState("")
   const [password, setPassword] = useState("")
   const [file, setFile] = useState<File | null>(null)
@@ -43,15 +86,49 @@ export default function UploadCertificatePage() {
   const doctors = users.filter((u) =>
     u.roles.includes("DOCTOR")
   )
+  const ownerOptions =
+    ownerType === "USER"
+      ? doctors.map((u) => ({ id: u.id, label: `${u.fullName} (${u.email})` }))
+      : ownerType === "PHARMACY"
+        ? pharmacies.map((p) => ({ id: p.id, label: p.name }))
+        : clinics.map((c) => ({ id: c.id, label: c.name }))
+  const hasOwnerOptions = ownerOptions.length > 0
+  const lockedOwnerLabel =
+    ownerOptions.find((opt) => opt.id === ownerId)?.label ?? ownerId
+  const noOptionsLabel =
+    ownerType === "USER"
+      ? "No hay doctores disponibles"
+      : ownerType === "PHARMACY"
+        ? "No hay farmacias disponibles"
+        : "No hay clínicas disponibles"
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
-    if (!ownerId) newErrors.ownerId = "Selecciona un propietario"
+    if (!ownerId) {
+      newErrors.ownerId = "Selecciona un propietario"
+    } else if (!isOwnerLocked && !hasOwnerOptions) {
+      newErrors.ownerId = noOptionsLabel
+    }
     if (!alias.trim()) newErrors.alias = "El alias es requerido"
     if (!password) newErrors.password = "La contraseña del P12 es requerida"
-    if (!file) newErrors.file = "Selecciona un archivo P12"
+    const fileError = validateP12File(file)
+    if (fileError) newErrors.file = fileError
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  function handleFileChange(nextFile: File | null) {
+    const fileError = validateP12File(nextFile)
+    setFile(fileError ? null : nextFile)
+    setErrors((prev) => {
+      const nextErrors = { ...prev }
+      if (fileError) {
+        nextErrors.file = fileError
+      } else {
+        delete nextErrors.file
+      }
+      return nextErrors
+    })
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -67,7 +144,8 @@ export default function UploadCertificatePage() {
         password,
       })
       toast.success("Certificado subido exitosamente")
-      router.push(`/dashboard/admin/certificates/${result.id}`)
+      const detailHref = `/dashboard/admin/certificates/${result.id}`
+      router.push(`${detailHref}?back=${encodeURIComponent(backHref)}`)
     } catch {
       toast.error("Error al subir el certificado. Verifica la contraseña del P12.")
     }
@@ -79,7 +157,7 @@ export default function UploadCertificatePage() {
         <Button
           variant="ghost"
           size="icon-sm"
-          render={<Link href="/dashboard/admin/certificates" />}
+          render={<Link href={backHref} />}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -100,59 +178,87 @@ export default function UploadCertificatePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Tipo de propietario</Label>
-              <Select
-                value={ownerType}
-                onValueChange={(v) => {
-                  if (v) setOwnerType(v as OwnerType)
-                  setOwnerId("")
-                }}
-                items={{ USER: "Doctor", PHARMACY: "Farmacia" }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USER">Doctor</SelectItem>
-                  <SelectItem value="PHARMACY">Farmacia</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>
-                {ownerType === "USER" ? "Doctor" : "Farmacia"} *
-              </Label>
-              <Select
-                value={ownerId}
-                onValueChange={(v) => setOwnerId(v ?? "")}
-                items={Object.fromEntries(
-                  ownerType === "USER"
-                    ? doctors.map((u) => [u.id, `${u.fullName} (${u.email})`])
-                    : pharmacies.map((p) => [p.id, p.name])
-                )}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {ownerType === "USER"
-                    ? doctors.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.fullName} ({u.email})
+            {isOwnerLocked ? (
+              <div className="sm:col-span-2 space-y-2">
+                <Label>Propietario asignado</Label>
+                <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                  <span className="font-medium">{OWNER_TYPE_LABELS[ownerType]}:</span>{" "}
+                  {lockedOwnerLabel}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Este certificado se guardará para este propietario.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="certificate-owner-type">Tipo de propietario</Label>
+                  <Select
+                    value={ownerType}
+                    onValueChange={(v) => {
+                      if (v) setOwnerType(v as OwnerType)
+                      setOwnerId("")
+                    }}
+                    items={{ USER: "Doctor", PHARMACY: "Farmacia", CLINIC: "Clínica" }}
+                  >
+                    <SelectTrigger id="certificate-owner-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USER">Doctor</SelectItem>
+                      <SelectItem value="PHARMACY">Farmacia</SelectItem>
+                      <SelectItem value="CLINIC">Clínica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="certificate-owner-id">
+                    {ownerType === "USER"
+                      ? "Doctor"
+                      : ownerType === "PHARMACY"
+                        ? "Farmacia"
+                        : "Clínica"}{" "}
+                    *
+                  </Label>
+                  <Select
+                    value={ownerId}
+                    onValueChange={(v) => setOwnerId(v ?? "")}
+                    items={Object.fromEntries(
+                      ownerOptions.map((opt) => [opt.id, opt.label])
+                    )}
+                  >
+                    <SelectTrigger id="certificate-owner-id" disabled={!hasOwnerOptions}>
+                      <SelectValue
+                        placeholder={
+                          hasOwnerOptions ? "Seleccionar..." : noOptionsLabel
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hasOwnerOptions ? (
+                        ownerOptions.map((opt) => (
+                          <SelectItem key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="__no-owner-options__" disabled>
+                          {noOptionsLabel}
                         </SelectItem>
-                      ))
-                    : pharmacies.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                </SelectContent>
-              </Select>
-              {errors.ownerId && (
-                <p className="text-xs text-destructive">{errors.ownerId}</p>
-              )}
-            </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {!hasOwnerOptions && (
+                    <p className="text-xs text-muted-foreground">
+                      Crea o activa una entidad de este tipo para continuar.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+            {errors.ownerId && (
+              <p className="sm:col-span-2 text-xs text-destructive">{errors.ownerId}</p>
+            )}
           </CardContent>
         </Card>
 
@@ -195,7 +301,7 @@ export default function UploadCertificatePage() {
                 id="file"
                 type="file"
                 accept=".p12,.pfx"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
               />
               {errors.file && (
                 <p className="text-xs text-destructive">{errors.file}</p>
@@ -211,7 +317,7 @@ export default function UploadCertificatePage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.back()}
+            onClick={() => router.push(backHref)}
             disabled={uploadMutation.isPending}
           >
             Cancelar

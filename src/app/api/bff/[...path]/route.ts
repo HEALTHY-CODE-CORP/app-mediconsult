@@ -15,7 +15,7 @@ async function handleRequest(request: NextRequest, context: RouteContext): Promi
   try {
     const { path } = await context.params;
     const upstreamPath = path.join('/');
-    const token = await getSessionTokenFromRequest(request);
+    const token = await getSessionTokenFromRequest();
 
     const upstreamResponse = await forwardRequestToBackend({
       request,
@@ -30,7 +30,7 @@ async function handleRequest(request: NextRequest, context: RouteContext): Promi
     return NextResponse.json(
       {
         success: false,
-        message: `Error interno del proxy BFF: ${errorMessage}`,
+        message: "Error interno del proxy BFF",
       },
       { status: 500 }
     );

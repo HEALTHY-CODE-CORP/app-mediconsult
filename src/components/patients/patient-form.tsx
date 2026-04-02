@@ -34,6 +34,7 @@ import type {
   Gender,
   BloodType,
 } from "@/types/patient.model"
+import { ClipboardCheck, Info } from "lucide-react"
 
 interface PatientFormProps {
   patient?: Patient
@@ -63,8 +64,30 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
     insuranceNumber: patient?.insuranceNumber ?? undefined,
     notes: patient?.notes ?? undefined,
   })
+  const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const isPending = createMutation.isPending || updateMutation.isPending
+  const requiredChecklist = [
+    { label: "Tipo de identificación", ok: Boolean(formData.idType) },
+    { label: "Número de identificación", ok: Boolean(formData.idNumber.trim()) },
+    { label: "Nombres", ok: Boolean(formData.firstName.trim()) },
+    { label: "Apellidos", ok: Boolean(formData.lastName.trim()) },
+  ]
+  const completedRequired = requiredChecklist.filter((item) => item.ok).length
+  const progressPercent = Math.round(
+    (completedRequired / requiredChecklist.length) * 100
+  )
+  const emailValue = formData.email?.trim() ?? ""
+  const fieldErrors = {
+    idNumber: formData.idNumber?.trim() ? "" : "El número de identificación es obligatorio.",
+    firstName: formData.firstName?.trim() ? "" : "Los nombres son obligatorios.",
+    lastName: formData.lastName?.trim() ? "" : "Los apellidos son obligatorios.",
+    email:
+      emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)
+        ? "Ingresa un correo electrónico válido."
+        : "",
+  }
+  const hasValidationErrors = Object.values(fieldErrors).some(Boolean)
 
   function updateField<K extends keyof CreatePatientRequest>(
     key: K,
@@ -75,6 +98,12 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setSubmitAttempted(true)
+
+    if (hasValidationErrors) {
+      toast.error("Revisa los campos obligatorios del formulario")
+      return
+    }
 
     try {
       if (mode === "create") {
@@ -97,6 +126,38 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <Card className="border-border/70">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ClipboardCheck className="h-4 w-4" />
+            Progreso del registro
+          </CardTitle>
+          <CardDescription>
+            Completa los campos obligatorios para continuar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              Campos obligatorios completados
+            </span>
+            <span className="font-medium">
+              {completedRequired}/{requiredChecklist.length}
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-muted">
+            <div
+              className="h-2 rounded-full bg-primary transition-all"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="flex items-center gap-2 rounded-md bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            Puedes completar los datos opcionales ahora o editarlos más tarde.
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Identificación */}
       <Card>
         <CardHeader>
@@ -111,7 +172,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               onValueChange={(v) => updateField("idType", v as IdType)}
               items={ID_TYPE_LABELS as Record<string, string>}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="idType" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -131,7 +192,11 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               onChange={(e) => updateField("idNumber", e.target.value)}
               placeholder="0000000000"
               required
+              aria-invalid={submitAttempted && Boolean(fieldErrors.idNumber)}
             />
+            {submitAttempted && fieldErrors.idNumber && (
+              <p className="text-xs text-destructive">{fieldErrors.idNumber}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="firstName">Nombres *</Label>
@@ -141,7 +206,11 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               onChange={(e) => updateField("firstName", e.target.value)}
               placeholder="Nombres"
               required
+              aria-invalid={submitAttempted && Boolean(fieldErrors.firstName)}
             />
+            {submitAttempted && fieldErrors.firstName && (
+              <p className="text-xs text-destructive">{fieldErrors.firstName}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="lastName">Apellidos *</Label>
@@ -151,7 +220,11 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               onChange={(e) => updateField("lastName", e.target.value)}
               placeholder="Apellidos"
               required
+              aria-invalid={submitAttempted && Boolean(fieldErrors.lastName)}
             />
+            {submitAttempted && fieldErrors.lastName && (
+              <p className="text-xs text-destructive">{fieldErrors.lastName}</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -179,7 +252,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               onValueChange={(v) => updateField("gender", (v || undefined) as Gender | undefined)}
               items={GENDER_LABELS as Record<string, string>}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="gender" className="w-full">
                 <SelectValue placeholder="Seleccionar" />
               </SelectTrigger>
               <SelectContent>
@@ -200,7 +273,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               }
               items={BLOOD_TYPE_LABELS as Record<string, string>}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="bloodType" className="w-full">
                 <SelectValue placeholder="Seleccionar" />
               </SelectTrigger>
               <SelectContent>
@@ -249,7 +322,15 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               value={formData.email ?? ""}
               onChange={(e) => updateField("email", e.target.value)}
               placeholder="correo@ejemplo.com"
+              aria-invalid={submitAttempted && Boolean(fieldErrors.email)}
             />
+            {submitAttempted && fieldErrors.email ? (
+              <p className="text-xs text-destructive">{fieldErrors.email}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Opcional, pero recomendado para comunicación clínica.
+              </p>
+            )}
           </div>
           <div className="col-span-full space-y-2">
             <Label htmlFor="address">Dirección</Label>
@@ -334,16 +415,17 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
       </Card>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={() => router.back()}
           disabled={isPending}
+          className="w-full sm:w-auto"
         >
           Cancelar
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending
             ? mode === "create"
               ? "Creando..."

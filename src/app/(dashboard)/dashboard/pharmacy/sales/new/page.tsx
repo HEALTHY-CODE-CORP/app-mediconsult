@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, Suspense } from "react"
+import { useState, useMemo, Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card"
 import { ProductSearchInput } from "@/components/pharmacy/product-search-input"
 import { CustomerSearchInput } from "@/components/pharmacy/customer-search-input"
+import { SummaryTile } from "@/components/shared/summary-tile"
 import { useProducts } from "@/hooks/use-inventory"
 import { useCreateSale, usePatientPurchaseSummary } from "@/hooks/use-sales"
 import { useCreateCustomer } from "@/hooks/use-customers"
@@ -40,6 +41,10 @@ import {
   UserPlus,
   Pill,
   Star,
+  Store,
+  DollarSign,
+  Package2,
+  CircleUserRound,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { PaymentMethod } from "@/types/sales.model"
@@ -50,6 +55,14 @@ interface SaleItemForm {
   quantity: string
   unitPrice: number
   discountPercent: string
+}
+
+const EMPTY_SALE_ITEM: SaleItemForm = {
+  productId: "",
+  productName: "",
+  quantity: "1",
+  unitPrice: 0,
+  discountPercent: "0",
 }
 
 export default function NewSalePage() {
@@ -80,7 +93,30 @@ function NewSaleContent() {
   const createMutation = useCreateSale()
   const createCustomerMutation = useCreateCustomer()
 
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null)
+  const prescriptionDefaultCustomer = useMemo<CustomerSearchResult | null>(() => {
+    if (!prescription?.patientId) return null
+
+    return {
+      id: `patient-${prescription.patientId}`,
+      type: "PATIENT",
+      customerId: null,
+      patientId: prescription.patientId,
+      idNumber: prescription.patientIdNumber ?? null,
+      firstName: prescription.patientName?.split(" ")[0] ?? "",
+      lastName: prescription.patientName?.split(" ").slice(1).join(" ") ?? "",
+      fullName: prescription.patientName ?? "",
+      phone: null,
+      email: null,
+    }
+  }, [prescription])
+  const [selectedCustomerOverride, setSelectedCustomerOverride] = useState<
+    CustomerSearchResult | null | undefined
+  >(undefined)
+  const selectedCustomer =
+    selectedCustomerOverride === undefined
+      ? prescriptionDefaultCustomer
+      : selectedCustomerOverride
+
   const [showCreateCustomer, setShowCreateCustomer] = useState(false)
   const [newCustomerFirstName, setNewCustomerFirstName] = useState("")
   const [newCustomerLastName, setNewCustomerLastName] = useState("")
@@ -91,19 +127,10 @@ function NewSaleContent() {
   const effectivePatientId = selectedCustomer?.patientId ?? prescription?.patientId ?? ""
   const { data: purchaseSummary } = usePatientPurchaseSummary(effectivePatientId)
 
-  const [items, setItems] = useState<SaleItemForm[]>([
-    { productId: "", productName: "", quantity: "1", unitPrice: 0, discountPercent: "0" },
-  ])
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH")
-  const [paymentReference, setPaymentReference] = useState("")
-  const [notes, setNotes] = useState("")
-  const [prescriptionLoaded, setPrescriptionLoaded] = useState(false)
+  const prescriptionItems = useMemo<SaleItemForm[]>(() => {
+    if (!prescription || products.length === 0) return []
 
-  // Auto-populate items from prescription
-  useEffect(() => {
-    if (!prescription || prescriptionLoaded || products.length === 0) return
-
-    const prescriptionItems: SaleItemForm[] = prescription.items
+    return prescription.items
       .filter((rxItem) => rxItem.isPending)
       .map((rxItem) => {
         const product = products.find((p) => p.id === rxItem.productId)
@@ -115,43 +142,43 @@ function NewSaleContent() {
           discountPercent: "0",
         }
       })
-      .filter((item) => item.unitPrice > 0) // Only include items that exist in this pharmacy
+      .filter((item) => item.unitPrice > 0)
+  }, [prescription, products])
+  const defaultItems = useMemo<SaleItemForm[]>(
+    () => (prescriptionItems.length > 0 ? prescriptionItems : [{ ...EMPTY_SALE_ITEM }]),
+    [prescriptionItems]
+  )
+  const [itemsOverride, setItemsOverride] = useState<SaleItemForm[] | null>(null)
+  const items = itemsOverride ?? defaultItems
 
-    if (prescriptionItems.length > 0) {
-      setItems(prescriptionItems)
-      setNotes(`Receta ${prescription.prescriptionNumber}`)
-    }
-    // Auto-set customer from prescription patient
-    if (prescription.patientId) {
-      setSelectedCustomer({
-        id: `patient-${prescription.patientId}`,
-        type: "PATIENT",
-        customerId: null,
-        patientId: prescription.patientId,
-        idNumber: prescription.patientIdNumber ?? null,
-        firstName: prescription.patientName?.split(" ")[0] ?? "",
-        lastName: prescription.patientName?.split(" ").slice(1).join(" ") ?? "",
-        fullName: prescription.patientName ?? "",
-        phone: null,
-        email: null,
-      })
-    }
-    setPrescriptionLoaded(true)
-  }, [prescription, products, prescriptionLoaded])
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH")
+  const [paymentReference, setPaymentReference] = useState("")
+  const defaultNotes = prescription?.prescriptionNumber
+    ? `Receta ${prescription.prescriptionNumber}`
+    : ""
+  const [notesOverride, setNotesOverride] = useState<string | null>(null)
+  const notes = notesOverride ?? defaultNotes
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+
+  function updateItems(
+    updater: (currentItems: SaleItemForm[]) => SaleItemForm[]
+  ) {
+    setItemsOverride((prev) => updater(prev ?? defaultItems))
+  }
 
   function addItem() {
-    setItems((prev) => [
+    updateItems((prev) => [
       ...prev,
-      { productId: "", productName: "", quantity: "1", unitPrice: 0, discountPercent: "0" },
+      { ...EMPTY_SALE_ITEM },
     ])
   }
 
   function removeItem(index: number) {
-    setItems((prev) => prev.filter((_, i) => i !== index))
+    updateItems((prev) => prev.filter((_, i) => i !== index))
   }
 
   function updateItem(index: number, field: keyof SaleItemForm, value: string | number) {
-    setItems((prev) =>
+    updateItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item
         const updated = { ...item, [field]: value }
@@ -172,6 +199,12 @@ function NewSaleContent() {
     const lineTotal = qty * item.unitPrice * (1 - disc / 100)
     return acc + lineTotal
   }, 0)
+  const selectedProductsCount = items.filter((item) => item.productId).length
+  const customerLabel = selectedCustomer?.fullName ?? "Sin cliente seleccionado"
+  const hasValidItems = items.some(
+    (item) => item.productId && parseInt(item.quantity) > 0
+  )
+  const canManageInventorySelection = products.length > 0
 
   // Items from prescription that are NOT available in this pharmacy
   const unavailableItems = useMemo(() => {
@@ -183,6 +216,7 @@ function NewSaleContent() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setSubmitAttempted(true)
 
     const validItems = items.filter((item) => item.productId && parseInt(item.quantity) > 0)
     if (validItems.length === 0) {
@@ -236,16 +270,63 @@ function NewSaleContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          render={<Link href="/dashboard/pharmacy/sales" />}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-2xl font-bold">Nueva venta</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            render={<Link href="/dashboard/pharmacy/sales" />}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Nueva venta</h1>
+            <p className="text-sm text-muted-foreground">
+              Registra una venta y, si aplica, emite factura al finalizar.
+            </p>
+          </div>
+        </div>
+        <Badge variant="outline" className="gap-1.5">
+          <Store className="h-3.5 w-3.5" />
+          Flujo de venta
+        </Badge>
       </div>
+
+      <Card className="border-border/70">
+        <CardContent className="pt-6">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <SummaryTile
+              icon={<CircleUserRound className="h-4 w-4 text-muted-foreground" />}
+              label="Cliente"
+              value={customerLabel}
+              valueClassName="truncate"
+            />
+            <SummaryTile
+              icon={<Package2 className="h-4 w-4 text-muted-foreground" />}
+              label="Productos"
+              value={`${selectedProductsCount} seleccionado(s)`}
+            />
+            <SummaryTile
+              icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+              label="Subtotal estimado"
+              value={`$${subtotal.toFixed(2)}`}
+            />
+            <SummaryTile
+              icon={<Store className="h-4 w-4 text-muted-foreground" />}
+              label="Pago"
+              value={
+                paymentMethod === "CASH"
+                  ? "Efectivo"
+                  : paymentMethod === "CARD"
+                    ? "Tarjeta"
+                    : paymentMethod === "TRANSFER"
+                      ? "Transferencia"
+                      : "Mixto"
+              }
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Prescription info banner */}
       {prescriptionId && (
@@ -339,8 +420,8 @@ function NewSaleContent() {
         <CardContent className="space-y-3 overflow-visible">
           <CustomerSearchInput
             value={selectedCustomer}
-            onSelect={setSelectedCustomer}
-            onClear={() => setSelectedCustomer(null)}
+            onSelect={setSelectedCustomerOverride}
+            onClear={() => setSelectedCustomerOverride(null)}
             onCreateNew={() => setShowCreateCustomer(true)}
             disabled={!!prescriptionId && !!prescription?.patientId}
           />
@@ -401,11 +482,12 @@ function NewSaleContent() {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     setShowCreateCustomer(false)
                     setNewCustomerFirstName("")
@@ -419,6 +501,7 @@ function NewSaleContent() {
                 <Button
                   type="button"
                   size="sm"
+                  className="w-full sm:w-auto"
                   disabled={!newCustomerFirstName.trim() || !newCustomerLastName.trim() || createCustomerMutation.isPending}
                   onClick={async () => {
                     try {
@@ -428,7 +511,7 @@ function NewSaleContent() {
                         phone: newCustomerPhone.trim() || undefined,
                         idNumber: newCustomerIdNumber.trim() || undefined,
                       })
-                      setSelectedCustomer({
+                      setSelectedCustomerOverride({
                         id: `customer-${created.id}`,
                         type: "CUSTOMER",
                         customerId: created.id,
@@ -469,7 +552,13 @@ function NewSaleContent() {
                   <ShoppingCart className="h-5 w-5" />
                   Productos
                 </CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addItem}
+                  disabled={!canManageInventorySelection}
+                >
                   <Plus className="mr-1 h-3 w-3" />
                   Agregar
                 </Button>
@@ -481,6 +570,23 @@ function NewSaleContent() {
               )}
             </CardHeader>
             <CardContent className="space-y-4 overflow-visible">
+              {!canManageInventorySelection && (
+                <div className="rounded-lg border border-dashed px-4 py-4 text-sm">
+                  <p className="font-medium">No hay productos en inventario</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Registra productos en inventario para poder crear ventas.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    render={<Link href={`/dashboard/pharmacy/inventory?pharmacyId=${pharmacyId}`} />}
+                  >
+                    Ir a inventario
+                  </Button>
+                </div>
+              )}
+
               {items.map((item, index) => {
                 const selectedItemIds = items
                   .filter((_, i) => i !== index)
@@ -573,6 +679,12 @@ function NewSaleContent() {
                   <p className="text-xl font-bold">${subtotal.toFixed(2)}</p>
                 </div>
               </div>
+
+              {submitAttempted && !hasValidItems && (
+                <p className="text-xs text-destructive">
+                  Debes seleccionar al menos un producto con cantidad mayor a cero.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -584,13 +696,13 @@ function NewSaleContent() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Método de pago *</Label>
+                  <Label htmlFor="sale-payment-method">Método de pago *</Label>
                   <Select
                     value={paymentMethod}
                     onValueChange={(v) => setPaymentMethod((v as PaymentMethod) ?? "CASH")}
                     items={{ CASH: "Efectivo", CARD: "Tarjeta", TRANSFER: "Transferencia", MIXED: "Mixto" }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="sale-payment-method">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -603,34 +715,46 @@ function NewSaleContent() {
                 </div>
                 {paymentMethod !== "CASH" && (
                   <div className="space-y-2">
-                    <Label>Referencia de pago</Label>
+                    <Label htmlFor="sale-payment-reference">Referencia de pago</Label>
                     <Input
+                      id="sale-payment-reference"
                       value={paymentReference}
                       onChange={(e) => setPaymentReference(e.target.value)}
                       placeholder="N° transacción, autorización, etc."
                     />
+                    {!paymentReference.trim() && (
+                      <p className="text-xs text-muted-foreground">
+                        Recomendado para auditoría y conciliación.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Notas (opcional)</Label>
+                <Label htmlFor="sale-notes">Notas (opcional)</Label>
                 <Textarea
+                  id="sale-notes"
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e) => setNotesOverride(e.target.value)}
                   rows={2}
                   placeholder="Observaciones de la venta..."
                 />
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"
+                  className="w-full sm:w-auto"
                   render={<Link href="/dashboard/pharmacy/sales" />}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="w-full sm:w-auto"
+                >
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   {createMutation.isPending ? "Registrando..." : "Registrar venta"}
                 </Button>

@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import {
   useProduct,
   useProductLots,
@@ -87,8 +88,6 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
   })
 
   async function handleDelete() {
-    if (!confirm("¿Deseas eliminar este producto? Esta acción no se puede deshacer."))
-      return
     try {
       await deleteMutation.mutateAsync(productId)
       toast.success("Producto eliminado")
@@ -219,15 +218,19 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
             <Pencil className="mr-1 h-4 w-4" />
             Editar
           </Button>
-          <Button
+          <ConfirmButton
             variant="destructive"
             size="sm"
-            onClick={handleDelete}
+            title="Eliminar producto"
+            description="Esta acción eliminará el producto y no se puede deshacer."
+            confirmLabel="Eliminar producto"
+            loadingLabel="Eliminando..."
+            onConfirm={handleDelete}
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="mr-1 h-4 w-4" />
-            {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
-          </Button>
+            Eliminar
+          </ConfirmButton>
         </div>
       </div>
 

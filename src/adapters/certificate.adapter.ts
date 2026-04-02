@@ -29,6 +29,7 @@ export interface Certificate {
 const OWNER_TYPE_LABELS: Record<OwnerType, string> = {
   USER: "Doctor",
   PHARMACY: "Farmacia",
+  CLINIC: "Clínica",
 }
 
 function formatFileSize(bytes: number): string {

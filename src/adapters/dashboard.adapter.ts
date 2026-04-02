@@ -7,7 +7,6 @@ import type {
   ClinicRevenueResponse,
   PharmacyRevenueResponse,
   PaymentMethodStatsResponse,
-  TopPatientResponse,
   TopCustomerResponse,
   TopProductResponse,
 } from "@/types/dashboard.model"

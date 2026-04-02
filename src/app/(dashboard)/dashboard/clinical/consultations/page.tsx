@@ -22,10 +22,6 @@ import {
   useOrganizationConsultations,
 } from "@/hooks/use-clinical"
 import { useConsultationEarnings } from "@/hooks/use-dashboard"
-import {
-  CONSULTATION_STATUS_LABELS,
-  CONSULTATION_STATUS_COLORS,
-} from "@/adapters/clinical.adapter"
 import { Plus, Eye, ClipboardList, DollarSign, TrendingUp } from "lucide-react"
 
 export default function ConsultationsPage() {

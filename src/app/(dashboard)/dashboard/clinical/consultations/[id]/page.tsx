@@ -2,7 +2,6 @@
 
 import { use } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -12,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
+import { SummaryTile } from "@/components/shared/summary-tile"
 import { EvolutionNotesCard } from "@/components/clinical/evolution-notes-card"
 import { ReferralsCard } from "@/components/clinical/referrals-card"
 import { PrescriptionCard } from "@/components/clinical/prescription-card"
@@ -28,6 +29,9 @@ import {
   Pill,
   MessageSquare,
   Receipt,
+  Building2,
+  ClipboardCheck,
+  CircleDashed,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -39,13 +43,11 @@ export default function ConsultationDetailPage({
   params,
 }: ConsultationDetailPageProps) {
   const { id } = use(params)
-  const router = useRouter()
   const { data: consultation, isLoading } = useConsultation(id)
   const { data: existingInvoice } = useConsultationInvoice(id)
   const completeMutation = useCompleteConsultation()
 
   async function handleComplete() {
-    if (!confirm("¿Deseas completar esta consulta?")) return
     try {
       await completeMutation.mutateAsync(id)
       toast.success("Consulta completada")
@@ -85,11 +87,22 @@ export default function ConsultationDetailPage({
   }
 
   const isActive = consultation.status === "IN_PROGRESS"
+  const billingStatus = existingInvoice
+    ? "Facturada"
+    : consultation.status === "COMPLETED"
+      ? "Pendiente de facturar"
+      : "No disponible"
+  const diagnosisStatus =
+    consultation.diagnosisCode || consultation.diagnosisDescription
+      ? "Registrado"
+      : "Pendiente"
+  const treatmentStatus =
+    consultation.procedures || consultation.treatment ? "Registrado" : "Pendiente"
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -110,17 +123,22 @@ export default function ConsultationDetailPage({
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {isActive && (
-            <Button
+            <ConfirmButton
               variant="default"
               size="sm"
-              onClick={handleComplete}
+              title="Completar consulta"
+              description="La consulta pasará a estado completada."
+              confirmLabel="Completar"
+              confirmVariant="default"
+              loadingLabel="Completando..."
+              onConfirm={handleComplete}
               disabled={completeMutation.isPending}
             >
               <CheckCircle2 className="mr-1 h-4 w-4" />
-              {completeMutation.isPending ? "Completando..." : "Completar consulta"}
-            </Button>
+              Completar consulta
+            </ConfirmButton>
           )}
           {consultation.status === "COMPLETED" && !existingInvoice && (
             <Button
@@ -152,6 +170,33 @@ export default function ConsultationDetailPage({
           )}
         </div>
       </div>
+
+      <Card className="border-border/70">
+        <CardContent className="pt-6">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <SummaryTile
+              icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
+              label="Clínica"
+              value={consultation.clinicName}
+            />
+            <SummaryTile
+              icon={<Receipt className="h-4 w-4 text-muted-foreground" />}
+              label="Facturación"
+              value={billingStatus}
+            />
+            <SummaryTile
+              icon={<ClipboardCheck className="h-4 w-4 text-muted-foreground" />}
+              label="Diagnóstico"
+              value={diagnosisStatus}
+            />
+            <SummaryTile
+              icon={<CircleDashed className="h-4 w-4 text-muted-foreground" />}
+              label="Tratamiento"
+              value={treatmentStatus}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Info cards */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -299,6 +344,12 @@ export default function ConsultationDetailPage({
       </div>
 
       {/* Prescriptions */}
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold tracking-tight">Seguimiento clínico</h2>
+        <p className="text-sm text-muted-foreground">
+          Gestiona recetas, evolución y derivaciones relacionadas a esta consulta.
+        </p>
+      </div>
       <PrescriptionCard
         consultationId={id}
         canAdd={isActive}

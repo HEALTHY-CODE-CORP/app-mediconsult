@@ -122,7 +122,7 @@ export async function buildClientResponse(
   });
 }
 
-export async function getSessionTokenFromRequest(_request: NextRequest): Promise<string | null> {
+export async function getSessionTokenFromRequest(): Promise<string | null> {
   const session = await auth();
   if (!session) {
     console.warn('[BFF] No session found — user may not be authenticated');

@@ -39,6 +39,14 @@ export interface Clinic {
   address: string | null
   phone: string | null
   email: string | null
+  billingLegalName: string | null
+  billingCommercialName: string | null
+  billingRuc: string | null
+  billingEstablishmentCode: string | null
+  billingEmissionPointCode: string | null
+  billingMatrixAddress: string | null
+  billingSpecialTaxpayerCode: string | null
+  billingAccountingRequired: boolean
   consultationPrice: number
   consultationPriceFormatted: string
   isActive: boolean
@@ -53,6 +61,14 @@ export interface Pharmacy {
   address: string | null
   phone: string | null
   email: string | null
+  billingLegalName: string | null
+  billingCommercialName: string | null
+  billingRuc: string | null
+  billingEstablishmentCode: string | null
+  billingEmissionPointCode: string | null
+  billingMatrixAddress: string | null
+  billingSpecialTaxpayerCode: string | null
+  billingAccountingRequired: boolean
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -113,6 +129,14 @@ export function toClinic(r: ClinicResponse): Clinic {
     address: r.address ?? null,
     phone: r.phone ?? null,
     email: r.email ?? null,
+    billingLegalName: r.billingLegalName ?? null,
+    billingCommercialName: r.billingCommercialName ?? null,
+    billingRuc: r.billingRuc ?? null,
+    billingEstablishmentCode: r.billingEstablishmentCode ?? null,
+    billingEmissionPointCode: r.billingEmissionPointCode ?? null,
+    billingMatrixAddress: r.billingMatrixAddress ?? null,
+    billingSpecialTaxpayerCode: r.billingSpecialTaxpayerCode ?? null,
+    billingAccountingRequired: r.billingAccountingRequired ?? false,
     consultationPrice: r.consultationPrice,
     consultationPriceFormatted: `$${r.consultationPrice.toFixed(2)}`,
     isActive: r.isActive,
@@ -133,6 +157,14 @@ export function toPharmacy(r: PharmacyResponse): Pharmacy {
     address: r.address ?? null,
     phone: r.phone ?? null,
     email: r.email ?? null,
+    billingLegalName: r.billingLegalName ?? null,
+    billingCommercialName: r.billingCommercialName ?? null,
+    billingRuc: r.billingRuc ?? null,
+    billingEstablishmentCode: r.billingEstablishmentCode ?? null,
+    billingEmissionPointCode: r.billingEmissionPointCode ?? null,
+    billingMatrixAddress: r.billingMatrixAddress ?? null,
+    billingSpecialTaxpayerCode: r.billingSpecialTaxpayerCode ?? null,
+    billingAccountingRequired: r.billingAccountingRequired ?? false,
     isActive: r.isActive,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
@@ -165,6 +197,10 @@ export interface ClinicStaff {
   id: string
   clinicId: string
   user: User
+  consultationPrice: number | null
+  consultationPercentage: number | null
+  effectiveConsultationPrice: number
+  effectiveConsultationPriceFormatted: string
   isPrimary: boolean
   isActive: boolean
   assignedAt: string
@@ -175,6 +211,10 @@ export function toClinicStaff(r: ClinicStaffResponse): ClinicStaff {
     id: r.id,
     clinicId: r.clinicId,
     user: toUser(r.user),
+    consultationPrice: r.consultationPrice,
+    consultationPercentage: r.consultationPercentage,
+    effectiveConsultationPrice: r.effectiveConsultationPrice,
+    effectiveConsultationPriceFormatted: `$${r.effectiveConsultationPrice.toFixed(2)}`,
     isPrimary: r.isPrimary,
     isActive: r.isActive,
     assignedAt: r.assignedAt,

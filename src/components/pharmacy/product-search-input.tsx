@@ -55,17 +55,15 @@ export function ProductSearchInput({
       .slice(0, 12)
   }, [query, products, excludeIds])
 
-  // Reset highlight when results change
-  useEffect(() => {
-    setHighlightIndex(0)
-  }, [results])
+  const activeHighlightIndex =
+    results.length === 0 ? 0 : Math.min(highlightIndex, results.length - 1)
 
   // Scroll highlighted item into view
   useEffect(() => {
     if (!listRef.current) return
     const items = listRef.current.querySelectorAll("[data-result-item]")
-    items[highlightIndex]?.scrollIntoView({ block: "nearest" })
-  }, [highlightIndex])
+    items[activeHighlightIndex]?.scrollIntoView({ block: "nearest" })
+  }, [activeHighlightIndex, results.length])
 
   // Close on click outside
   useEffect(() => {
@@ -106,8 +104,8 @@ export function ProductSearchInput({
         break
       case "Enter":
         e.preventDefault()
-        if (results[highlightIndex]) {
-          handleSelect(results[highlightIndex])
+        if (results[activeHighlightIndex]) {
+          handleSelect(results[activeHighlightIndex])
         }
         break
       case "Escape":
@@ -163,6 +161,7 @@ export function ProductSearchInput({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
+            setHighlightIndex(0)
             setIsOpen(e.target.value.length >= 1)
           }}
           onFocus={() => {
@@ -179,7 +178,7 @@ export function ProductSearchInput({
       {isOpen && (
         <div
           ref={listRef}
-          className="absolute z-50 mt-1 w-full rounded-md border bg-white shadow-lg max-h-72 overflow-y-auto"
+          className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md"
         >
           {results.length === 0 && query.length >= 1 && (
             <div className="px-3 py-6 text-center text-sm text-muted-foreground">
@@ -197,8 +196,8 @@ export function ProductSearchInput({
               data-result-item
               onClick={() => handleSelect(product)}
               onMouseEnter={() => setHighlightIndex(index)}
-              className={`w-full text-left px-3 py-2 flex items-start gap-2.5 border-b last:border-b-0 transition-colors ${
-                index === highlightIndex ? "bg-muted/70" : "hover:bg-muted/40"
+              className={`flex w-full items-start gap-2.5 border-b border-border px-3 py-2 text-left transition-colors last:border-b-0 ${
+                index === activeHighlightIndex ? "bg-muted/70" : "hover:bg-muted/40"
               }`}
             >
               <Package className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />

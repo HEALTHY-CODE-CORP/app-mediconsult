@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   Card,
   CardContent,
@@ -44,7 +45,10 @@ export function EntityForm({
   const router = useRouter()
   const labels = ENTITY_LABELS[entityType]
   const isClinic = entityType === "clinic"
+  const isPharmacy = entityType === "pharmacy"
   const clinicEntity = isClinic ? (entity as Clinic | undefined) : undefined
+  const pharmacyEntity = isPharmacy ? (entity as Pharmacy | undefined) : undefined
+  const billingSource = isPharmacy ? pharmacyEntity : clinicEntity
 
   const [formData, setFormData] = useState({
     name: entity?.name ?? "",
@@ -52,30 +56,68 @@ export function EntityForm({
     phone: entity?.phone ?? "",
     email: entity?.email ?? "",
     consultationPrice: clinicEntity?.consultationPrice?.toString() ?? "0",
+    billingLegalName: billingSource?.billingLegalName ?? "",
+    billingCommercialName: billingSource?.billingCommercialName ?? "",
+    billingRuc: billingSource?.billingRuc ?? "",
+    billingEstablishmentCode: billingSource?.billingEstablishmentCode ?? "",
+    billingEmissionPointCode: billingSource?.billingEmissionPointCode ?? "",
+    billingMatrixAddress: billingSource?.billingMatrixAddress ?? "",
+    billingSpecialTaxpayerCode: billingSource?.billingSpecialTaxpayerCode ?? "",
+    billingAccountingRequired: billingSource?.billingAccountingRequired ?? false,
   })
 
-  function updateField(key: keyof typeof formData, value: string) {
+  function updateField(
+    key: Exclude<keyof typeof formData, "billingAccountingRequired">,
+    value: string
+  ) {
     setFormData((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function updateAccountingRequired(value: boolean) {
+    setFormData((prev) => ({ ...prev, billingAccountingRequired: value }))
+  }
+
+  function toOptional(value: string): string | undefined {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : undefined
   }
 
   function toPayload(): FormData {
     const base = {
-      name: formData.name,
-      address: formData.address || undefined,
-      phone: formData.phone || undefined,
-      email: formData.email || undefined,
+      name: formData.name.trim(),
+      address: toOptional(formData.address),
+      phone: toOptional(formData.phone),
+      email: toOptional(formData.email),
     }
 
     if (isClinic) {
       return {
         ...base,
+        billingLegalName: toOptional(formData.billingLegalName),
+        billingCommercialName: toOptional(formData.billingCommercialName),
+        billingRuc: toOptional(formData.billingRuc),
+        billingEstablishmentCode: toOptional(formData.billingEstablishmentCode),
+        billingEmissionPointCode: toOptional(formData.billingEmissionPointCode),
+        billingMatrixAddress: toOptional(formData.billingMatrixAddress),
+        billingSpecialTaxpayerCode: toOptional(formData.billingSpecialTaxpayerCode),
+        billingAccountingRequired: formData.billingAccountingRequired,
         consultationPrice: formData.consultationPrice
           ? Number(formData.consultationPrice)
           : undefined,
       } satisfies CreateClinicRequest
     }
 
-    return base satisfies CreatePharmacyRequest
+    return {
+      ...base,
+      billingLegalName: toOptional(formData.billingLegalName),
+      billingCommercialName: toOptional(formData.billingCommercialName),
+      billingRuc: toOptional(formData.billingRuc),
+      billingEstablishmentCode: toOptional(formData.billingEstablishmentCode),
+      billingEmissionPointCode: toOptional(formData.billingEmissionPointCode),
+      billingMatrixAddress: toOptional(formData.billingMatrixAddress),
+      billingSpecialTaxpayerCode: toOptional(formData.billingSpecialTaxpayerCode),
+      billingAccountingRequired: formData.billingAccountingRequired,
+    } satisfies CreatePharmacyRequest
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -176,6 +218,125 @@ export function EntityForm({
               <p className="text-xs text-muted-foreground">
                 Este valor se usará para calcular las ganancias del médico por consulta
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {(isPharmacy || isClinic) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Facturación electrónica</CardTitle>
+            <CardDescription>
+              {isPharmacy
+                ? "Perfil tributario requerido para emitir comprobantes SRI desde esta farmacia"
+                : "Perfil tributario del consultorio para emitir facturas de consultas"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="billingLegalName">
+                Razón social{isPharmacy ? " *" : ""}
+              </Label>
+              <Input
+                id="billingLegalName"
+                value={formData.billingLegalName}
+                onChange={(e) => updateField("billingLegalName", e.target.value)}
+                placeholder="OSWART JAVIER AYALA DAVILA"
+                required={isPharmacy}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="billingCommercialName">
+                Nombre comercial{isPharmacy ? " *" : ""}
+              </Label>
+              <Input
+                id="billingCommercialName"
+                value={formData.billingCommercialName}
+                onChange={(e) => updateField("billingCommercialName", e.target.value)}
+                placeholder={isPharmacy ? "Farmacia Central" : "Consultorio San Rafael"}
+                required={isPharmacy}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="billingRuc">RUC{isPharmacy ? " *" : ""}</Label>
+              <Input
+                id="billingRuc"
+                value={formData.billingRuc}
+                onChange={(e) => updateField("billingRuc", e.target.value)}
+                placeholder="1002090320001"
+                inputMode="numeric"
+                maxLength={13}
+                pattern="[0-9]{13}"
+                required={isPharmacy}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="billingSpecialTaxpayerCode">Contribuyente especial</Label>
+              <Input
+                id="billingSpecialTaxpayerCode"
+                value={formData.billingSpecialTaxpayerCode}
+                onChange={(e) => updateField("billingSpecialTaxpayerCode", e.target.value)}
+                placeholder="Opcional"
+                maxLength={13}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="billingEstablishmentCode">
+                Código establecimiento{isPharmacy ? " *" : ""}
+              </Label>
+              <Input
+                id="billingEstablishmentCode"
+                value={formData.billingEstablishmentCode}
+                onChange={(e) => updateField("billingEstablishmentCode", e.target.value)}
+                placeholder="001"
+                inputMode="numeric"
+                maxLength={3}
+                pattern="[0-9]{3}"
+                required={isPharmacy}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="billingEmissionPointCode">
+                Punto de emisión{isPharmacy ? " *" : ""}
+              </Label>
+              <Input
+                id="billingEmissionPointCode"
+                value={formData.billingEmissionPointCode}
+                onChange={(e) => updateField("billingEmissionPointCode", e.target.value)}
+                placeholder="001"
+                inputMode="numeric"
+                maxLength={3}
+                pattern="[0-9]{3}"
+                required={isPharmacy}
+              />
+            </div>
+            <div className="col-span-full space-y-2">
+              <Label htmlFor="billingMatrixAddress">
+                Dirección matriz{isPharmacy ? " *" : ""}
+              </Label>
+              <Input
+                id="billingMatrixAddress"
+                value={formData.billingMatrixAddress}
+                onChange={(e) => updateField("billingMatrixAddress", e.target.value)}
+                placeholder="Dirección tributaria de la matriz"
+                required={isPharmacy}
+              />
+            </div>
+            <div className="col-span-full rounded-lg border bg-muted/20 p-3">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium">Obligado a llevar contabilidad</p>
+                  <p className="text-xs text-muted-foreground">
+                    Este valor se enviará como obligadoContabilidad al emitir la factura.
+                  </p>
+                </div>
+                <Switch
+                  id="billing-accounting-required"
+                  checked={formData.billingAccountingRequired}
+                  onCheckedChange={updateAccountingRequired}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

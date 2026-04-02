@@ -47,6 +47,14 @@ export interface ClinicResponse {
   address?: string
   phone?: string
   email?: string
+  billingLegalName?: string
+  billingCommercialName?: string
+  billingRuc?: string
+  billingEstablishmentCode?: string
+  billingEmissionPointCode?: string
+  billingMatrixAddress?: string
+  billingSpecialTaxpayerCode?: string
+  billingAccountingRequired: boolean
   consultationPrice: number
   isActive: boolean
   createdAt: string
@@ -58,6 +66,14 @@ export interface CreateClinicRequest {
   address?: string
   phone?: string
   email?: string
+  billingLegalName?: string
+  billingCommercialName?: string
+  billingRuc?: string
+  billingEstablishmentCode?: string
+  billingEmissionPointCode?: string
+  billingMatrixAddress?: string
+  billingSpecialTaxpayerCode?: string
+  billingAccountingRequired?: boolean
   consultationPrice?: number
 }
 
@@ -68,6 +84,14 @@ export interface PharmacyResponse {
   address?: string
   phone?: string
   email?: string
+  billingLegalName?: string
+  billingCommercialName?: string
+  billingRuc?: string
+  billingEstablishmentCode?: string
+  billingEmissionPointCode?: string
+  billingMatrixAddress?: string
+  billingSpecialTaxpayerCode?: string
+  billingAccountingRequired: boolean
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -78,6 +102,14 @@ export interface CreatePharmacyRequest {
   address?: string
   phone?: string
   email?: string
+  billingLegalName?: string
+  billingCommercialName?: string
+  billingRuc?: string
+  billingEstablishmentCode?: string
+  billingEmissionPointCode?: string
+  billingMatrixAddress?: string
+  billingSpecialTaxpayerCode?: string
+  billingAccountingRequired?: boolean
 }
 
 export interface ClinicPharmacyResponse {
@@ -94,6 +126,9 @@ export interface ClinicStaffResponse {
   id: string
   clinicId: string
   user: UserResponse
+  consultationPrice: number | null
+  consultationPercentage: number | null
+  effectiveConsultationPrice: number
   isPrimary: boolean
   isActive: boolean
   assignedAt: string
@@ -101,5 +136,12 @@ export interface ClinicStaffResponse {
 
 export interface AssignStaffRequest {
   userId: string
+  consultationPrice?: number
+  consultationPercentage?: number
   isPrimary?: boolean
+}
+
+export interface UpdateStaffRequest {
+  consultationPrice?: number
+  consultationPercentage?: number
 }

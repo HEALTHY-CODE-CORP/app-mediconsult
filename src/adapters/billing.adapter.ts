@@ -1,4 +1,5 @@
 import type {
+  ConsultationIssuerType,
   InvoiceResponse,
   InvoiceStatus,
   InvoiceType,
@@ -33,6 +34,11 @@ export const INVOICE_TYPE_COLORS: Record<InvoiceType, string> = {
   CONSULTATION: "bg-purple-100 text-purple-800",
 }
 
+export const CONSULTATION_ISSUER_LABELS: Record<ConsultationIssuerType, string> = {
+  CLINIC: "Consultorio",
+  DOCTOR: "Médico",
+}
+
 export const TIPO_ID_LABELS: Record<TipoIdentificacion, string> = {
   "04": "RUC",
   "05": "Cédula",
@@ -59,6 +65,8 @@ export interface Invoice {
   clinicName: string | null
   doctorId: string | null
   doctorName: string | null
+  consultationIssuerType: ConsultationIssuerType | null
+  consultationIssuerTypeLabel: string | null
 
   // Establishment name (pharmacy or clinic)
   establishmentName: string
@@ -139,10 +147,16 @@ export function toInvoice(raw: InvoiceResponse): Invoice {
     clinicName: raw.clinicName ?? null,
     doctorId: raw.doctorId ?? null,
     doctorName: raw.doctorName ?? null,
+    consultationIssuerType: raw.consultationIssuerType ?? null,
+    consultationIssuerTypeLabel: raw.consultationIssuerType
+      ? CONSULTATION_ISSUER_LABELS[raw.consultationIssuerType] ?? raw.consultationIssuerType
+      : null,
 
     establishmentName:
       invoiceType === "CONSULTATION"
-        ? raw.clinicName ?? "Clínica"
+        ? raw.consultationIssuerType === "DOCTOR"
+          ? raw.doctorName ?? "Médico"
+          : raw.clinicName ?? "Clínica"
         : raw.pharmacyName ?? "Farmacia",
 
     numeroFactura: raw.numeroFactura,

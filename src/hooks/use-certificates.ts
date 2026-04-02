@@ -79,6 +79,53 @@ export function useUploadCertificate() {
   })
 }
 
+// === Doctor self-management ===
+
+export function useMyCertificates() {
+  return useQuery({
+    queryKey: [...CERTS_KEY, "my"],
+    queryFn: async () => {
+      const { data } = await api.get<CertificateResponse[]>("/certificates/my")
+      return toCertificateList(data)
+    },
+  })
+}
+
+export function useMyActiveCertificate() {
+  return useQuery({
+    queryKey: [...CERTS_KEY, "my", "active"],
+    queryFn: async () => {
+      const { data } = await api.get<CertificateResponse>("/certificates/my/active")
+      return toCertificate(data)
+    },
+    retry: false,
+  })
+}
+
+export function useUploadMyCertificate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (params: {
+      file: File
+      alias: string
+      password: string
+    }) => {
+      const formData = new FormData()
+      formData.append("file", params.file)
+      formData.append("alias", params.alias)
+      formData.append("password", params.password)
+
+      const { data } = await api.post<CertificateResponse>("/certificates/my", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      return toCertificate(data)
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: CERTS_KEY }),
+  })
+}
+
+// === Admin management ===
+
 export function useDeactivateCertificate() {
   const queryClient = useQueryClient()
   return useMutation({

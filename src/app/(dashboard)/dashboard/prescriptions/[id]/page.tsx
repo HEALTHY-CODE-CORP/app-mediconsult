@@ -2,7 +2,6 @@
 
 import { use, useState, useMemo } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,7 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import { PrescriptionItemsTable } from "@/components/prescriptions/prescription-items-table"
 import { StockCheckTable } from "@/components/prescriptions/stock-check-table"
 import {
@@ -50,7 +51,6 @@ export default function PrescriptionDetailPage({
   params,
 }: PrescriptionDetailPageProps) {
   const { id } = use(params)
-  const router = useRouter()
   const { data: session } = useSession()
   const userRoles = session?.user?.roles ?? []
 
@@ -76,7 +76,6 @@ export default function PrescriptionDetailPage({
   )
 
   async function handleCancel() {
-    if (!confirm("¿Deseas cancelar esta receta? Esta acción no se puede deshacer.")) return
     try {
       await cancelMutation.mutateAsync(id)
       toast.success("Receta cancelada")
@@ -161,15 +160,19 @@ export default function PrescriptionDetailPage({
         </div>
         <div className="flex gap-2">
           {canCancel && (
-            <Button
+            <ConfirmButton
               variant="destructive"
               size="sm"
-              onClick={handleCancel}
+              title="Cancelar receta"
+              description="Esta acción no se puede deshacer y la receta quedará cancelada."
+              confirmLabel="Sí, cancelar receta"
+              loadingLabel="Cancelando..."
+              onConfirm={handleCancel}
               disabled={cancelMutation.isPending}
             >
               <XCircle className="mr-1 h-4 w-4" />
-              {cancelMutation.isPending ? "Cancelando..." : "Cancelar"}
-            </Button>
+              Cancelar
+            </ConfirmButton>
           )}
         </div>
       </div>
@@ -239,16 +242,22 @@ export default function PrescriptionDetailPage({
 
             {canAssignPharmacy && (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
+                <Label
+                  htmlFor="prescription-assign-pharmacy-select"
+                  className="text-xs font-medium text-muted-foreground"
+                >
                   Asignar farmacia
-                </p>
+                </Label>
                 <div className="flex gap-2">
                   <Select
                     value={assignPharmacyId}
                     onValueChange={(v) => setAssignPharmacyId(v ?? "")}
                     items={pharmacyItems}
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger
+                      id="prescription-assign-pharmacy-select"
+                      className="flex-1"
+                    >
                       <SelectValue placeholder="Seleccionar farmacia" />
                     </SelectTrigger>
                     <SelectContent>

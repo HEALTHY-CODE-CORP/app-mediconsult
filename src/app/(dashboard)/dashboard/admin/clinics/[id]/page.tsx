@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import { ClinicPharmaciesCard } from "@/components/admin/clinic-pharmacies"
 import { ClinicStaffCard } from "@/components/admin/clinic-staff-card"
 import { useClinic, useDeleteClinic } from "@/hooks/use-organizations"
@@ -24,6 +25,7 @@ import {
   Mail,
   MapPin,
   DollarSign,
+  FileKey,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -38,7 +40,6 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
   const deleteMutation = useDeleteClinic()
 
   async function handleDelete() {
-    if (!confirm("¿Estás seguro de eliminar esta clínica?")) return
     try {
       await deleteMutation.mutateAsync(id)
       toast.success("Clínica eliminada")
@@ -96,15 +97,19 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
             <Pencil className="mr-1 h-4 w-4" />
             Editar
           </Button>
-          <Button
+          <ConfirmButton
             variant="destructive"
             size="sm"
-            onClick={handleDelete}
+            title="Eliminar clínica"
+            description="Esta acción eliminará la clínica de forma permanente."
+            confirmLabel="Eliminar clínica"
+            loadingLabel="Eliminando..."
+            onConfirm={handleDelete}
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="mr-1 h-4 w-4" />
             Eliminar
-          </Button>
+          </ConfirmButton>
         </div>
       </div>
 
@@ -124,6 +129,42 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
               icon={<DollarSign className="h-4 w-4" />}
               label="Precio de consulta"
               value={clinic.consultationPriceFormatted}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2">
+              <FileKey className="h-5 w-5" />
+              Facturación del consultorio
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              render={
+                <Link
+                  href={`/dashboard/admin/certificates/upload?ownerType=CLINIC&ownerId=${id}&back=${encodeURIComponent(`/dashboard/admin/clinics/${id}`)}`}
+                />
+              }
+            >
+              Subir certificado
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <InfoRow label="Razón social" value={clinic.billingLegalName} />
+            <InfoRow label="Nombre comercial" value={clinic.billingCommercialName} />
+            <InfoRow label="RUC" value={clinic.billingRuc} />
+            <InfoRow label="Establecimiento" value={clinic.billingEstablishmentCode} />
+            <InfoRow label="Punto de emisión" value={clinic.billingEmissionPointCode} />
+            <InfoRow label="Dirección matriz" value={clinic.billingMatrixAddress} />
+            <InfoRow
+              label="Contribuyente especial"
+              value={clinic.billingSpecialTaxpayerCode}
+            />
+            <InfoRow
+              label="Obligado a contabilidad"
+              value={clinic.billingAccountingRequired ? "Sí" : "No"}
             />
           </CardContent>
         </Card>

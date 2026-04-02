@@ -11,6 +11,7 @@ import type {
   ClinicPharmacyResponse,
   ClinicStaffResponse,
   AssignStaffRequest,
+  UpdateStaffRequest,
 } from "@/types/organization.model"
 import {
   toOrganization,
@@ -240,6 +241,18 @@ export function useUnassignStaffFromClinic(clinicId: string) {
   return useMutation({
     mutationFn: async (userId: string) => {
       await api.delete(`/clinics/${clinicId}/staff/${userId}`)
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...CLINICS_KEY, clinicId, "staff"] }),
+  })
+}
+
+export function useUpdateClinicStaff(clinicId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ userId, ...body }: UpdateStaffRequest & { userId: string }) => {
+      const { data } = await api.patch(`/clinics/${clinicId}/staff/${userId}`, body)
+      return data
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: [...CLINICS_KEY, clinicId, "staff"] }),

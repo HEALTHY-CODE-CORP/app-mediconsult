@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import {
   useInvoice,
   useSriInvoiceRequest,
@@ -68,7 +69,6 @@ export default function ConsultationInvoiceDetailPage({
   }
 
   async function handleCancel() {
-    if (!confirm("¿Deseas anular esta factura?")) return
     try {
       await cancelMutation.mutateAsync(id)
       toast.success("Factura anulada")
@@ -184,15 +184,19 @@ export default function ConsultationInvoiceDetailPage({
             </Button>
           )}
           {canCancel && (
-            <Button
+            <ConfirmButton
               variant="destructive"
               size="sm"
-              onClick={handleCancel}
+              title="Anular factura"
+              description="La factura se marcará como anulada."
+              confirmLabel="Sí, anular factura"
+              loadingLabel="Anulando..."
+              onConfirm={handleCancel}
               disabled={cancelMutation.isPending}
             >
               <XCircle className="mr-1 h-4 w-4" />
-              {cancelMutation.isPending ? "Anulando..." : "Anular factura"}
-            </Button>
+              Anular factura
+            </ConfirmButton>
           )}
         </div>
       </div>

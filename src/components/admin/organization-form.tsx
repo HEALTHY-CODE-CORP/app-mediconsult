@@ -236,7 +236,7 @@ export function OrganizationForm({
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Plan</Label>
+            <Label htmlFor="organization-plan-select">Plan</Label>
             <Select
               value={formData.planId}
               onValueChange={(value) => updateField("planId", value ?? "")}
@@ -244,7 +244,7 @@ export function OrganizationForm({
                 plans.map((p) => [p.id, `${p.name} — ${p.monthlyPriceFormatted}/mes`])
               )}
             >
-              <SelectTrigger>
+              <SelectTrigger id="organization-plan-select">
                 <SelectValue placeholder="Seleccionar plan" />
               </SelectTrigger>
               <SelectContent>
@@ -263,13 +263,13 @@ export function OrganizationForm({
             )}
           </div>
           <div className="space-y-2">
-            <Label>Ciclo de facturación</Label>
+            <Label htmlFor="organization-billing-cycle">Ciclo de facturación</Label>
             <Select
               value={formData.billingCycle}
               onValueChange={(value) => updateField("billingCycle", value ?? "MONTHLY")}
               items={{ MONTHLY: "Mensual", ANNUAL: "Anual" }}
             >
-              <SelectTrigger>
+              <SelectTrigger id="organization-billing-cycle">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

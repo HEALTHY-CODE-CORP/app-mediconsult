@@ -24,7 +24,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { useUsers, useToggleUserActive } from "@/hooks/use-users"
 import { ROLE_LABELS } from "@/adapters/user.adapter"
 import type { Role } from "@/types/auth.model"
-import { UserPlus, Search, Power } from "lucide-react"
+import { UserPlus, Search, Power, Eye, Pencil } from "lucide-react"
 import { toast } from "sonner"
 
 const ROLE_COLORS: Record<Role, string> = {
@@ -122,7 +122,10 @@ export default function UsersPage() {
             ...Object.fromEntries(FILTERABLE_ROLES.map((r) => [r, ROLE_LABELS[r]])),
           }}
         >
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger
+            className="w-full sm:w-[180px]"
+            aria-label="Filtrar usuarios por rol"
+          >
             <SelectValue placeholder="Filtrar por rol" />
           </SelectTrigger>
           <SelectContent>
@@ -139,7 +142,10 @@ export default function UsersPage() {
           onValueChange={(v) => { if (v) setStatusFilter(v) }}
           items={{ ALL: "Todos", ACTIVE: "Activos", INACTIVE: "Inactivos" }}
         >
-          <SelectTrigger className="w-full sm:w-[160px]">
+          <SelectTrigger
+            className="w-full sm:w-[160px]"
+            aria-label="Filtrar usuarios por estado"
+          >
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
@@ -221,17 +227,35 @@ export default function UsersPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={toggleMutation.isPending}
-                    onClick={() =>
-                      handleToggleActive(user.id, user.fullName, user.isActive)
-                    }
-                    title={user.isActive ? "Desactivar usuario" : "Activar usuario"}
-                  >
-                    <Power className="h-4 w-4" />
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Ver detalle"
+                      render={<Link href={`/dashboard/admin/users/${user.id}`} />}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Editar usuario"
+                      render={<Link href={`/dashboard/admin/users/${user.id}/edit`} />}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={toggleMutation.isPending}
+                      onClick={() =>
+                        handleToggleActive(user.id, user.fullName, user.isActive)
+                      }
+                      title={user.isActive ? "Desactivar usuario" : "Activar usuario"}
+                    >
+                      <Power className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

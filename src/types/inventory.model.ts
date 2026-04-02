@@ -14,7 +14,7 @@ export interface CreateProductRequest {
   requiresPrescription: boolean
 }
 
-export interface UpdateProductRequest extends Partial<CreateProductRequest> {}
+export type UpdateProductRequest = Partial<CreateProductRequest>
 
 export interface ProductResponse {
   id: string

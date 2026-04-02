@@ -2,7 +2,7 @@
 
 import { use } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import {
   useCertificate,
   useDeactivateCertificate,
@@ -36,12 +37,13 @@ export default function CertificateDetailPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const backHref = searchParams.get("back") ?? "/dashboard/admin/pharmacies"
   const { data: cert, isLoading } = useCertificate(id)
   const deactivate = useDeactivateCertificate()
   const deleteCert = useDeleteCertificate()
 
   async function handleDeactivate() {
-    if (!confirm("¿Desactivar este certificado? Ya no se usará para firmar.")) return
     try {
       await deactivate.mutateAsync(id)
       toast.success("Certificado desactivado")
@@ -51,11 +53,10 @@ export default function CertificateDetailPage({
   }
 
   async function handleDelete() {
-    if (!confirm("¿Eliminar este certificado? Se eliminará también del almacenamiento.")) return
     try {
       await deleteCert.mutateAsync(id)
       toast.success("Certificado eliminado")
-      router.push("/dashboard/admin/certificates")
+      router.push(backHref)
     } catch {
       toast.error("Error al eliminar")
     }
@@ -92,7 +93,7 @@ export default function CertificateDetailPage({
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <p className="text-muted-foreground">Certificado no encontrado</p>
-        <Button variant="link" className="mt-2" render={<Link href="/dashboard/admin/certificates" />}>
+        <Button variant="link" className="mt-2" render={<Link href={backHref} />}>
           Volver a certificados
         </Button>
       </div>
@@ -106,7 +107,7 @@ export default function CertificateDetailPage({
           <Button
             variant="ghost"
             size="icon-sm"
-            render={<Link href="/dashboard/admin/certificates" />}
+            render={<Link href={backHref} />}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -136,25 +137,33 @@ export default function CertificateDetailPage({
             Descargar
           </Button>
           {cert.isActive && (
-            <Button
+            <ConfirmButton
               variant="outline"
               size="sm"
-              onClick={handleDeactivate}
+              title="Desactivar certificado"
+              description="El certificado dejará de usarse para firmar."
+              confirmLabel="Desactivar"
+              loadingLabel="Desactivando..."
+              onConfirm={handleDeactivate}
               disabled={deactivate.isPending}
             >
               <XCircle className="mr-1 h-4 w-4" />
               Desactivar
-            </Button>
+            </ConfirmButton>
           )}
-          <Button
+          <ConfirmButton
             variant="destructive"
             size="sm"
-            onClick={handleDelete}
+            title="Eliminar certificado"
+            description="El certificado y su archivo asociado se eliminarán permanentemente."
+            confirmLabel="Eliminar certificado"
+            loadingLabel="Eliminando..."
+            onConfirm={handleDelete}
             disabled={deleteCert.isPending}
           >
             <Trash2 className="mr-1 h-4 w-4" />
             Eliminar
-          </Button>
+          </ConfirmButton>
         </div>
       </div>
 

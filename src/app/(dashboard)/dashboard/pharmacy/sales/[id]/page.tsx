@@ -28,21 +28,27 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
+import { SummaryTile } from "@/components/shared/summary-tile"
 import { useSale, useCancelSale } from "@/hooks/use-sales"
 import { useSaleInvoice, useCreateInvoice } from "@/hooks/use-billing"
 import {
   ArrowLeft,
   ShoppingCart,
-  User,
   CreditCard,
   Receipt,
   XCircle,
   FileText,
   Plus,
+  Store,
+  UserRound,
+  DollarSign,
+  Package2,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { TipoIdentificacion } from "@/types/billing.model"
 import { TIPO_ID_LABELS } from "@/adapters/billing.adapter"
+import type { ApiError } from "@/types/api"
 
 interface SaleDetailPageProps {
   params: Promise<{ id: string }>
@@ -54,7 +60,6 @@ export default function SaleDetailPage({ params }: SaleDetailPageProps) {
   const cancelMutation = useCancelSale()
 
   async function handleCancel() {
-    if (!confirm("¿Deseas cancelar esta venta?")) return
     try {
       await cancelMutation.mutateAsync(id)
       toast.success("Venta cancelada")
@@ -94,11 +99,12 @@ export default function SaleDetailPage({ params }: SaleDetailPageProps) {
   }
 
   const canCancel = sale.status === "COMPLETED"
+  const buyer = sale.customerName ?? sale.patientName ?? "Consumidor final"
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -118,17 +124,49 @@ export default function SaleDetailPage({ params }: SaleDetailPageProps) {
           </div>
         </div>
         {canCancel && (
-          <Button
+          <ConfirmButton
             variant="destructive"
             size="sm"
-            onClick={handleCancel}
+            title="Cancelar venta"
+            description="La venta se marcará como cancelada."
+            confirmLabel="Cancelar venta"
+            loadingLabel="Cancelando..."
+            onConfirm={handleCancel}
             disabled={cancelMutation.isPending}
           >
             <XCircle className="mr-1 h-4 w-4" />
-            {cancelMutation.isPending ? "Cancelando..." : "Cancelar venta"}
-          </Button>
+            Cancelar venta
+          </ConfirmButton>
         )}
       </div>
+
+      <Card className="border-border/70">
+        <CardContent className="pt-6">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <SummaryTile
+              icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+              label="Total de venta"
+              value={sale.totalFormatted}
+            />
+            <SummaryTile
+              icon={<Package2 className="h-4 w-4 text-muted-foreground" />}
+              label="Items"
+              value={`${sale.totalItems} producto${sale.totalItems !== 1 ? "s" : ""}`}
+            />
+            <SummaryTile
+              icon={<UserRound className="h-4 w-4 text-muted-foreground" />}
+              label="Cliente"
+              value={buyer}
+              valueClassName="truncate"
+            />
+            <SummaryTile
+              icon={<Store className="h-4 w-4 text-muted-foreground" />}
+              label="Método de pago"
+              value={sale.paymentMethodLabel}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Info cards */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -201,36 +239,38 @@ export default function SaleDetailPage({ params }: SaleDetailPageProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Producto</TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead className="text-center">Cantidad</TableHead>
-                <TableHead className="text-right">P. Unitario</TableHead>
-                <TableHead className="text-center">Desc. %</TableHead>
-                <TableHead className="text-right">Subtotal</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sale.items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.productName}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {item.productBarcode ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-center">{item.quantity}</TableCell>
-                  <TableCell className="text-right">{item.unitPriceFormatted}</TableCell>
-                  <TableCell className="text-center">
-                    {item.discountPercent > 0 ? `${item.discountPercent}%` : "—"}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {item.subtotalFormatted}
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Producto</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead className="text-center">Cantidad</TableHead>
+                  <TableHead className="text-right">P. Unitario</TableHead>
+                  <TableHead className="text-center">Desc. %</TableHead>
+                  <TableHead className="text-right">Subtotal</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {sale.items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="min-w-44 font-medium">{item.productName}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {item.productBarcode ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-center">{item.quantity}</TableCell>
+                    <TableCell className="text-right">{item.unitPriceFormatted}</TableCell>
+                    <TableCell className="text-center">
+                      {item.discountPercent > 0 ? `${item.discountPercent}%` : "—"}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {item.subtotalFormatted}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -251,6 +291,16 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
   const [direccion, setDireccion] = useState("")
   const [email, setEmail] = useState("")
 
+  function getApiErrorMessage(error: unknown): string | null {
+    if (error && typeof error === "object" && "message" in error) {
+      const apiError = error as ApiError
+      if (typeof apiError.message === "string" && apiError.message.trim().length > 0) {
+        return apiError.message
+      }
+    }
+    return null
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!identificacion || !razonSocial) {
@@ -268,8 +318,8 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
       })
       toast.success("Factura creada exitosamente")
       setShowForm(false)
-    } catch {
-      toast.error("Error al crear factura")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) ?? "Error al crear factura")
     }
   }
 
@@ -314,10 +364,13 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
         ) : saleStatus === "COMPLETED" ? (
           <>
             {!showForm ? (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Esta venta no tiene factura asociada
-                </p>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed bg-muted/20 p-4">
+                <div>
+                  <p className="text-sm font-medium">Esta venta aún no tiene factura</p>
+                  <p className="text-xs text-muted-foreground">
+                    Genera la factura electrónica para completar el proceso de cobro.
+                  </p>
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
@@ -328,13 +381,18 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleCreate} className="space-y-4">
-                <h4 className="text-sm font-semibold">
-                  Datos del comprador
-                </h4>
+              <form onSubmit={handleCreate} className="rounded-lg border bg-muted/20 p-4 space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold">Datos del comprador</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Completa la información requerida para generar la factura.
+                  </p>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Tipo identificación *</Label>
+                    <Label className="text-xs" htmlFor="sale-invoice-tipo-id">
+                      Tipo identificación *
+                    </Label>
                     <Select
                       value={tipoId}
                       onValueChange={(v) => {
@@ -350,7 +408,7 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                       }}
                       items={TIPO_ID_LABELS as Record<string, string>}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="sale-invoice-tipo-id">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -368,8 +426,11 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Identificación *</Label>
+                    <Label className="text-xs" htmlFor="sale-invoice-identificacion">
+                      Identificación *
+                    </Label>
                     <Input
+                      id="sale-invoice-identificacion"
                       value={identificacion}
                       onChange={(e) => setIdentificacion(e.target.value)}
                       placeholder="N° identificación"
@@ -377,8 +438,11 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Razón social *</Label>
+                    <Label className="text-xs" htmlFor="sale-invoice-razon-social">
+                      Razón social *
+                    </Label>
                     <Input
+                      id="sale-invoice-razon-social"
                       value={razonSocial}
                       onChange={(e) => setRazonSocial(e.target.value)}
                       placeholder="Nombre o razón social"
@@ -386,16 +450,22 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Dirección</Label>
+                    <Label className="text-xs" htmlFor="sale-invoice-direccion">
+                      Dirección
+                    </Label>
                     <Input
+                      id="sale-invoice-direccion"
                       value={direccion}
                       onChange={(e) => setDireccion(e.target.value)}
                       placeholder="Dirección del comprador"
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-xs">Email</Label>
+                    <Label className="text-xs" htmlFor="sale-invoice-email">
+                      Email
+                    </Label>
                     <Input
+                      id="sale-invoice-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}

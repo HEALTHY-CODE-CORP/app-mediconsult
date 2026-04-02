@@ -84,7 +84,7 @@ export function ClinicSelector({ value, onChange }: ClinicSelectorProps) {
         onValueChange={handleChange}
         items={items}
       >
-        <SelectTrigger>
+        <SelectTrigger aria-label="Seleccionar clínica">
           <SelectValue placeholder="Selecciona una clínica" />
         </SelectTrigger>
         <SelectContent>

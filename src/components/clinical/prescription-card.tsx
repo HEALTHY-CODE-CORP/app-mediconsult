@@ -179,13 +179,30 @@ export function PrescriptionCard({
 
             {/* Pharmacy selector (optional) */}
             <div className="space-y-2">
-              <Label>Farmacia (opcional)</Label>
+              <Label htmlFor="prescription-pharmacy">Farmacia (opcional)</Label>
               <Select
                 value={selectedPharmacyId}
-                onValueChange={(v) => setSelectedPharmacyId(v ?? "")}
+                onValueChange={(v) => {
+                  const nextPharmacyId = v ?? ""
+                  setSelectedPharmacyId((prevPharmacyId) => {
+                    if (prevPharmacyId !== nextPharmacyId) {
+                      setItems((prevItems) =>
+                        prevItems.map((item) => ({
+                          ...item,
+                          productId: "",
+                          productName: "",
+                        }))
+                      )
+                    }
+                    return nextPharmacyId
+                  })
+                }}
                 items={pharmacyItems}
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  id="prescription-pharmacy"
+                  aria-label="Farmacia destino de la receta"
+                >
                   <SelectValue placeholder="Seleccionar farmacia destino" />
                 </SelectTrigger>
                 <SelectContent>
@@ -240,27 +257,53 @@ export function PrescriptionCard({
                   </div>
 
                   {/* Product selector */}
-                  {selectedPharmacyId && products.length > 0 ? (
+                  {selectedPharmacyId ? (
                     <div className="space-y-1">
-                      <Label className="text-xs">Producto *</Label>
+                      <Label
+                        className="text-xs"
+                        htmlFor={`prescription-product-${index}`}
+                      >
+                        Producto *
+                      </Label>
                       <Select
                         value={item.productId}
                         onValueChange={(v) => updateItem(index, "productId", v ?? "")}
-                        items={productItems}
+                        items={products.length > 0 ? productItems : {}}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar producto" />
+                        <SelectTrigger
+                          id={`prescription-product-${index}`}
+                          aria-label={`Producto ${index + 1}`}
+                          disabled={products.length === 0}
+                        >
+                          <SelectValue
+                            placeholder={
+                              products.length === 0
+                                ? "No hay productos en inventario"
+                                : "Seleccionar producto"
+                            }
+                          />
                         </SelectTrigger>
                         <SelectContent>
-                          {products.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.name}
-                              {product.concentration && ` (${product.concentration})`}
-                              {" — "}Stock: {product.currentStock}
+                          {products.length === 0 ? (
+                            <SelectItem value="__no-products__" disabled>
+                              No hay productos disponibles para esta farmacia
                             </SelectItem>
-                          ))}
+                          ) : (
+                            products.map((product) => (
+                              <SelectItem key={product.id} value={product.id}>
+                                {product.name}
+                                {product.concentration && ` (${product.concentration})`}
+                                {" — "}Stock: {product.currentStock}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
+                      {products.length === 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          Agrega productos al inventario de esta farmacia para poder recetar.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-1">

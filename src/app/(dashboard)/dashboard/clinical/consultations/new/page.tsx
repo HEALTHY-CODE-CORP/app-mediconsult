@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { SummaryTile } from "@/components/shared/summary-tile"
 import { toast } from "sonner"
 import { usePatients } from "@/hooks/use-patients"
 import { useMyClinics } from "@/hooks/use-organizations"
@@ -38,9 +40,13 @@ import {
   UserRound,
   Building2,
   Stethoscope,
+  FileText,
   Heart,
   Thermometer,
   Activity,
+  CheckCircle2,
+  CircleDashed,
+  ClipboardCheck,
 } from "lucide-react"
 
 export default function NewConsultationPage() {
@@ -56,15 +62,11 @@ export default function NewConsultationPage() {
   const [step, setStep] = useState<"select" | "form">("select")
   const [medicalRecordId, setMedicalRecordId] = useState("")
   const [isNewRecord, setIsNewRecord] = useState(false)
+  const [selectionAttempted, setSelectionAttempted] = useState(false)
+  const [formSubmitAttempted, setFormSubmitAttempted] = useState(false)
 
   // Auto-select clinic if only one
   const effectiveClinicId = clinics.length === 1 ? clinics[0].id : (selectedClinicId ?? "")
-
-  useEffect(() => {
-    if (clinics.length === 1 && !selectedClinicId) {
-      setSelectedClinicId(clinics[0].id)
-    }
-  }, [clinics, selectedClinicId])
 
   // Look up existing medical record for the patient in this organization
   const {
@@ -109,6 +111,7 @@ export default function NewConsultationPage() {
     setMedicalRecordId("")
     setIsNewRecord(false)
     setSearch("")
+    setSelectionAttempted(false)
   }
 
   function handleClearPatient() {
@@ -119,6 +122,7 @@ export default function NewConsultationPage() {
   }
 
   async function handleProceed() {
+    setSelectionAttempted(true)
     if (!selectedPatientId || !effectiveClinicId) {
       toast.error("Selecciona un paciente y un consultorio")
       return
@@ -146,6 +150,7 @@ export default function NewConsultationPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setFormSubmitAttempted(true)
     if (!formData.reasonForVisit.trim()) {
       toast.error("El motivo de consulta es requerido")
       return
@@ -173,26 +178,76 @@ export default function NewConsultationPage() {
 
   const isPending = createRecord.isPending || createConsultation.isPending
   const canProceed = selectedPatientId && effectiveClinicId && !isPending && !loadingRecord
+  const selectedClinicName =
+    clinics.length === 1
+      ? clinics[0]?.name
+      : clinics.find((c) => c.id === effectiveClinicId)?.name
+  const stepLabel = step === "select" ? "Selección inicial" : "Registro clínico"
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          render={<Link href="/dashboard/clinical/consultations" />}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Nueva consulta</h1>
-          {step === "form" && selectedPatient && (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            render={<Link href="/dashboard/clinical/consultations" />}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Nueva consulta</h1>
             <p className="text-sm text-muted-foreground">
-              Completa los datos de la consulta
+              {step === "select"
+                ? "Selecciona paciente y consultorio para iniciar"
+                : "Completa los datos de la consulta"}
             </p>
-          )}
+          </div>
         </div>
+        <Badge variant="outline" className="gap-1.5">
+          {step === "select" ? (
+            <CircleDashed className="h-3.5 w-3.5" />
+          ) : (
+            <ClipboardCheck className="h-3.5 w-3.5" />
+          )}
+          {stepLabel}
+        </Badge>
       </div>
+
+      <Card className="border-border/70">
+        <CardContent className="pt-6">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <SummaryTile
+              icon={<UserRound className="h-4 w-4 text-muted-foreground" />}
+              label="Paciente"
+              value={selectedPatient?.fullName ?? "Sin seleccionar"}
+              valueClassName="truncate"
+            />
+            <SummaryTile
+              icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
+              label="Consultorio"
+              value={selectedClinicName ?? "Sin seleccionar"}
+              valueClassName="truncate"
+            />
+            <SummaryTile
+              icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+              label="Historia clínica"
+              value={
+                !selectedPatientId || !effectiveClinicId
+                  ? "Pendiente"
+                  : existingRecord
+                    ? "Existente"
+                    : "Se creará automáticamente"
+              }
+            />
+            <SummaryTile
+              icon={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}
+              label="Estado del flujo"
+              value={step === "select" ? "Configuración inicial" : "Listo para guardar"}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {step === "select" ? (
         <div className="space-y-6">
@@ -241,9 +296,20 @@ export default function NewConsultationPage() {
                     />
                   </div>
                   {search && filteredPatients.length === 0 && (
-                    <p className="text-sm text-muted-foreground py-2 text-center">
-                      No se encontraron pacientes
-                    </p>
+                    <div className="rounded-lg border border-dashed px-4 py-5 text-center">
+                      <p className="text-sm font-medium">No se encontraron pacientes</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Intenta con otro término o registra un paciente nuevo.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        render={<Link href="/dashboard/patients/new" />}
+                      >
+                        Crear paciente
+                      </Button>
+                    </div>
                   )}
                   {search && filteredPatients.length > 0 && (
                     <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border">
@@ -270,6 +336,11 @@ export default function NewConsultationPage() {
                   )}
                 </div>
               )}
+              {selectionAttempted && !selectedPatientId && (
+                <p className="mt-2 text-xs text-destructive">
+                  Debes seleccionar un paciente para continuar.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -289,22 +360,33 @@ export default function NewConsultationPage() {
                   <span className="font-medium">{clinics[0].name}</span>
                 </div>
               ) : (
-                <Select
-                  value={selectedClinicId}
-                  onValueChange={(v) => setSelectedClinicId(v)}
-                  items={Object.fromEntries(clinics.map((c) => [c.id, c.name]))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un consultorio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clinics.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="consultation-clinic-select">Consultorio *</Label>
+                  <Select
+                    value={selectedClinicId}
+                    onValueChange={(v) => {
+                      setSelectedClinicId(v)
+                      setSelectionAttempted(false)
+                    }}
+                    items={Object.fromEntries(clinics.map((c) => [c.id, c.name]))}
+                  >
+                    <SelectTrigger id="consultation-clinic-select">
+                      <SelectValue placeholder="Selecciona un consultorio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clinics.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {selectionAttempted && !effectiveClinicId && (
+                <p className="mt-2 text-xs text-destructive">
+                  Debes seleccionar un consultorio para iniciar.
+                </p>
               )}
             </CardContent>
           </Card>
@@ -359,6 +441,7 @@ export default function NewConsultationPage() {
               size="lg"
               onClick={handleProceed}
               disabled={!canProceed}
+              className="w-full sm:w-auto"
             >
               <Stethoscope className="mr-2 h-4 w-4" />
               {isPending ? "Preparando..." : "Iniciar consulta"}
@@ -369,18 +452,25 @@ export default function NewConsultationPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Patient summary bar */}
           {selectedPatient && (
-            <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-              <UserRound className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-medium">{selectedPatient.fullName}</span>
-              <span className="text-sm text-muted-foreground">({selectedPatient.idNumber})</span>
-              {clinics.length === 1 ? (
-                <span className="ml-auto text-sm text-muted-foreground">{clinics[0].name}</span>
-              ) : (
-                <span className="ml-auto text-sm text-muted-foreground">
-                  {clinics.find((c) => c.id === effectiveClinicId)?.name}
-                </span>
-              )}
-            </div>
+            <Card className="border-border/70">
+              <CardContent className="pt-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <UserRound className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{selectedPatient.fullName}</span>
+                  </div>
+                  <Badge variant="outline">{selectedPatient.idNumber}</Badge>
+                  <div className="ml-auto flex flex-wrap items-center gap-2">
+                    {selectedClinicName && (
+                      <Badge variant="outline">{selectedClinicName}</Badge>
+                    )}
+                    <Badge variant="outline">
+                      {isNewRecord ? "Historia nueva" : "Historia existente"}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Antecedentes — expanded edit for new records, collapsible for existing */}
@@ -409,7 +499,15 @@ export default function NewConsultationPage() {
                   placeholder="Describa el motivo principal de la consulta"
                   rows={3}
                   autoFocus
+                  aria-invalid={
+                    formSubmitAttempted && !formData.reasonForVisit.trim()
+                  }
                 />
+                {formSubmitAttempted && !formData.reasonForVisit.trim() && (
+                  <p className="text-xs text-destructive">
+                    El motivo de consulta es obligatorio.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="currentIllness">Enfermedad actual</Label>
@@ -509,16 +607,17 @@ export default function NewConsultationPage() {
             </CardContent>
           </Card>
 
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => setStep("select")}
               disabled={isPending}
+              className="w-full sm:w-auto"
             >
               Volver
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
               <Stethoscope className="mr-2 h-4 w-4" />
               {isPending ? "Creando..." : "Crear consulta"}
             </Button>

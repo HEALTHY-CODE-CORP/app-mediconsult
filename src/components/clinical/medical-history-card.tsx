@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Card,
   CardContent,
@@ -33,6 +33,22 @@ interface MedicalHistoryCardProps {
   record?: MedicalRecord | null
 }
 
+interface MedicalRecordFormData {
+  personalHistory: string
+  familyHistory: string
+  surgicalHistory: string
+  currentMedications: string
+}
+
+function toFormData(record: MedicalRecord): MedicalRecordFormData {
+  return {
+    personalHistory: record.personalHistory ?? "",
+    familyHistory: record.familyHistory ?? "",
+    surgicalHistory: record.surgicalHistory ?? "",
+    currentMedications: record.currentMedications ?? "",
+  }
+}
+
 export function MedicalHistoryCard({
   medicalRecordId,
   isNew = false,
@@ -42,39 +58,44 @@ export function MedicalHistoryCard({
     externalRecord ? "" : medicalRecordId
   )
   const record = externalRecord ?? fetchedRecord
+
+  if (!record) return null
+
+  return (
+    <MedicalHistoryCardContent
+      key={record.id}
+      medicalRecordId={medicalRecordId}
+      record={record}
+      isNew={isNew}
+    />
+  )
+}
+
+interface MedicalHistoryCardContentProps {
+  medicalRecordId: string
+  record: MedicalRecord
+  isNew: boolean
+}
+
+function MedicalHistoryCardContent({
+  medicalRecordId,
+  record,
+  isNew,
+}: MedicalHistoryCardContentProps) {
   const updateMutation = useUpdateMedicalRecord(medicalRecordId)
 
   const hasAntecedents = !!(
-    record?.personalHistory ||
-    record?.familyHistory ||
-    record?.surgicalHistory ||
-    record?.currentMedications
+    record.personalHistory ||
+    record.familyHistory ||
+    record.surgicalHistory ||
+    record.currentMedications
   )
 
   const [expanded, setExpanded] = useState(isNew || !hasAntecedents)
   const [editing, setEditing] = useState(isNew || !hasAntecedents)
-  const [formData, setFormData] = useState({
-    personalHistory: "",
-    familyHistory: "",
-    surgicalHistory: "",
-    currentMedications: "",
-  })
-
-  // Sync form data with record
-  useEffect(() => {
-    if (record) {
-      setFormData({
-        personalHistory: record.personalHistory ?? "",
-        familyHistory: record.familyHistory ?? "",
-        surgicalHistory: record.surgicalHistory ?? "",
-        currentMedications: record.currentMedications ?? "",
-      })
-      // If record has antecedents and it's not new, collapse and show read view
-      if (!isNew && hasAntecedents) {
-        setEditing(false)
-      }
-    }
-  }, [record?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const [formData, setFormData] = useState<MedicalRecordFormData>(() =>
+    toFormData(record)
+  )
 
   function handleEdit() {
     setEditing(true)
@@ -82,14 +103,7 @@ export function MedicalHistoryCard({
   }
 
   function handleCancel() {
-    if (record) {
-      setFormData({
-        personalHistory: record.personalHistory ?? "",
-        familyHistory: record.familyHistory ?? "",
-        surgicalHistory: record.surgicalHistory ?? "",
-        currentMedications: record.currentMedications ?? "",
-      })
-    }
+    setFormData(toFormData(record))
     setEditing(false)
     if (hasAntecedents) {
       setExpanded(true)
@@ -115,8 +129,6 @@ export function MedicalHistoryCard({
     setEditing(false)
     setExpanded(false)
   }
-
-  if (!record) return null
 
   return (
     <Card>
@@ -261,47 +273,44 @@ export function MedicalHistoryCard({
                     size="sm"
                     onClick={handleSkip}
                   >
-                    Completar después
-                  </Button>
-                )}
-                {!isNew && hasAntecedents && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancel}
-                  >
-                    <X className="mr-1 h-4 w-4" />
-                    Cancelar
+                    Omitir por ahora
                   </Button>
                 )}
                 <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancel}
+                >
+                  <X className="mr-1 h-4 w-4" />
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
                   size="sm"
                   onClick={handleSave}
                   disabled={updateMutation.isPending}
                 >
                   <Save className="mr-1 h-4 w-4" />
-                  {updateMutation.isPending
-                    ? "Guardando..."
-                    : "Guardar antecedentes"}
+                  {updateMutation.isPending ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <HistoryField
+            <div className="space-y-4">
+              <ReadOnlyField
                 label="Antecedentes personales"
                 value={record.personalHistory}
               />
-              <HistoryField
+              <ReadOnlyField
                 label="Antecedentes familiares"
                 value={record.familyHistory}
               />
-              <HistoryField
+              <ReadOnlyField
                 label="Antecedentes quirúrgicos"
                 value={record.surgicalHistory}
               />
-              <HistoryField
+              <ReadOnlyField
                 label="Medicamentos actuales"
                 value={record.currentMedications}
               />
@@ -313,21 +322,17 @@ export function MedicalHistoryCard({
   )
 }
 
-function HistoryField({
+function ReadOnlyField({
   label,
   value,
 }: {
   label: string
-  value: string | null
+  value?: string | null
 }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="text-sm whitespace-pre-wrap">
-        {value || (
-          <span className="text-muted-foreground italic">No registrado</span>
-        )}
-      </p>
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm whitespace-pre-wrap">{value || "—"}</p>
     </div>
   )
 }

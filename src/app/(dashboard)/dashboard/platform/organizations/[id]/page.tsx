@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import {
   useOrganization,
   useDeleteOrganization,
@@ -67,8 +68,6 @@ export default function OrganizationDetailPage({
   const toggleMutation = useToggleUserActiveByOrg()
 
   async function handleDelete() {
-    if (!confirm("¿Estás seguro de eliminar esta organización? Esta acción no se puede deshacer."))
-      return
     try {
       await deleteMutation.mutateAsync(id)
       toast.success("Organización eliminada")
@@ -79,7 +78,6 @@ export default function OrganizationDetailPage({
   }
 
   async function handleDeactivate() {
-    if (!confirm("¿Estás seguro de desactivar esta organización?")) return
     try {
       await deactivateMutation.mutateAsync(id)
       toast.success("Organización desactivada")
@@ -166,25 +164,33 @@ export default function OrganizationDetailPage({
             Editar
           </Button>
           {org.isActive && (
-            <Button
+            <ConfirmButton
               variant="outline"
               size="sm"
-              onClick={handleDeactivate}
+              title="Desactivar organización"
+              description="La organización dejará de estar activa."
+              confirmLabel="Desactivar"
+              loadingLabel="Desactivando..."
+              onConfirm={handleDeactivate}
               disabled={deactivateMutation.isPending}
             >
               <Power className="mr-1 h-4 w-4" />
               Desactivar
-            </Button>
+            </ConfirmButton>
           )}
-          <Button
+          <ConfirmButton
             variant="destructive"
             size="sm"
-            onClick={handleDelete}
+            title="Eliminar organización"
+            description="Esta acción no se puede deshacer y eliminará la organización."
+            confirmLabel="Eliminar organización"
+            loadingLabel="Eliminando..."
+            onConfirm={handleDelete}
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="mr-1 h-4 w-4" />
             Eliminar
-          </Button>
+          </ConfirmButton>
         </div>
       </div>
 

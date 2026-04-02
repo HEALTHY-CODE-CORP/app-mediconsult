@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
 import { usePlan, useDeletePlan } from "@/hooks/use-plans"
 import { ArrowLeft, Pencil, Trash2, Building2, Store, Users, UserCheck, DollarSign } from "lucide-react"
 import { toast } from "sonner"
@@ -28,8 +29,6 @@ export default function PlanDetailPage({
   const deletePlan = useDeletePlan()
 
   async function handleDelete() {
-    if (!confirm("¿Estás seguro de eliminar este plan? Las organizaciones con este plan quedarán sin plan asignado."))
-      return
     try {
       await deletePlan.mutateAsync(id)
       toast.success("Plan eliminado exitosamente")
@@ -92,14 +91,19 @@ export default function PlanDetailPage({
             <Pencil className="mr-2 h-4 w-4" />
             Editar
           </Button>
-          <Button
+          <ConfirmButton
             variant="destructive"
-            onClick={handleDelete}
+            size="default"
+            title="Eliminar plan"
+            description="Las organizaciones que usan este plan quedarán sin plan asignado."
+            confirmLabel="Eliminar plan"
+            loadingLabel="Eliminando..."
+            onConfirm={handleDelete}
             disabled={deletePlan.isPending}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Eliminar
-          </Button>
+          </ConfirmButton>
         </div>
       </div>
 

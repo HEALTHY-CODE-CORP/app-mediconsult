@@ -14,7 +14,6 @@ import {
   toProductList,
   toProductLot,
   toProductLotList,
-  toInventoryMovement,
   toInventoryMovementList,
 } from "@/adapters/inventory.adapter"
 

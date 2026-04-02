@@ -125,14 +125,14 @@ export default function ForgotPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isPlatform && (
             <div className="space-y-2">
-              <Label>Organización</Label>
+              <Label htmlFor="forgot-password-org-select">Organización</Label>
               <Select
                 value={selectedOrgId}
                 onValueChange={(v) => setSelectedOrgId(v ?? "")}
                 items={orgItems}
                 disabled={isSubmitting || isLoadingOrgs}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="forgot-password-org-select" className="w-full">
                   <SelectValue
                     placeholder={
                       isLoadingOrgs

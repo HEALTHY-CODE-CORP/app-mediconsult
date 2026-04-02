@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmButton } from "@/components/shared/confirm-button"
+import { SummaryTile } from "@/components/shared/summary-tile"
 import { PatientAllergies } from "@/components/patients/patient-allergies"
 import { usePatient, useDeletePatient } from "@/hooks/use-patients"
 import {
@@ -27,6 +29,8 @@ import {
   Heart,
   Shield,
   Briefcase,
+  IdCard,
+  Clock3,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -41,7 +45,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const deleteMutation = useDeletePatient()
 
   async function handleDelete() {
-    if (!confirm("¿Estás seguro de eliminar este paciente?")) return
     try {
       await deleteMutation.mutateAsync(id)
       toast.success("Paciente eliminado")
@@ -64,10 +67,18 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     )
   }
 
+  const lastUpdated = new Intl.DateTimeFormat("es-EC", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(patient.updatedAt))
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon-sm" render={<Link href="/dashboard/patients" />}>
             <ArrowLeft className="h-4 w-4" />
@@ -89,17 +100,48 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             <Pencil className="mr-1 h-4 w-4" />
             Editar
           </Button>
-          <Button
+          <ConfirmButton
             variant="destructive"
             size="sm"
-            onClick={handleDelete}
+            title="Eliminar paciente"
+            description="Esta acción eliminará el paciente de forma permanente."
+            confirmLabel="Eliminar paciente"
+            loadingLabel="Eliminando..."
+            onConfirm={handleDelete}
             disabled={deleteMutation.isPending}
           >
             <Trash2 className="mr-1 h-4 w-4" />
             Eliminar
-          </Button>
+          </ConfirmButton>
         </div>
       </div>
+
+      <Card className="border-border/70">
+        <CardContent className="pt-6">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <SummaryTile
+              icon={<IdCard className="h-4 w-4 text-muted-foreground" />}
+              label="Identificación"
+              value={`${patient.idTypeLabel}: ${patient.idNumber}`}
+            />
+            <SummaryTile
+              icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
+              label="Edad"
+              value={patient.age !== null ? `${patient.age} años` : "Sin registrar"}
+            />
+            <SummaryTile
+              icon={<Heart className="h-4 w-4 text-muted-foreground" />}
+              label="Tipo de sangre"
+              value={patient.bloodTypeLabel ?? "Sin registrar"}
+            />
+            <SummaryTile
+              icon={<Clock3 className="h-4 w-4 text-muted-foreground" />}
+              label="Última actualización"
+              value={lastUpdated}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Datos personales */}

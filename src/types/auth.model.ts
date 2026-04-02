@@ -14,6 +14,33 @@ export interface RegisterRequest {
   roles: string[]
 }
 
+export interface UpdateUserRequest {
+  email: string
+  firstName: string
+  lastName: string
+  phone?: string
+  billingLegalName?: string
+  billingCommercialName?: string
+  billingRuc?: string
+  billingEstablishmentCode?: string
+  billingEmissionPointCode?: string
+  billingMatrixAddress?: string
+  billingSpecialTaxpayerCode?: string
+  billingAccountingRequired?: boolean
+  roles: string[]
+}
+
+export interface UpdateMyBillingProfileRequest {
+  billingLegalName?: string
+  billingCommercialName?: string
+  billingRuc?: string
+  billingEstablishmentCode?: string
+  billingEmissionPointCode?: string
+  billingMatrixAddress?: string
+  billingSpecialTaxpayerCode?: string
+  billingAccountingRequired?: boolean
+}
+
 export interface AuthResponse {
   token: string
   tokenType: string
@@ -29,6 +56,14 @@ export interface UserResponse {
   lastName: string
   fullName: string
   phone?: string
+  billingLegalName?: string
+  billingCommercialName?: string
+  billingRuc?: string
+  billingEstablishmentCode?: string
+  billingEmissionPointCode?: string
+  billingMatrixAddress?: string
+  billingSpecialTaxpayerCode?: string
+  billingAccountingRequired: boolean
   roles: string[]
   isActive: boolean
   createdAt: string

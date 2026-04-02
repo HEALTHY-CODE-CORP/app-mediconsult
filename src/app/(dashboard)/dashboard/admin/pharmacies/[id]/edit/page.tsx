@@ -19,9 +19,9 @@ export default function EditPharmacyPage({ params }: EditPharmacyPageProps) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6">
         <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-96 w-full" />
       </div>
     )
   }
@@ -38,7 +38,7 @@ export default function EditPharmacyPage({ params }: EditPharmacyPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon-sm" render={<Link href={`/dashboard/admin/pharmacies/${id}`} />}>
           <ArrowLeft className="h-4 w-4" />

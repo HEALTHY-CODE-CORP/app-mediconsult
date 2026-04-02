@@ -21,6 +21,14 @@ export interface User {
   lastName: string
   fullName: string
   phone: string | null
+  billingLegalName: string | null
+  billingCommercialName: string | null
+  billingRuc: string | null
+  billingEstablishmentCode: string | null
+  billingEmissionPointCode: string | null
+  billingMatrixAddress: string | null
+  billingSpecialTaxpayerCode: string | null
+  billingAccountingRequired: boolean
   roles: Role[]
   roleLabels: string[]
   isActive: boolean
@@ -41,6 +49,14 @@ export function toUser(raw: UserResponse): User {
     lastName: raw.lastName,
     fullName: raw.fullName,
     phone: raw.phone ?? null,
+    billingLegalName: raw.billingLegalName ?? null,
+    billingCommercialName: raw.billingCommercialName ?? null,
+    billingRuc: raw.billingRuc ?? null,
+    billingEstablishmentCode: raw.billingEstablishmentCode ?? null,
+    billingEmissionPointCode: raw.billingEmissionPointCode ?? null,
+    billingMatrixAddress: raw.billingMatrixAddress ?? null,
+    billingSpecialTaxpayerCode: raw.billingSpecialTaxpayerCode ?? null,
+    billingAccountingRequired: raw.billingAccountingRequired ?? false,
     roles,
     roleLabels: roles.map((r) => ROLE_LABELS[r] ?? r),
     isActive: raw.isActive,

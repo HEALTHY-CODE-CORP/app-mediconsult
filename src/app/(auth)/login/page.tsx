@@ -91,14 +91,14 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isPlatformLogin && (
             <div className="space-y-2">
-              <Label>Organización</Label>
+              <Label htmlFor="login-org-select">Organización</Label>
               <Select
                 value={selectedOrgId}
                 onValueChange={(v) => setSelectedOrgId(v ?? "")}
                 items={orgItems}
                 disabled={isPending || isLoadingOrgs}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="login-org-select" className="w-full">
                   <SelectValue
                     placeholder={
                       isLoadingOrgs
