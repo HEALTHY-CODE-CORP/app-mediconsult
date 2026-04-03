@@ -98,6 +98,8 @@ export interface Invoice {
   status: InvoiceStatus
   statusLabel: string
   statusColor: string
+  sriStatus: string | null
+  sriErrors: string | null
   sriNumeroAutorizacion: string | null
   sriFechaAutorizacion: string | null
   sriFechaAutorizacionFormatted: string | null
@@ -110,6 +112,15 @@ export interface Invoice {
 
 function fmt(value: number): string {
   return `$${value.toFixed(2)}`
+}
+
+function toNumber(value: number | string | null | undefined, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(",", "."))
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return fallback
 }
 
 function formatDateTime(dateStr?: string | null): string | null {
@@ -131,6 +142,13 @@ function formatDateTime(dateStr?: string | null): string | null {
 
 export function toInvoice(raw: InvoiceResponse): Invoice {
   const invoiceType = raw.invoiceType ?? "PHARMACY_SALE"
+  const totalSinImpuestos = toNumber(raw.totalSinImpuestos)
+  const totalDescuento = toNumber(raw.totalDescuento)
+  const totalIva0 = toNumber(raw.totalIva0)
+  const totalIva12 = toNumber(raw.totalIva12)
+  const totalIva15 = toNumber(raw.totalIva15)
+  const totalIva = toNumber(raw.totalIva ?? raw.valorIva)
+  const importeTotal = toNumber(raw.importeTotal)
 
   return {
     id: raw.id,
@@ -169,23 +187,25 @@ export function toInvoice(raw: InvoiceResponse): Invoice {
     compradorRazonSocial: raw.compradorRazonSocial,
     compradorDireccion: raw.compradorDireccion ?? null,
     compradorEmail: raw.compradorEmail ?? null,
-    totalSinImpuestos: raw.totalSinImpuestos,
-    totalSinImpuestosFormatted: fmt(raw.totalSinImpuestos),
-    totalDescuento: raw.totalDescuento,
-    totalDescuentoFormatted: fmt(raw.totalDescuento),
-    totalIva0: raw.totalIva0,
-    totalIva0Formatted: fmt(raw.totalIva0),
-    totalIva12: raw.totalIva12,
-    totalIva12Formatted: fmt(raw.totalIva12),
-    totalIva15: raw.totalIva15,
-    totalIva15Formatted: fmt(raw.totalIva15),
-    totalIva: raw.totalIva,
-    totalIvaFormatted: fmt(raw.totalIva),
-    importeTotal: raw.importeTotal,
-    importeTotalFormatted: fmt(raw.importeTotal),
+    totalSinImpuestos,
+    totalSinImpuestosFormatted: fmt(totalSinImpuestos),
+    totalDescuento,
+    totalDescuentoFormatted: fmt(totalDescuento),
+    totalIva0,
+    totalIva0Formatted: fmt(totalIva0),
+    totalIva12,
+    totalIva12Formatted: fmt(totalIva12),
+    totalIva15,
+    totalIva15Formatted: fmt(totalIva15),
+    totalIva,
+    totalIvaFormatted: fmt(totalIva),
+    importeTotal,
+    importeTotalFormatted: fmt(importeTotal),
     status: raw.status,
     statusLabel: INVOICE_STATUS_LABELS[raw.status] ?? raw.status,
     statusColor: INVOICE_STATUS_COLORS[raw.status] ?? "",
+    sriStatus: raw.sriStatus ?? null,
+    sriErrors: raw.sriErrors ?? null,
     sriNumeroAutorizacion: raw.sriNumeroAutorizacion ?? null,
     sriFechaAutorizacion: raw.sriFechaAutorizacion ?? null,
     sriFechaAutorizacionFormatted: formatDateTime(raw.sriFechaAutorizacion),

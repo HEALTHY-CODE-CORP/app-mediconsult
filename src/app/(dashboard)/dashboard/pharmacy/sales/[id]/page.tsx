@@ -2,6 +2,7 @@
 
 import { use, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,8 @@ import { ConfirmButton } from "@/components/shared/confirm-button"
 import { SummaryTile } from "@/components/shared/summary-tile"
 import { useSale, useCancelSale } from "@/hooks/use-sales"
 import { useSaleInvoice, useCreateInvoice } from "@/hooks/use-billing"
+import { useCustomer } from "@/hooks/use-customers"
+import { usePatient } from "@/hooks/use-patients"
 import {
   ArrowLeft,
   ShoppingCart,
@@ -44,10 +47,12 @@ import {
   UserRound,
   DollarSign,
   Package2,
+  RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { TipoIdentificacion } from "@/types/billing.model"
 import { TIPO_ID_LABELS } from "@/adapters/billing.adapter"
+import type { Sale } from "@/adapters/sales.adapter"
 import type { ApiError } from "@/types/api"
 
 interface SaleDetailPageProps {
@@ -275,14 +280,32 @@ export default function SaleDetailPage({ params }: SaleDetailPageProps) {
       </Card>
 
       {/* Invoice / Billing */}
-      <InvoiceCard saleId={id} saleStatus={sale.status} />
+      <InvoiceCard sale={sale} />
     </div>
   )
 }
 
-function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: string }) {
-  const { data: invoice, isLoading } = useSaleInvoice(saleId)
+function mapPersonIdTypeToBillingType(rawIdType?: string | null): TipoIdentificacion | null {
+  if (!rawIdType) return null
+  const normalized = rawIdType.trim().toUpperCase()
+  if (normalized === "04" || normalized === "RUC") return "04"
+  if (normalized === "05" || normalized === "CEDULA" || normalized === "CÉDULA") return "05"
+  if (normalized === "06" || normalized === "PASSPORT" || normalized === "PASAPORTE") return "06"
+  if (normalized === "07" || normalized === "CONSUMIDOR_FINAL" || normalized === "CONSUMIDOR FINAL") return "07"
+  return null
+}
+
+function InvoiceCard({ sale }: { sale: Sale }) {
+  const router = useRouter()
+  const saleId = sale.id
+  const saleStatus = sale.status
+  const { data: invoice, isLoading, refetch } = useSaleInvoice(saleId)
   const createMutation = useCreateInvoice()
+  const customerQuery = useCustomer(sale.customerId ?? "")
+  const patientQuery = usePatient(sale.patientId ?? "")
+  const customer = customerQuery.data
+  const patient = patientQuery.data
+  const isPrefillLoading = customerQuery.isFetching || patientQuery.isFetching
 
   const [showForm, setShowForm] = useState(false)
   const [tipoId, setTipoId] = useState<TipoIdentificacion>("07")
@@ -290,6 +313,36 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
   const [razonSocial, setRazonSocial] = useState("CONSUMIDOR FINAL")
   const [direccion, setDireccion] = useState("")
   const [email, setEmail] = useState("")
+
+  function prefillBuyerDataFromSale() {
+    const suggestedType =
+      mapPersonIdTypeToBillingType(customer?.idType) ??
+      mapPersonIdTypeToBillingType(patient?.idType) ??
+      (sale.customerId || sale.patientId ? "05" : "07")
+
+    const suggestedIdentification =
+      customer?.idNumber?.trim() ||
+      patient?.idNumber?.trim() ||
+      (suggestedType === "07" ? "9999999999999" : "")
+
+    const suggestedName =
+      customer?.fullName?.trim() ||
+      patient?.fullName?.trim() ||
+      sale.customerName?.trim() ||
+      sale.patientName?.trim() ||
+      (suggestedType === "07" ? "CONSUMIDOR FINAL" : "")
+
+    setTipoId(suggestedType)
+    setIdentificacion(suggestedIdentification)
+    setRazonSocial(suggestedName)
+    setDireccion((customer?.address ?? patient?.address ?? "").trim())
+    setEmail((customer?.email ?? patient?.email ?? "").trim())
+  }
+
+  function openInvoiceForm() {
+    prefillBuyerDataFromSale()
+    setShowForm(true)
+  }
 
   function getApiErrorMessage(error: unknown): string | null {
     if (error && typeof error === "object" && "message" in error) {
@@ -299,6 +352,16 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
       }
     }
     return null
+  }
+
+  function isInvoiceAlreadyExistsError(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false
+    const apiError = error as Partial<ApiError>
+    if (apiError.status === 409) return true
+    if (typeof apiError.message === "string") {
+      return apiError.message.toLowerCase().includes("invoice already exists")
+    }
+    return false
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -319,6 +382,15 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
       toast.success("Factura creada exitosamente")
       setShowForm(false)
     } catch (error) {
+      if (isInvoiceAlreadyExistsError(error)) {
+        const existing = await refetch()
+        if (existing.data?.id) {
+          toast.message("Esta venta ya tiene una factura. Abriendo detalle.")
+          setShowForm(false)
+          router.push(`/dashboard/pharmacy/billing/${existing.data.id}`)
+          return
+        }
+      }
       toast.error(getApiErrorMessage(error) ?? "Error al crear factura")
     }
   }
@@ -374,7 +446,7 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowForm(true)}
+                  onClick={openInvoiceForm}
                 >
                   <Plus className="mr-1 h-3 w-3" />
                   Generar factura
@@ -383,10 +455,26 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
             ) : (
               <form onSubmit={handleCreate} className="rounded-lg border bg-muted/20 p-4 space-y-4">
                 <div>
-                  <h4 className="text-sm font-semibold">Datos del comprador</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Completa la información requerida para generar la factura.
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-semibold">Datos del comprador</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Completa la información requerida para generar la factura.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={prefillBuyerDataFromSale}
+                      disabled={isPrefillLoading}
+                    >
+                      <RefreshCw
+                        className={`mr-1 h-3.5 w-3.5 ${isPrefillLoading ? "animate-spin" : ""}`}
+                      />
+                      Reautocompletar
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
@@ -401,9 +489,6 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                         if (val === "07") {
                           setIdentificacion("9999999999999")
                           setRazonSocial("CONSUMIDOR FINAL")
-                        } else {
-                          setIdentificacion("")
-                          setRazonSocial("")
                         }
                       }}
                       items={TIPO_ID_LABELS as Record<string, string>}
@@ -434,7 +519,6 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                       value={identificacion}
                       onChange={(e) => setIdentificacion(e.target.value)}
                       placeholder="N° identificación"
-                      disabled={tipoId === "07"}
                     />
                   </div>
                   <div className="space-y-1">
@@ -446,7 +530,6 @@ function InvoiceCard({ saleId, saleStatus }: { saleId: string; saleStatus: strin
                       value={razonSocial}
                       onChange={(e) => setRazonSocial(e.target.value)}
                       placeholder="Nombre o razón social"
-                      disabled={tipoId === "07"}
                     />
                   </div>
                   <div className="space-y-1">

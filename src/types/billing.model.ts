@@ -2,6 +2,7 @@ export type InvoiceStatus = "DRAFT" | "PENDING" | "AUTHORIZED" | "CANCELLED" | "
 export type InvoiceType = "PHARMACY_SALE" | "CONSULTATION"
 export type TipoIdentificacion = "04" | "05" | "06" | "07"
 export type ConsultationIssuerType = "CLINIC" | "DOCTOR"
+type NumericLike = number | string | null | undefined
 
 export interface CreateInvoiceRequest {
   saleId: string
@@ -58,15 +59,18 @@ export interface InvoiceResponse {
   compradorRazonSocial: string
   compradorDireccion?: string
   compradorEmail?: string
-  subtotal: number
-  totalIva0: number
-  totalIva12: number
-  totalIva15: number
-  totalIva: number
-  totalDescuento: number
-  totalSinImpuestos: number
-  importeTotal: number
+  subtotal?: NumericLike
+  totalIva0?: NumericLike
+  totalIva12?: NumericLike
+  totalIva15?: NumericLike
+  totalIva?: NumericLike
+  valorIva?: NumericLike
+  totalDescuento?: NumericLike
+  totalSinImpuestos?: NumericLike
+  importeTotal?: NumericLike
   status: InvoiceStatus
+  sriStatus?: string
+  sriErrors?: string
   sriNumeroAutorizacion?: string
   sriFechaAutorizacion?: string
   createdAt: string

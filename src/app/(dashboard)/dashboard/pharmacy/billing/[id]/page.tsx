@@ -4,8 +4,14 @@ import { use, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Card,
   CardContent,
@@ -17,9 +23,9 @@ import { ConfirmButton } from "@/components/shared/confirm-button"
 import {
   useInvoice,
   useSriInvoiceRequest,
-  useSubmitSriResponse,
-  useMarkInvoicePending,
   useCancelInvoice,
+  useSriSubmit,
+  useSriAuthorize,
 } from "@/hooks/use-billing"
 import {
   ArrowLeft,
@@ -29,11 +35,11 @@ import {
   Shield,
   Send,
   XCircle,
-  Clock,
   Copy,
   CheckCircle,
 } from "lucide-react"
 import { toast } from "sonner"
+import type { ApiError } from "@/types/api"
 
 interface InvoiceDetailPageProps {
   params: Promise<{ id: string }>
@@ -45,23 +51,59 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   const { data: sriRequest } = useSriInvoiceRequest(
     invoice?.status === "PENDING" || invoice?.status === "DRAFT" ? id : ""
   )
-  const submitSriMutation = useSubmitSriResponse(id)
-  const markPendingMutation = useMarkInvoicePending(id)
+  const sriSubmitMutation = useSriSubmit()
+  const sriAuthorizeMutation = useSriAuthorize()
   const cancelMutation = useCancelInvoice()
+  const [sriEnvironmentOverride, setSriEnvironmentOverride] = useState<"1" | "2" | null>(null)
+  const sriEnvironment = sriEnvironmentOverride ?? (invoice?.ambiente === "2" ? "2" : "1")
 
-  // SRI response form
-  const [showSriForm, setShowSriForm] = useState(false)
-  const [sriClaveAcceso, setSriClaveAcceso] = useState("")
-  const [sriNumeroAutorizacion, setSriNumeroAutorizacion] = useState("")
-  const [sriFechaAutorizacion, setSriFechaAutorizacion] = useState("")
-  const [sriAmbiente, setSriAmbiente] = useState("1")
-
-  async function handleMarkPending() {
+  async function handleSubmitToSri() {
     try {
-      await markPendingMutation.mutateAsync()
-      toast.success("Factura marcada como pendiente")
-    } catch {
-      toast.error("Error al actualizar factura")
+      const response = await sriSubmitMutation.mutateAsync({
+        invoiceId: id,
+        isProduction: sriEnvironment === "2",
+      })
+      if (response.isReceived) {
+        toast.success(`Factura enviada al SRI: ${response.estado}`)
+      } else {
+        const firstError = response.errors[0]
+        toast.error(
+          firstError?.mensaje
+            ? `${response.estado}: ${firstError.mensaje}`
+            : `SRI respondió: ${response.estado}`
+        )
+      }
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? (error as ApiError).message
+          : null
+      toast.error(message || "Error al enviar factura al SRI")
+    }
+  }
+
+  async function handleCheckAuthorization() {
+    try {
+      const response = await sriAuthorizeMutation.mutateAsync({
+        invoiceId: id,
+        isProduction: sriEnvironment === "2",
+      })
+      if (response.isAuthorized) {
+        toast.success("Factura autorizada por el SRI")
+      } else {
+        const firstError = response.errors[0]
+        toast.error(
+          firstError?.mensaje
+            ? `${response.estado}: ${firstError.mensaje}`
+            : `Estado de autorización: ${response.estado}`
+        )
+      }
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? (error as ApiError).message
+          : null
+      toast.error(message || "Error al consultar autorización SRI")
     }
   }
 
@@ -71,26 +113,6 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
       toast.success("Factura anulada")
     } catch {
       toast.error("Error al anular factura")
-    }
-  }
-
-  async function handleSubmitSri(e: React.FormEvent) {
-    e.preventDefault()
-    if (!sriClaveAcceso || !sriNumeroAutorizacion || !sriFechaAutorizacion) {
-      toast.error("Completa todos los campos de autorización SRI")
-      return
-    }
-    try {
-      await submitSriMutation.mutateAsync({
-        claveAcceso: sriClaveAcceso,
-        numeroAutorizacion: sriNumeroAutorizacion,
-        fechaAutorizacion: sriFechaAutorizacion,
-        ambiente: sriAmbiente,
-      })
-      toast.success("Autorización SRI registrada")
-      setShowSriForm(false)
-    } catch {
-      toast.error("Error al registrar autorización SRI")
     }
   }
 
@@ -131,9 +153,9 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
     )
   }
 
-  const canMarkPending = invoice.status === "DRAFT"
-  const canSubmitSri =
-    invoice.status === "PENDING" || invoice.status === "DRAFT"
+  const canSubmitSri = invoice.status === "DRAFT"
+  const canAuthorizeSri =
+    invoice.status === "PENDING" && Boolean(invoice.claveAcceso)
   const canCancel =
     invoice.status !== "CANCELLED" && invoice.status !== "AUTHORIZED"
 
@@ -164,19 +186,6 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          {canMarkPending && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleMarkPending}
-              disabled={markPendingMutation.isPending}
-            >
-              <Clock className="mr-1 h-4 w-4" />
-              {markPendingMutation.isPending
-                ? "Actualizando..."
-                : "Marcar pendiente"}
-            </Button>
-          )}
           {canCancel && (
             <ConfirmButton
               variant="destructive"
@@ -332,90 +341,67 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
                 </div>
               )}
 
-              {/* Submit SRI response */}
-              {canSubmitSri && !showSriForm && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSriForm(true)}
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  Registrar autorización SRI
-                </Button>
-              )}
-
-              {showSriForm && (
-                <form
-                  onSubmit={handleSubmitSri}
-                  className="rounded-lg border bg-muted/30 p-4 space-y-4"
-                >
-                  <h4 className="text-sm font-semibold">
-                    Registrar respuesta del SRI
-                  </h4>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Clave de acceso *</Label>
-                      <Input
-                        value={sriClaveAcceso}
-                        onChange={(e) => setSriClaveAcceso(e.target.value)}
-                        placeholder="49 dígitos"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">N° Autorización *</Label>
-                      <Input
-                        value={sriNumeroAutorizacion}
-                        onChange={(e) =>
-                          setSriNumeroAutorizacion(e.target.value)
-                        }
-                        placeholder="Número de autorización"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Fecha autorización *</Label>
-                      <Input
-                        type="datetime-local"
-                        value={sriFechaAutorizacion}
-                        onChange={(e) =>
-                          setSriFechaAutorizacion(e.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Ambiente</Label>
-                      <Input
-                        value={sriAmbiente}
-                        onChange={(e) => setSriAmbiente(e.target.value)}
-                        placeholder="1 = Pruebas, 2 = Producción"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
+              <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-[minmax(0,220px)_1fr] sm:items-end">
+                <div className="space-y-1">
+                  <Label className="text-xs" htmlFor="sri-environment">
+                    Ambiente de envío
+                  </Label>
+                  <Select
+                    value={sriEnvironment}
+                    onValueChange={(value) =>
+                      setSriEnvironmentOverride((value as "1" | "2") ?? "1")
+                    }
+                    items={{ "1": "Pruebas", "2": "Producción" }}
+                  >
+                    <SelectTrigger id="sri-environment">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Pruebas</SelectItem>
+                      <SelectItem value="2">Producción</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {canSubmitSri && (
                     <Button
-                      type="button"
+                      onClick={handleSubmitToSri}
+                      disabled={sriSubmitMutation.isPending || sriAuthorizeMutation.isPending}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      {sriSubmitMutation.isPending ? "Enviando..." : "Enviar al SRI"}
+                    </Button>
+                  )}
+                  {canAuthorizeSri && (
+                    <Button
                       variant="outline"
-                      size="sm"
-                      onClick={() => setShowSriForm(false)}
+                      onClick={handleCheckAuthorization}
+                      disabled={sriAuthorizeMutation.isPending || sriSubmitMutation.isPending}
                     >
-                      Cancelar
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      {sriAuthorizeMutation.isPending
+                        ? "Consultando..."
+                        : "Consultar autorización"}
                     </Button>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      disabled={submitSriMutation.isPending}
-                    >
-                      <Send className="mr-1 h-3 w-3" />
-                      {submitSriMutation.isPending
-                        ? "Enviando..."
-                        : "Registrar autorización"}
-                    </Button>
-                  </div>
-                </form>
+                  )}
+                </div>
+              </div>
+
+              {invoice.sriStatus && (
+                <p className="text-sm text-muted-foreground">
+                  Último estado SRI: <span className="font-medium">{invoice.sriStatus}</span>
+                </p>
               )}
 
-              {!canSubmitSri && (
+              {invoice.sriErrors && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                  {invoice.sriErrors}
+                </div>
+              )}
+
+              {!canSubmitSri && !canAuthorizeSri && (
                 <p className="text-sm text-muted-foreground">
-                  La factura está {invoice.statusLabel.toLowerCase()} y no puede
-                  ser enviada al SRI.
+                  La factura está {invoice.statusLabel.toLowerCase()} y no requiere más acciones SRI.
                 </p>
               )}
             </>

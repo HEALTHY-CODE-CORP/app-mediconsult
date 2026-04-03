@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -40,9 +40,26 @@ import {
 import type { InvoiceStatus } from "@/types/billing.model"
 import {
   INVOICE_STATUS_LABELS,
+  type Invoice,
 } from "@/adapters/billing.adapter"
+import type { ApiError } from "@/types/api"
 
 type FilterMode = "all" | "status" | "dateRange"
+
+function coalesceInvoices(serverData: Invoice[] | undefined, fallback: Invoice[]): Invoice[] {
+  if (!serverData) return fallback
+  if (serverData.length > 0) return serverData
+  return fallback.length > 0 ? fallback : serverData
+}
+
+function getQueryErrorMessage(error: unknown): string {
+  if (!error) return "No fue posible cargar facturas."
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const apiError = error as ApiError
+    return apiError.message || "No fue posible cargar facturas."
+  }
+  return "No fue posible cargar facturas."
+}
 
 export default function BillingPage() {
   const [pharmacyId, setPharmacyId] = useState("")
@@ -77,6 +94,41 @@ export default function BillingPage() {
     endDate
   )
 
+  const orgPharmacyInvoices = useMemo(
+    () =>
+      (orgQuery.data ?? []).filter((inv) => inv.invoiceType === "PHARMACY_SALE"),
+    [orgQuery.data]
+  )
+
+  const orgSelectedPharmacyInvoices = useMemo(
+    () =>
+      orgPharmacyInvoices.filter((inv) => inv.pharmacyId === pharmacyId),
+    [orgPharmacyInvoices, pharmacyId]
+  )
+
+  const orgSelectedPharmacyByStatus = useMemo(
+    () =>
+      orgSelectedPharmacyInvoices.filter((inv) =>
+        statusFilter ? inv.status === statusFilter : true
+      ),
+    [orgSelectedPharmacyInvoices, statusFilter]
+  )
+
+  const orgSelectedPharmacyByDate = useMemo(
+    () =>
+      orgSelectedPharmacyInvoices.filter((inv) => {
+        const createdDate = inv.createdAt?.slice(0, 10)
+        return Boolean(
+          createdDate &&
+            startDate &&
+            endDate &&
+            createdDate >= startDate &&
+            createdDate <= endDate
+        )
+      }),
+    [orgSelectedPharmacyInvoices, startDate, endDate]
+  )
+
   // When no pharmacy selected, always use org-level data
   const isLoading = pharmacyId
     ? shouldQueryAll
@@ -89,14 +141,49 @@ export default function BillingPage() {
     : orgQuery.isLoading
 
   const invoices = !pharmacyId
-    ? orgQuery.data ?? []
+    ? orgPharmacyInvoices
     : shouldQueryStatus
-      ? statusQuery.data ?? []
+      ? coalesceInvoices(statusQuery.data, orgSelectedPharmacyByStatus)
       : shouldQueryDate
-        ? dateQuery.data ?? []
+        ? coalesceInvoices(dateQuery.data, orgSelectedPharmacyByDate)
         : shouldQueryAll
-          ? pharmacyQuery.data ?? []
+          ? coalesceInvoices(pharmacyQuery.data, orgSelectedPharmacyInvoices)
           : []
+  const rawQueryError = !pharmacyId
+    ? orgQuery.error
+    : shouldQueryAll
+      ? pharmacyQuery.error
+      : shouldQueryStatus
+        ? statusQuery.error
+        : shouldQueryDate
+          ? dateQuery.error
+          : null
+  const hasFallbackForCurrentCriteria = !pharmacyId
+    ? false
+    : shouldQueryStatus
+      ? orgSelectedPharmacyByStatus.length > 0
+      : shouldQueryDate
+        ? orgSelectedPharmacyByDate.length > 0
+        : shouldQueryAll
+          ? orgSelectedPharmacyInvoices.length > 0
+          : false
+  const serverRowsForCurrentCriteria = !pharmacyId
+    ? orgPharmacyInvoices.length
+    : shouldQueryStatus
+      ? (statusQuery.data?.length ?? 0)
+      : shouldQueryDate
+        ? (dateQuery.data?.length ?? 0)
+        : shouldQueryAll
+          ? (pharmacyQuery.data?.length ?? 0)
+          : 0
+  const isActiveQueryError = Boolean(rawQueryError)
+  const shouldSuppressQueryError = Boolean(
+    pharmacyId &&
+      hasFallbackForCurrentCriteria &&
+      (isActiveQueryError || serverRowsForCurrentCriteria === 0)
+  )
+  const queryError = shouldSuppressQueryError ? null : rawQueryError
+  const queryErrorMessage = getQueryErrorMessage(queryError)
   const incompleteFilterMessage =
     filterMode === "status"
       ? "Selecciona un estado para consultar facturas."
@@ -121,6 +208,13 @@ export default function BillingPage() {
           inv.compradorIdentificacion.includes(search)
       )
     : invoices
+  const shouldSuggestAllPharmacies = Boolean(
+    pharmacyId &&
+      !isLoading &&
+      !queryError &&
+      filtered.length === 0 &&
+      orgPharmacyInvoices.length > 0
+  )
 
   return (
     <div className="space-y-6">
@@ -290,23 +384,40 @@ export default function BillingPage() {
       </Card>
 
       {/* Summary */}
-      {!isLoading && !isFilterIncomplete && (
+      {!isLoading && !isFilterIncomplete && !queryError && (
         <p className="text-sm text-muted-foreground">
           {filtered.length} de {invoices.length} factura{invoices.length !== 1 ? "s" : ""}
         </p>
       )}
 
+      {shouldSuggestAllPharmacies && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+          <span>No hay facturas para la farmacia seleccionada.</span>
+          <Button type="button" variant="link" className="h-auto p-0" onClick={() => setPharmacyId("")}>
+            Ver todas las farmacias
+          </Button>
+        </div>
+      )}
+
       {/* Invoice list */}
       <DataTable
         isLoading={isLoading}
-        isEmpty={isFilterIncomplete || filtered.length === 0}
+        isEmpty={Boolean(queryError) || isFilterIncomplete || filtered.length === 0}
         emptyIcon={<FileText className="h-8 w-8 text-muted-foreground" />}
         emptyMessage={
-          isFilterIncomplete
+          queryError
+            ? "No se pudo cargar facturas"
+            : isFilterIncomplete
             ? "Falta completar filtros"
             : "No hay facturas para mostrar"
         }
-        emptyDescription={isFilterIncomplete ? incompleteFilterMessage : undefined}
+        emptyDescription={
+          queryError
+            ? queryErrorMessage
+            : isFilterIncomplete
+              ? incompleteFilterMessage
+              : undefined
+        }
       >
         <Table>
           <TableHeader>
