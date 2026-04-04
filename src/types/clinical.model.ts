@@ -153,3 +153,75 @@ export interface ReferralResponse {
   status: ReferralStatus
   createdAt: string
 }
+
+export type MedicalCertificateStatus = "DRAFT" | "ISSUED" | "VOID"
+
+export interface MedicalCertificateTemplateResponse {
+  id: string
+  name: string
+  description?: string
+  contentTemplate: string
+  isSystem: boolean
+}
+
+export interface CreateMedicalCertificateRequest {
+  templateId?: string
+  title?: string
+  certificateDate?: string
+  restDays?: number
+  restStartDate?: string
+  restEndDate?: string
+  diagnosisSummary?: string
+  purpose?: string
+  content?: string
+}
+
+export interface UpdateMedicalCertificateRequest {
+  title?: string
+  certificateDate?: string
+  restDays?: number
+  restStartDate?: string
+  restEndDate?: string
+  diagnosisSummary?: string
+  purpose?: string
+  content?: string
+}
+
+export interface VoidMedicalCertificateRequest {
+  reason: string
+}
+
+export interface MedicalCertificateResponse {
+  id: string
+  consultationId: string
+  patientId: string
+  patientName: string
+  patientIdType: string
+  patientIdNumber: string
+  doctorId: string
+  doctorName: string
+  clinicId?: string
+  clinicName?: string
+  templateId?: string
+  templateName?: string
+  status: MedicalCertificateStatus
+  title: string
+  certificateDate: string
+  restDays: number
+  restStartDate?: string
+  restEndDate?: string
+  diagnosisSummary?: string
+  purpose?: string
+  content: string
+  issuedAt?: string
+  issuedById?: string
+  issuedByName?: string
+  voidedAt?: string
+  voidedById?: string
+  voidedByName?: string
+  voidReason?: string
+  createdById: string
+  createdByName: string
+  createdAt: string
+  updatedAt: string
+}

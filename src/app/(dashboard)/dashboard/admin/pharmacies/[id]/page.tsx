@@ -200,6 +200,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
             <InfoRow label="RUC" value={pharmacy.billingRuc} />
             <InfoRow label="Razón social" value={pharmacy.billingLegalName} />
             <InfoRow label="Nombre comercial" value={pharmacy.billingCommercialName} />
+            <InfoRow label="Ambiente SRI" value={pharmacy.sriEnvironmentLabel} />
             <InfoRow label="Código establecimiento" value={pharmacy.billingEstablishmentCode} />
             <InfoRow label="Punto de emisión" value={pharmacy.billingEmissionPointCode} />
             <InfoRow label="Dirección matriz" value={pharmacy.billingMatrixAddress} />

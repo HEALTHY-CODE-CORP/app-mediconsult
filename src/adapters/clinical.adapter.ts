@@ -4,9 +4,12 @@ import type {
   ConsultationResponse,
   EvolutionNoteResponse,
   ReferralResponse,
+  MedicalCertificateResponse,
+  MedicalCertificateTemplateResponse,
   ConsultationStatus,
   ReferralStatus,
   BmiCategory,
+  MedicalCertificateStatus,
 } from "@/types/clinical.model"
 
 // ─── Label maps ──────────────────────────────────────────────────────
@@ -35,6 +38,18 @@ export const REFERRAL_STATUS_COLORS: Record<ReferralStatus, string> = {
   SENT: "bg-blue-100 text-blue-800",
   ACCEPTED: "bg-green-100 text-green-800",
   REJECTED: "bg-red-100 text-red-800",
+}
+
+export const MEDICAL_CERTIFICATE_STATUS_LABELS: Record<MedicalCertificateStatus, string> = {
+  DRAFT: "Borrador",
+  ISSUED: "Emitido",
+  VOID: "Anulado",
+}
+
+export const MEDICAL_CERTIFICATE_STATUS_COLORS: Record<MedicalCertificateStatus, string> = {
+  DRAFT: "bg-slate-100 text-slate-800",
+  ISSUED: "bg-green-100 text-green-800",
+  VOID: "bg-red-100 text-red-800",
 }
 
 export const BMI_CATEGORY_LABELS: Record<BmiCategory, string> = {
@@ -149,6 +164,57 @@ export interface Referral {
   statusColor: string
   createdAt: string
   createdAtFormatted: string
+}
+
+export interface MedicalCertificateTemplate {
+  id: string
+  name: string
+  description: string | null
+  contentTemplate: string
+  isSystem: boolean
+}
+
+export interface MedicalCertificate {
+  id: string
+  consultationId: string
+  patientId: string
+  patientName: string
+  patientIdType: string
+  patientIdNumber: string
+  doctorId: string
+  doctorName: string
+  clinicId: string | null
+  clinicName: string | null
+  templateId: string | null
+  templateName: string | null
+  status: MedicalCertificateStatus
+  statusLabel: string
+  statusColor: string
+  title: string
+  certificateDate: string
+  certificateDateFormatted: string
+  restDays: number
+  restStartDate: string | null
+  restStartDateFormatted: string | null
+  restEndDate: string | null
+  restEndDateFormatted: string | null
+  diagnosisSummary: string | null
+  purpose: string | null
+  content: string
+  issuedAt: string | null
+  issuedAtFormatted: string | null
+  issuedById: string | null
+  issuedByName: string | null
+  voidedAt: string | null
+  voidedAtFormatted: string | null
+  voidedById: string | null
+  voidedByName: string | null
+  voidReason: string | null
+  createdById: string
+  createdByName: string
+  createdAt: string
+  createdAtFormatted: string
+  updatedAt: string
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -310,4 +376,71 @@ export function toReferral(raw: ReferralResponse): Referral {
 
 export function toReferralList(raw: ReferralResponse[]): Referral[] {
   return raw.map(toReferral)
+}
+
+export function toMedicalCertificateTemplate(
+  raw: MedicalCertificateTemplateResponse
+): MedicalCertificateTemplate {
+  return {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description ?? null,
+    contentTemplate: raw.contentTemplate,
+    isSystem: raw.isSystem,
+  }
+}
+
+export function toMedicalCertificateTemplateList(
+  raw: MedicalCertificateTemplateResponse[]
+): MedicalCertificateTemplate[] {
+  return raw.map(toMedicalCertificateTemplate)
+}
+
+export function toMedicalCertificate(raw: MedicalCertificateResponse): MedicalCertificate {
+  return {
+    id: raw.id,
+    consultationId: raw.consultationId,
+    patientId: raw.patientId,
+    patientName: raw.patientName,
+    patientIdType: raw.patientIdType,
+    patientIdNumber: raw.patientIdNumber,
+    doctorId: raw.doctorId,
+    doctorName: raw.doctorName,
+    clinicId: raw.clinicId ?? null,
+    clinicName: raw.clinicName ?? null,
+    templateId: raw.templateId ?? null,
+    templateName: raw.templateName ?? null,
+    status: raw.status,
+    statusLabel: MEDICAL_CERTIFICATE_STATUS_LABELS[raw.status] ?? raw.status,
+    statusColor: MEDICAL_CERTIFICATE_STATUS_COLORS[raw.status] ?? "",
+    title: raw.title,
+    certificateDate: raw.certificateDate,
+    certificateDateFormatted: formatDate(raw.certificateDate),
+    restDays: raw.restDays,
+    restStartDate: raw.restStartDate ?? null,
+    restStartDateFormatted: raw.restStartDate ? formatDate(raw.restStartDate) : null,
+    restEndDate: raw.restEndDate ?? null,
+    restEndDateFormatted: raw.restEndDate ? formatDate(raw.restEndDate) : null,
+    diagnosisSummary: raw.diagnosisSummary ?? null,
+    purpose: raw.purpose ?? null,
+    content: raw.content,
+    issuedAt: raw.issuedAt ?? null,
+    issuedAtFormatted: raw.issuedAt ? formatDateTime(raw.issuedAt) : null,
+    issuedById: raw.issuedById ?? null,
+    issuedByName: raw.issuedByName ?? null,
+    voidedAt: raw.voidedAt ?? null,
+    voidedAtFormatted: raw.voidedAt ? formatDateTime(raw.voidedAt) : null,
+    voidedById: raw.voidedById ?? null,
+    voidedByName: raw.voidedByName ?? null,
+    voidReason: raw.voidReason ?? null,
+    createdById: raw.createdById,
+    createdByName: raw.createdByName,
+    createdAt: raw.createdAt,
+    createdAtFormatted: formatDateTime(raw.createdAt),
+    updatedAt: raw.updatedAt,
+  }
+}
+
+export function toMedicalCertificateList(raw: MedicalCertificateResponse[]): MedicalCertificate[] {
+  return raw.map(toMedicalCertificate)
 }

@@ -39,6 +39,7 @@ type FormOverrides = {
   firstName?: string
   lastName?: string
   phone?: string
+  consultationPrice?: string
 }
 
 export default function EditUserPage({ params }: EditUserPageProps) {
@@ -63,12 +64,16 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     if (!user) return false
     return user.roles.some((role) => !ASSIGNABLE_ROLES.includes(role as Role))
   }, [user])
+  const canConfigureDoctorPrice = selectedRoles.includes("DOCTOR")
 
   const formData = {
     firstName: formOverrides.firstName ?? user?.firstName ?? "",
     lastName: formOverrides.lastName ?? user?.lastName ?? "",
     email: formOverrides.email ?? user?.email ?? "",
     phone: formOverrides.phone ?? user?.phone ?? "",
+    consultationPrice:
+      formOverrides.consultationPrice ??
+      (user?.consultationPrice != null ? user.consultationPrice.toString() : ""),
   }
 
   function updateField(key: keyof FormOverrides, value: string) {
@@ -110,6 +115,12 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     if (selectedRoles.length === 0) {
       newErrors.roles = "Selecciona al menos un rol"
     }
+    if (
+      formData.consultationPrice.trim() &&
+      !/^\d+(\.\d{1,2})?$/.test(formData.consultationPrice.trim())
+    ) {
+      newErrors.consultationPrice = "Precio inválido (usa hasta 2 decimales)"
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -124,6 +135,9 @@ export default function EditUserPage({ params }: EditUserPageProps) {
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim() || undefined,
+        consultationPrice: canConfigureDoctorPrice && formData.consultationPrice.trim()
+          ? Number(formData.consultationPrice.trim())
+          : undefined,
         roles: selectedRoles,
       })
       toast.success("Usuario actualizado")
@@ -225,6 +239,29 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                 placeholder="0999999999"
               />
             </div>
+            {canConfigureDoctorPrice && (
+              <div className="col-span-full space-y-2">
+                <Label htmlFor="edit-user-consultation-price">
+                  Precio de consulta del médico
+                </Label>
+                <Input
+                  id="edit-user-consultation-price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={formData.consultationPrice}
+                  onChange={(e) => updateField("consultationPrice", e.target.value)}
+                  placeholder="Ej: 25.00"
+                />
+                {errors.consultationPrice && (
+                  <p className="text-xs text-destructive">{errors.consultationPrice}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Precio por defecto para facturas de consulta emitidas por este médico.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

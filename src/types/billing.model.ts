@@ -23,6 +23,7 @@ export interface CreateConsultationInvoiceRequest {
   compradorDireccion?: string
   compradorEmail?: string
   compradorTelefono?: string
+  consultationPrice?: number
   ambiente?: string
   formaPago?: string
 }

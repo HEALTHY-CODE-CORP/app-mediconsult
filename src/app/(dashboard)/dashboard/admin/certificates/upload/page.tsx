@@ -26,6 +26,7 @@ import { useUploadCertificate } from "@/hooks/use-certificates"
 import { useUsers } from "@/hooks/use-users"
 import { usePharmacies, useClinics } from "@/hooks/use-organizations"
 import type { OwnerType } from "@/types/certificate.model"
+import type { ApiError } from "@/types/api"
 
 const MAX_P12_FILE_SIZE_BYTES = 10 * 1024 * 1024
 const ALLOWED_CERT_EXTENSIONS = [".p12", ".pfx"] as const
@@ -102,6 +103,16 @@ export default function UploadCertificatePage() {
         ? "No hay farmacias disponibles"
         : "No hay clínicas disponibles"
 
+  function getApiErrorMessage(error: unknown): string | null {
+    if (error && typeof error === "object" && "message" in error) {
+      const apiError = error as ApiError
+      if (typeof apiError.message === "string" && apiError.message.trim().length > 0) {
+        return apiError.message
+      }
+    }
+    return null
+  }
+
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
     if (!ownerId) {
@@ -146,8 +157,8 @@ export default function UploadCertificatePage() {
       toast.success("Certificado subido exitosamente")
       const detailHref = `/dashboard/admin/certificates/${result.id}`
       router.push(`${detailHref}?back=${encodeURIComponent(backHref)}`)
-    } catch {
-      toast.error("Error al subir el certificado. Verifica la contraseña del P12.")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) ?? "Error al subir el certificado.")
     }
   }
 

@@ -29,6 +29,10 @@ export interface User {
   billingMatrixAddress: string | null
   billingSpecialTaxpayerCode: string | null
   billingAccountingRequired: boolean
+  sriEnvironment: "1" | "2"
+  sriEnvironmentLabel: string
+  consultationPrice: number | null
+  consultationPriceFormatted: string | null
   roles: Role[]
   roleLabels: string[]
   isActive: boolean
@@ -41,6 +45,7 @@ export interface User {
 
 export function toUser(raw: UserResponse): User {
   const roles = raw.roles as Role[]
+  const sriEnvironment = (raw.sriEnvironment === "2" ? "2" : "1") as "1" | "2"
   return {
     id: raw.id,
     organizationId: raw.organizationId,
@@ -57,6 +62,11 @@ export function toUser(raw: UserResponse): User {
     billingMatrixAddress: raw.billingMatrixAddress ?? null,
     billingSpecialTaxpayerCode: raw.billingSpecialTaxpayerCode ?? null,
     billingAccountingRequired: raw.billingAccountingRequired ?? false,
+    sriEnvironment,
+    sriEnvironmentLabel: sriEnvironment === "2" ? "Producción" : "Pruebas",
+    consultationPrice: raw.consultationPrice ?? null,
+    consultationPriceFormatted:
+      raw.consultationPrice != null ? `$${raw.consultationPrice.toFixed(2)}` : null,
     roles,
     roleLabels: roles.map((r) => ROLE_LABELS[r] ?? r),
     isActive: raw.isActive,

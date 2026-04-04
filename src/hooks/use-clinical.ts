@@ -14,6 +14,11 @@ import type {
   ReferralResponse,
   CreateReferralRequest,
   ReferralStatus,
+  MedicalCertificateResponse,
+  MedicalCertificateTemplateResponse,
+  CreateMedicalCertificateRequest,
+  UpdateMedicalCertificateRequest,
+  VoidMedicalCertificateRequest,
 } from "@/types/clinical.model"
 import {
   toMedicalRecord,
@@ -26,6 +31,9 @@ import {
   toEvolutionNoteList,
   toReferral,
   toReferralList,
+  toMedicalCertificate,
+  toMedicalCertificateList,
+  toMedicalCertificateTemplateList,
 } from "@/adapters/clinical.adapter"
 
 const CLINICAL_KEY = ["clinical"]
@@ -366,5 +374,114 @@ export function useUpdateReferralStatus() {
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "referrals"] }),
+  })
+}
+
+// ─── Medical Certificates ────────────────────────────────────────────
+
+export function useMedicalCertificateTemplates() {
+  return useQuery({
+    queryKey: [...CLINICAL_KEY, "medical-certificate-templates"],
+    queryFn: async () => {
+      const { data } = await api.get<MedicalCertificateTemplateResponse[]>(
+        "/clinical/medical-certificate-templates"
+      )
+      return toMedicalCertificateTemplateList(data)
+    },
+  })
+}
+
+export function useConsultationMedicalCertificates(consultationId: string) {
+  return useQuery({
+    queryKey: [...CLINICAL_KEY, "medical-certificates", "consultation", consultationId],
+    queryFn: async () => {
+      const { data } = await api.get<MedicalCertificateResponse[]>(
+        `/clinical/consultations/${consultationId}/medical-certificates`
+      )
+      return toMedicalCertificateList(data)
+    },
+    enabled: !!consultationId,
+  })
+}
+
+export function useMedicalCertificate(id: string) {
+  return useQuery({
+    queryKey: [...CLINICAL_KEY, "medical-certificates", id],
+    queryFn: async () => {
+      const { data } = await api.get<MedicalCertificateResponse>(
+        `/clinical/medical-certificates/${id}`
+      )
+      return toMedicalCertificate(data)
+    },
+    enabled: !!id,
+  })
+}
+
+export function useCreateMedicalCertificate(consultationId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: CreateMedicalCertificateRequest) => {
+      const { data } = await api.post<MedicalCertificateResponse>(
+        `/clinical/consultations/${consultationId}/medical-certificates`,
+        payload
+      )
+      return toMedicalCertificate(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [...CLINICAL_KEY, "medical-certificates", "consultation", consultationId],
+      })
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates"] })
+    },
+  })
+}
+
+export function useUpdateMedicalCertificate(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: UpdateMedicalCertificateRequest) => {
+      const { data } = await api.put<MedicalCertificateResponse>(
+        `/clinical/medical-certificates/${id}`,
+        payload
+      )
+      return toMedicalCertificate(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates", id] })
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates"] })
+    },
+  })
+}
+
+export function useIssueMedicalCertificate(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.patch<MedicalCertificateResponse>(
+        `/clinical/medical-certificates/${id}/issue`
+      )
+      return toMedicalCertificate(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates", id] })
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates"] })
+    },
+  })
+}
+
+export function useVoidMedicalCertificate(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: VoidMedicalCertificateRequest) => {
+      const { data } = await api.patch<MedicalCertificateResponse>(
+        `/clinical/medical-certificates/${id}/void`,
+        payload
+      )
+      return toMedicalCertificate(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates", id] })
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates"] })
+    },
   })
 }

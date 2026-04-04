@@ -16,7 +16,11 @@ import { SummaryTile } from "@/components/shared/summary-tile"
 import { EvolutionNotesCard } from "@/components/clinical/evolution-notes-card"
 import { ReferralsCard } from "@/components/clinical/referrals-card"
 import { PrescriptionCard } from "@/components/clinical/prescription-card"
-import { useConsultation, useCompleteConsultation } from "@/hooks/use-clinical"
+import {
+  useConsultation,
+  useCompleteConsultation,
+  useConsultationMedicalCertificates,
+} from "@/hooks/use-clinical"
 import { useConsultationInvoice } from "@/hooks/use-billing"
 import {
   ArrowLeft,
@@ -45,6 +49,10 @@ export default function ConsultationDetailPage({
   const { id } = use(params)
   const { data: consultation, isLoading } = useConsultation(id)
   const { data: existingInvoice } = useConsultationInvoice(id)
+  const {
+    data: medicalCertificates = [],
+    isLoading: loadingMedicalCertificates,
+  } = useConsultationMedicalCertificates(id)
   const completeMutation = useCompleteConsultation()
 
   async function handleComplete() {
@@ -168,6 +176,20 @@ export default function ConsultationDetailPage({
               Ver factura
             </Button>
           )}
+          {consultation.status !== "CANCELLED" && (
+            <Button
+              variant="outline"
+              size="sm"
+              render={
+                <Link
+                  href={`/dashboard/clinical/consultations/${id}/certificates/new`}
+                />
+              }
+            >
+              <FileText className="mr-1 h-4 w-4" />
+              Generar certificado
+            </Button>
+          )}
         </div>
       </div>
 
@@ -195,6 +217,72 @@ export default function ConsultationDetailPage({
               value={treatmentStatus}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70">
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Certificados medicos
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Documentos emitidos para esta consulta.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            render={
+              <Link href={`/dashboard/clinical/consultations/${id}/certificates/new`} />
+            }
+          >
+            <FileText className="mr-1 h-4 w-4" />
+            Nuevo
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loadingMedicalCertificates ? (
+            <div className="space-y-2">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+            </div>
+          ) : medicalCertificates.length === 0 ? (
+            <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+              No hay certificados medicos para esta consulta.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {medicalCertificates.map((certificate) => (
+                <div
+                  key={certificate.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                >
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{certificate.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {certificate.certificateDateFormatted} · {certificate.patientName}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={certificate.statusColor}>
+                      {certificate.statusLabel}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      render={
+                        <Link href={`/dashboard/clinical/certificates/${certificate.id}`} />
+                      }
+                    >
+                      Ver detalle
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

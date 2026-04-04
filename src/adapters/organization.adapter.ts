@@ -47,6 +47,8 @@ export interface Clinic {
   billingMatrixAddress: string | null
   billingSpecialTaxpayerCode: string | null
   billingAccountingRequired: boolean
+  sriEnvironment: "1" | "2"
+  sriEnvironmentLabel: string
   consultationPrice: number
   consultationPriceFormatted: string
   isActive: boolean
@@ -69,6 +71,8 @@ export interface Pharmacy {
   billingMatrixAddress: string | null
   billingSpecialTaxpayerCode: string | null
   billingAccountingRequired: boolean
+  sriEnvironment: "1" | "2"
+  sriEnvironmentLabel: string
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -89,6 +93,11 @@ export interface ClinicPharmacy {
 export const BILLING_CYCLE_LABELS: Record<string, string> = {
   MONTHLY: "Mensual",
   ANNUAL: "Anual",
+}
+
+export const SRI_ENVIRONMENT_LABELS: Record<"1" | "2", string> = {
+  "1": "Pruebas",
+  "2": "Producción",
 }
 
 // ─── Transform Functions ─────────────────────────────────────────────
@@ -122,6 +131,7 @@ export function toOrganizationList(rs: OrganizationResponse[]): Organization[] {
 }
 
 export function toClinic(r: ClinicResponse): Clinic {
+  const sriEnvironment = (r.sriEnvironment === "2" ? "2" : "1") as "1" | "2"
   return {
     id: r.id,
     organizationId: r.organizationId,
@@ -137,6 +147,8 @@ export function toClinic(r: ClinicResponse): Clinic {
     billingMatrixAddress: r.billingMatrixAddress ?? null,
     billingSpecialTaxpayerCode: r.billingSpecialTaxpayerCode ?? null,
     billingAccountingRequired: r.billingAccountingRequired ?? false,
+    sriEnvironment,
+    sriEnvironmentLabel: SRI_ENVIRONMENT_LABELS[sriEnvironment],
     consultationPrice: r.consultationPrice,
     consultationPriceFormatted: `$${r.consultationPrice.toFixed(2)}`,
     isActive: r.isActive,
@@ -150,6 +162,7 @@ export function toClinicList(rs: ClinicResponse[]): Clinic[] {
 }
 
 export function toPharmacy(r: PharmacyResponse): Pharmacy {
+  const sriEnvironment = (r.sriEnvironment === "2" ? "2" : "1") as "1" | "2"
   return {
     id: r.id,
     organizationId: r.organizationId,
@@ -165,6 +178,8 @@ export function toPharmacy(r: PharmacyResponse): Pharmacy {
     billingMatrixAddress: r.billingMatrixAddress ?? null,
     billingSpecialTaxpayerCode: r.billingSpecialTaxpayerCode ?? null,
     billingAccountingRequired: r.billingAccountingRequired ?? false,
+    sriEnvironment,
+    sriEnvironmentLabel: SRI_ENVIRONMENT_LABELS[sriEnvironment],
     isActive: r.isActive,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,

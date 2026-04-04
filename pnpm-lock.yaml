@@ -14,6 +14,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.21
         version: 5.90.21(react@19.2.3)
+      '@tinymce/tinymce-react':
+        specifier: ^6.3.0
+        version: 6.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       axios:
         specifier: ^1.13.6
         version: 1.13.6
@@ -754,6 +757,16 @@ packages:
     resolution: {integrity: sha512-0Lu6y5t+tvlTJMTO7oh5NSpJfpg/5D41LlThfepTixPYkJ0sE2Jj0m0f6yYqujBwIXlId87e234+MxG3D3g7kg==}
     peerDependencies:
       react: ^18 || ^19
+
+  '@tinymce/tinymce-react@6.3.0':
+    resolution: {integrity: sha512-E++xnn0XzDzpKr40jno2Kj7umfAE6XfINZULEBBeNjTMvbACWzA6CjiR6V8eTDc9yVmdVhIPqVzV4PqD5TZ/4g==}
+    peerDependencies:
+      react: ^19.0.0 || ^18.0.0 || ^17.0.1 || ^16.7.0
+      react-dom: ^19.0.0 || ^18.0.0 || ^17.0.1 || ^16.7.0
+      tinymce: ^8.0.0 || ^7.0.0 || ^6.0.0 || ^5.5.1
+    peerDependenciesMeta:
+      tinymce:
+        optional: true
 
   '@ts-morph/common@0.27.0':
     resolution: {integrity: sha512-Wf29UqxWDpc+i61k3oIOzcUfQt79PIT9y/MWfAGlrkjg6lBC1hwDECLXPVJAhWjiGbfBCxZd65F/LIZF3+jeJQ==}
@@ -3731,6 +3744,12 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.90.20
       react: 19.2.3
+
+  '@tinymce/tinymce-react@6.3.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      prop-types: 15.8.1
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
   '@ts-morph/common@0.27.0':
     dependencies:

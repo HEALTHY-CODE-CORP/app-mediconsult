@@ -55,6 +55,7 @@ export interface ClinicResponse {
   billingMatrixAddress?: string
   billingSpecialTaxpayerCode?: string
   billingAccountingRequired: boolean
+  sriEnvironment: "1" | "2"
   consultationPrice: number
   isActive: boolean
   createdAt: string
@@ -74,6 +75,7 @@ export interface CreateClinicRequest {
   billingMatrixAddress?: string
   billingSpecialTaxpayerCode?: string
   billingAccountingRequired?: boolean
+  sriEnvironment?: "1" | "2"
   consultationPrice?: number
 }
 
@@ -92,6 +94,7 @@ export interface PharmacyResponse {
   billingMatrixAddress?: string
   billingSpecialTaxpayerCode?: string
   billingAccountingRequired: boolean
+  sriEnvironment: "1" | "2"
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -110,6 +113,7 @@ export interface CreatePharmacyRequest {
   billingMatrixAddress?: string
   billingSpecialTaxpayerCode?: string
   billingAccountingRequired?: boolean
+  sriEnvironment?: "1" | "2"
 }
 
 export interface ClinicPharmacyResponse {

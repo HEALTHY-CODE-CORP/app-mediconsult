@@ -155,6 +155,7 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
             <InfoRow label="Razón social" value={clinic.billingLegalName} />
             <InfoRow label="Nombre comercial" value={clinic.billingCommercialName} />
             <InfoRow label="RUC" value={clinic.billingRuc} />
+            <InfoRow label="Ambiente SRI" value={clinic.sriEnvironmentLabel} />
             <InfoRow label="Establecimiento" value={clinic.billingEstablishmentCode} />
             <InfoRow label="Punto de emisión" value={clinic.billingEmissionPointCode} />
             <InfoRow label="Dirección matriz" value={clinic.billingMatrixAddress} />

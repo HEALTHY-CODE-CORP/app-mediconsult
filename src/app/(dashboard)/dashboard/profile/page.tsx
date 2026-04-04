@@ -14,6 +14,13 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Card,
   CardContent,
   CardDescription,
@@ -33,6 +40,19 @@ const ROLE_LABELS: Record<string, string> = {
   CASHIER: "Cajero",
 }
 
+type BillingDraft = {
+  billingLegalName: string
+  billingCommercialName: string
+  billingRuc: string
+  billingEstablishmentCode: string
+  billingEmissionPointCode: string
+  billingMatrixAddress: string
+  billingSpecialTaxpayerCode: string
+  billingAccountingRequired: boolean
+  sriEnvironment: "1" | "2"
+  consultationPrice: string
+}
+
 export default function ProfilePage() {
   const { data: session } = useSession()
   const { data: profile, isLoading } = useProfile()
@@ -48,18 +68,9 @@ export default function ProfilePage() {
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [billingDraft, setBillingDraft] = useState<{
-    billingLegalName: string
-    billingCommercialName: string
-    billingRuc: string
-    billingEstablishmentCode: string
-    billingEmissionPointCode: string
-    billingMatrixAddress: string
-    billingSpecialTaxpayerCode: string
-    billingAccountingRequired: boolean
-  } | null>(null)
+  const [billingDraft, setBillingDraft] = useState<BillingDraft | null>(null)
 
-  const profileBillingData = useMemo(() => {
+  const profileBillingData = useMemo<BillingDraft>(() => {
     return {
       billingLegalName: profile?.billingLegalName ?? "",
       billingCommercialName: profile?.billingCommercialName ?? "",
@@ -69,6 +80,11 @@ export default function ProfilePage() {
       billingMatrixAddress: profile?.billingMatrixAddress ?? "",
       billingSpecialTaxpayerCode: profile?.billingSpecialTaxpayerCode ?? "",
       billingAccountingRequired: profile?.billingAccountingRequired ?? false,
+      sriEnvironment: profile?.sriEnvironment === "2" ? "2" : "1",
+      consultationPrice:
+        profile?.consultationPrice != null
+          ? profile.consultationPrice.toString()
+          : "",
     }
   }, [profile])
 
@@ -101,9 +117,12 @@ export default function ProfilePage() {
     }
   }
 
-  function updateBillingField(key: keyof typeof billingData, value: string | boolean) {
+  function updateBillingField<K extends keyof BillingDraft>(
+    key: K,
+    value: BillingDraft[K]
+  ) {
     setBillingDraft((prev) => ({
-      ...(prev ?? profileBillingData),
+      ...((prev ?? profileBillingData) as BillingDraft),
       [key]: value,
     }))
   }
@@ -132,6 +151,12 @@ export default function ProfilePage() {
       return
     }
 
+    const trimmedConsultationPrice = billingData.consultationPrice.trim()
+    if (trimmedConsultationPrice && !/^\d+(\.\d{1,2})?$/.test(trimmedConsultationPrice)) {
+      toast.error("El precio de consulta debe ser un número válido (hasta 2 decimales)")
+      return
+    }
+
     try {
       await updateBillingProfileMutation.mutateAsync({
         billingLegalName: billingData.billingLegalName,
@@ -142,6 +167,10 @@ export default function ProfilePage() {
         billingMatrixAddress: billingData.billingMatrixAddress,
         billingSpecialTaxpayerCode: billingData.billingSpecialTaxpayerCode,
         billingAccountingRequired: billingData.billingAccountingRequired,
+        sriEnvironment: billingData.sriEnvironment,
+        consultationPrice: trimmedConsultationPrice
+          ? Number(trimmedConsultationPrice)
+          : undefined,
       })
       setBillingDraft(null)
       toast.success("Perfil de facturación actualizado")
@@ -385,6 +414,50 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSaveBillingProfile} className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="doctor-sri-environment">Ambiente SRI *</Label>
+                <Select
+                  value={billingData.sriEnvironment}
+                  onValueChange={(value) =>
+                    updateBillingField(
+                      "sriEnvironment",
+                      ((value as "1" | "2") ?? "1")
+                    )
+                  }
+                  items={{ "1": "Pruebas", "2": "Producción" }}
+                >
+                  <SelectTrigger id="doctor-sri-environment">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Pruebas</SelectItem>
+                    <SelectItem value="2">Producción</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Se usará automáticamente al enviar facturas de consulta emitidas por el médico.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="doctor-consultation-price">
+                  Precio de consulta del médico
+                </Label>
+                <Input
+                  id="doctor-consultation-price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={billingData.consultationPrice}
+                  onChange={(e) =>
+                    updateBillingField("consultationPrice", e.target.value)
+                  }
+                  placeholder="Ej: 25.00"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Se usa como precio por defecto al facturar consultas del médico.
+                </p>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="billing-legal-name">Razón social</Label>
                 <Input

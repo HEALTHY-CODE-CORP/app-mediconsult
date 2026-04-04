@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Card,
   CardContent,
   CardDescription,
@@ -64,6 +71,8 @@ export function EntityForm({
     billingMatrixAddress: billingSource?.billingMatrixAddress ?? "",
     billingSpecialTaxpayerCode: billingSource?.billingSpecialTaxpayerCode ?? "",
     billingAccountingRequired: billingSource?.billingAccountingRequired ?? false,
+    sriEnvironment:
+      (isPharmacy ? pharmacyEntity?.sriEnvironment : clinicEntity?.sriEnvironment) ?? "1",
   })
 
   function updateField(
@@ -75,6 +84,10 @@ export function EntityForm({
 
   function updateAccountingRequired(value: boolean) {
     setFormData((prev) => ({ ...prev, billingAccountingRequired: value }))
+  }
+
+  function updateSriEnvironment(value: "1" | "2") {
+    setFormData((prev) => ({ ...prev, sriEnvironment: value }))
   }
 
   function toOptional(value: string): string | undefined {
@@ -101,6 +114,7 @@ export function EntityForm({
         billingMatrixAddress: toOptional(formData.billingMatrixAddress),
         billingSpecialTaxpayerCode: toOptional(formData.billingSpecialTaxpayerCode),
         billingAccountingRequired: formData.billingAccountingRequired,
+        sriEnvironment: formData.sriEnvironment as "1" | "2",
         consultationPrice: formData.consultationPrice
           ? Number(formData.consultationPrice)
           : undefined,
@@ -117,6 +131,7 @@ export function EntityForm({
       billingMatrixAddress: toOptional(formData.billingMatrixAddress),
       billingSpecialTaxpayerCode: toOptional(formData.billingSpecialTaxpayerCode),
       billingAccountingRequired: formData.billingAccountingRequired,
+      sriEnvironment: formData.sriEnvironment as "1" | "2",
     } satisfies CreatePharmacyRequest
   }
 
@@ -234,6 +249,29 @@ export function EntityForm({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
+            {(isPharmacy || isClinic) && (
+              <div className="space-y-2">
+                <Label htmlFor="sriEnvironment">Ambiente SRI *</Label>
+                <Select
+                  value={formData.sriEnvironment}
+                  onValueChange={(value) =>
+                    updateSriEnvironment((value as "1" | "2") ?? "1")
+                  }
+                  items={{ "1": "Pruebas", "2": "Producción" }}
+                >
+                  <SelectTrigger id="sriEnvironment">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Pruebas</SelectItem>
+                    <SelectItem value="2">Producción</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Este ambiente se usará automáticamente al enviar facturas al SRI para este emisor.
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="billingLegalName">
                 Razón social{isPharmacy ? " *" : ""}

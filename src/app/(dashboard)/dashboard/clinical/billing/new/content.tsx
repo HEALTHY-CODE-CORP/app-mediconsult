@@ -71,6 +71,7 @@ export function NewConsultationInvoiceContent() {
   }>({})
   const [formaPago, setFormaPago] = useState("01")
   const [issuerType, setIssuerType] = useState<ConsultationIssuerType>("CLINIC")
+  const [consultationPriceOverride, setConsultationPriceOverride] = useState("")
 
   function getApiErrorMessage(error: unknown): string | null {
     const axiosError = error as AxiosError<{ message?: string; error?: string }>
@@ -109,6 +110,16 @@ export function NewConsultationInvoiceContent() {
       return
     }
 
+    const trimmedPrice = consultationPriceOverride.trim()
+    let parsedConsultationPrice: number | undefined
+    if (trimmedPrice.length > 0) {
+      parsedConsultationPrice = Number(trimmedPrice)
+      if (!Number.isFinite(parsedConsultationPrice) || parsedConsultationPrice < 0) {
+        toast.error("El precio de la consulta debe ser un valor numérico mayor o igual a 0")
+        return
+      }
+    }
+
     try {
       const result = await createInvoiceMutation.mutateAsync({
         consultationId,
@@ -119,6 +130,7 @@ export function NewConsultationInvoiceContent() {
         compradorDireccion: compradorDireccion || undefined,
         compradorEmail: compradorEmail || undefined,
         compradorTelefono: compradorTelefono || undefined,
+        consultationPrice: parsedConsultationPrice,
         formaPago,
       })
       toast.success("Factura creada exitosamente")
@@ -408,32 +420,53 @@ export function NewConsultationInvoiceContent() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              Forma de pago
+              Cobro de consulta
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="max-w-sm space-y-2">
-              <Label htmlFor="consultation-invoice-payment-method">
-                Método de pago
-              </Label>
-              <Select
-                value={formaPago}
-                onValueChange={(v) => {
-                  if (v) setFormaPago(v)
-                }}
-                items={{ "01": "Efectivo", "16": "Tarjeta de débito", "19": "Tarjeta de crédito", "20": "Otros / Transferencia" }}
-              >
-                <SelectTrigger id="consultation-invoice-payment-method">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="01">Efectivo</SelectItem>
-                  <SelectItem value="16">Tarjeta de débito</SelectItem>
-                  <SelectItem value="19">Tarjeta de crédito</SelectItem>
-                  <SelectItem value="20">Otros / Transferencia</SelectItem>
-                </SelectContent>
-              </Select>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="consultation-invoice-payment-method">
+                  Método de pago
+                </Label>
+                <Select
+                  value={formaPago}
+                  onValueChange={(v) => {
+                    if (v) setFormaPago(v)
+                  }}
+                  items={{ "01": "Efectivo", "16": "Tarjeta de débito", "19": "Tarjeta de crédito", "20": "Otros / Transferencia" }}
+                >
+                  <SelectTrigger id="consultation-invoice-payment-method">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="01">Efectivo</SelectItem>
+                    <SelectItem value="16">Tarjeta de débito</SelectItem>
+                    <SelectItem value="19">Tarjeta de crédito</SelectItem>
+                    <SelectItem value="20">Otros / Transferencia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="consultation-invoice-custom-price">
+                  Precio de consulta (opcional)
+                </Label>
+                <Input
+                  id="consultation-invoice-custom-price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={consultationPriceOverride}
+                  onChange={(e) => setConsultationPriceOverride(e.target.value)}
+                  placeholder="Dejar vacío para usar precio configurado"
+                />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Si no defines un precio manual, se usa la configuración por defecto: precio del médico y, si no existe, el precio del consultorio.
+            </p>
           </CardContent>
         </Card>
 

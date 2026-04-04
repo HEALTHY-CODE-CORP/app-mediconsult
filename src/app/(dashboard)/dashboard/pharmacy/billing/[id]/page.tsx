@@ -1,17 +1,9 @@
 "use client"
 
-import { use, useState } from "react"
+import { use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Card,
   CardContent,
@@ -54,8 +46,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   const sriSubmitMutation = useSriSubmit()
   const sriAuthorizeMutation = useSriAuthorize()
   const cancelMutation = useCancelInvoice()
-  const [sriEnvironmentOverride, setSriEnvironmentOverride] = useState<"1" | "2" | null>(null)
-  const sriEnvironment = sriEnvironmentOverride ?? (invoice?.ambiente === "2" ? "2" : "1")
+  const sriEnvironment = invoice?.ambiente === "2" ? "2" : "1"
 
   async function handleSubmitToSri() {
     try {
@@ -343,24 +334,13 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
 
               <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-[minmax(0,220px)_1fr] sm:items-end">
                 <div className="space-y-1">
-                  <Label className="text-xs" htmlFor="sri-environment">
-                    Ambiente de envío
-                  </Label>
-                  <Select
-                    value={sriEnvironment}
-                    onValueChange={(value) =>
-                      setSriEnvironmentOverride((value as "1" | "2") ?? "1")
-                    }
-                    items={{ "1": "Pruebas", "2": "Producción" }}
-                  >
-                    <SelectTrigger id="sri-environment">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Pruebas</SelectItem>
-                      <SelectItem value="2">Producción</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <p className="text-xs text-muted-foreground">Ambiente de envío</p>
+                  <p className="text-sm font-medium">
+                    {sriEnvironment === "2" ? "Producción" : "Pruebas"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Configurado desde el perfil de facturación de la farmacia.
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {canSubmitSri && (

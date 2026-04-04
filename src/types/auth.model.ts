@@ -27,6 +27,8 @@ export interface UpdateUserRequest {
   billingMatrixAddress?: string
   billingSpecialTaxpayerCode?: string
   billingAccountingRequired?: boolean
+  sriEnvironment?: "1" | "2"
+  consultationPrice?: number
   roles: string[]
 }
 
@@ -39,6 +41,8 @@ export interface UpdateMyBillingProfileRequest {
   billingMatrixAddress?: string
   billingSpecialTaxpayerCode?: string
   billingAccountingRequired?: boolean
+  sriEnvironment?: "1" | "2"
+  consultationPrice?: number
 }
 
 export interface AuthResponse {
@@ -64,6 +68,8 @@ export interface UserResponse {
   billingMatrixAddress?: string
   billingSpecialTaxpayerCode?: string
   billingAccountingRequired: boolean
+  sriEnvironment: "1" | "2"
+  consultationPrice?: number
   roles: string[]
   isActive: boolean
   createdAt: string

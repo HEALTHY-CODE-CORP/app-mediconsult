@@ -1,8 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -12,7 +15,7 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmButton } from "@/components/shared/confirm-button"
-import { useUser, useToggleUserActive } from "@/hooks/use-users"
+import { useUser, useToggleUserActive, useUpdateUser } from "@/hooks/use-users"
 import { ROLE_LABELS } from "@/adapters/user.adapter"
 import type { Role } from "@/types/auth.model"
 import {
@@ -36,6 +39,14 @@ const ROLE_COLORS: Record<Role, string> = {
   CASHIER: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 }
 
+const ASSIGNABLE_ROLES: Role[] = [
+  "ADMIN",
+  "DOCTOR",
+  "NURSE",
+  "PHARMACIST",
+  "CASHIER",
+]
+
 interface UserDetailPageProps {
   params: Promise<{ id: string }>
 }
@@ -44,6 +55,16 @@ export default function UserDetailPage({ params }: UserDetailPageProps) {
   const { id } = use(params)
   const { data: user, isLoading } = useUser(id)
   const toggleMutation = useToggleUserActive()
+  const updateUserMutation = useUpdateUser(id)
+  const [consultationPriceOverride, setConsultationPriceOverride] = useState<string | null>(null)
+
+  const hasNonEditableRoles = user
+    ? user.roles.some((role) => !ASSIGNABLE_ROLES.includes(role as Role))
+    : false
+  const isDoctor = user?.roles.includes("DOCTOR") ?? false
+  const consultationPriceDraft =
+    consultationPriceOverride ??
+    (user?.consultationPrice != null ? user.consultationPrice.toString() : "")
 
   async function handleToggleActive() {
     if (!user) return
@@ -53,6 +74,44 @@ export default function UserDetailPage({ params }: UserDetailPageProps) {
       toast.success(`Usuario ${action}`)
     } catch {
       toast.error("Error al actualizar estado del usuario")
+    }
+  }
+
+  async function handleSaveConsultationPrice() {
+    if (!user) return
+
+    if (hasNonEditableRoles) {
+      toast.error("No se puede actualizar desde aquí por roles no editables")
+      return
+    }
+
+    const trimmedPrice = consultationPriceDraft.trim()
+    if (trimmedPrice && !/^\d+(\.\d{1,2})?$/.test(trimmedPrice)) {
+      toast.error("Precio inválido (usa hasta 2 decimales)")
+      return
+    }
+
+    const assignableRoles = user.roles.filter((role) =>
+      ASSIGNABLE_ROLES.includes(role as Role)
+    )
+    if (assignableRoles.length === 0) {
+      toast.error("No hay roles editables para este usuario")
+      return
+    }
+
+    try {
+      await updateUserMutation.mutateAsync({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone ?? undefined,
+        roles: assignableRoles,
+        consultationPrice: trimmedPrice ? Number(trimmedPrice) : undefined,
+      })
+      setConsultationPriceOverride(null)
+      toast.success("Precio de consulta actualizado")
+    } catch {
+      toast.error("Error al actualizar precio de consulta")
     }
   }
 
@@ -192,6 +251,47 @@ export default function UserDetailPage({ params }: UserDetailPageProps) {
           </CardContent>
         </Card>
       </div>
+
+      {isDoctor && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuración de consulta del médico</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="max-w-sm space-y-2">
+              <Label htmlFor="user-detail-consultation-price">
+                Precio de consulta (USD)
+              </Label>
+              <Input
+                id="user-detail-consultation-price"
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                value={consultationPriceDraft}
+                onChange={(e) => setConsultationPriceOverride(e.target.value)}
+                placeholder="Ej: 25.00"
+              />
+              <p className="text-xs text-muted-foreground">
+                Precio por defecto al facturar consultas emitidas por este médico.
+              </p>
+            </div>
+            {hasNonEditableRoles && (
+              <p className="text-xs text-amber-700">
+                Este usuario tiene roles no editables; actualiza el precio desde la pantalla de edición.
+              </p>
+            )}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSaveConsultationPrice}
+                disabled={updateUserMutation.isPending || hasNonEditableRoles}
+              >
+                {updateUserMutation.isPending ? "Guardando..." : "Guardar precio"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

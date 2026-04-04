@@ -28,6 +28,7 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { toast } from "sonner"
+import type { ApiError } from "@/types/api"
 
 const MAX_P12_FILE_SIZE_BYTES = 10 * 1024 * 1024
 const ALLOWED_CERT_EXTENSIONS = [".p12", ".pfx"] as const
@@ -64,6 +65,16 @@ export default function MyCertificatePage() {
   const activeCert = certificates.find((c) => c.isActive && !c.isExpired)
   const hasAnyCert = certificates.length > 0
 
+  function getApiErrorMessage(error: unknown): string | null {
+    if (error && typeof error === "object" && "message" in error) {
+      const apiError = error as ApiError
+      if (typeof apiError.message === "string" && apiError.message.trim().length > 0) {
+        return apiError.message
+      }
+    }
+    return null
+  }
+
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
     if (!alias.trim()) newErrors.alias = "El alias es requerido"
@@ -99,8 +110,8 @@ export default function MyCertificatePage() {
       setPassword("")
       setFile(null)
       setShowUpload(false)
-    } catch {
-      toast.error("Error al subir el certificado. Verifica la contraseña del P12.")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) ?? "Error al subir el certificado.")
     }
   }
 
