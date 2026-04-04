@@ -16,9 +16,12 @@ import type {
   ReferralStatus,
   MedicalCertificateResponse,
   MedicalCertificateTemplateResponse,
+  CreateMedicalCertificateTemplateRequest,
+  UpdateMedicalCertificateTemplateRequest,
   CreateMedicalCertificateRequest,
   UpdateMedicalCertificateRequest,
   VoidMedicalCertificateRequest,
+  SignMedicalCertificateRequest,
 } from "@/types/clinical.model"
 import {
   toMedicalRecord,
@@ -33,6 +36,7 @@ import {
   toReferralList,
   toMedicalCertificate,
   toMedicalCertificateList,
+  toMedicalCertificateTemplate,
   toMedicalCertificateTemplateList,
 } from "@/adapters/clinical.adapter"
 
@@ -391,6 +395,86 @@ export function useMedicalCertificateTemplates() {
   })
 }
 
+export function useManageMedicalCertificateTemplates() {
+  return useQuery({
+    queryKey: [...CLINICAL_KEY, "medical-certificate-templates", "manage"],
+    queryFn: async () => {
+      const { data } = await api.get<MedicalCertificateTemplateResponse[]>(
+        "/clinical/medical-certificate-templates/manage"
+      )
+      return toMedicalCertificateTemplateList(data)
+    },
+  })
+}
+
+export function useCreateMedicalCertificateTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: CreateMedicalCertificateTemplateRequest) => {
+      const { data } = await api.post<MedicalCertificateTemplateResponse>(
+        "/clinical/medical-certificate-templates",
+        payload
+      )
+      return toMedicalCertificateTemplate(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [...CLINICAL_KEY, "medical-certificate-templates", "manage"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: [...CLINICAL_KEY, "medical-certificate-templates"],
+      })
+    },
+  })
+}
+
+export function useUpdateMedicalCertificateTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: UpdateMedicalCertificateTemplateRequest
+    }) => {
+      const { data } = await api.put<MedicalCertificateTemplateResponse>(
+        `/clinical/medical-certificate-templates/${id}`,
+        payload
+      )
+      return toMedicalCertificateTemplate(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [...CLINICAL_KEY, "medical-certificate-templates", "manage"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: [...CLINICAL_KEY, "medical-certificate-templates"],
+      })
+    },
+  })
+}
+
+export function useToggleMedicalCertificateTemplateActive() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.patch<MedicalCertificateTemplateResponse>(
+        `/clinical/medical-certificate-templates/${id}/toggle-active`
+      )
+      return toMedicalCertificateTemplate(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [...CLINICAL_KEY, "medical-certificate-templates", "manage"],
+      })
+      queryClient.invalidateQueries({
+        queryKey: [...CLINICAL_KEY, "medical-certificate-templates"],
+      })
+    },
+  })
+}
+
 export function useConsultationMedicalCertificates(consultationId: string) {
   return useQuery({
     queryKey: [...CLINICAL_KEY, "medical-certificates", "consultation", consultationId],
@@ -459,6 +543,23 @@ export function useIssueMedicalCertificate(id: string) {
     mutationFn: async () => {
       const { data } = await api.patch<MedicalCertificateResponse>(
         `/clinical/medical-certificates/${id}/issue`
+      )
+      return toMedicalCertificate(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates", id] })
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates"] })
+    },
+  })
+}
+
+export function useSignMedicalCertificate(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload?: SignMedicalCertificateRequest) => {
+      const { data } = await api.patch<MedicalCertificateResponse>(
+        `/clinical/medical-certificates/${id}/sign`,
+        payload
       )
       return toMedicalCertificate(data)
     },

@@ -10,6 +10,7 @@ import type {
   ReferralStatus,
   BmiCategory,
   MedicalCertificateStatus,
+  SignaturePlacementValue,
 } from "@/types/clinical.model"
 
 // ─── Label maps ──────────────────────────────────────────────────────
@@ -43,12 +44,14 @@ export const REFERRAL_STATUS_COLORS: Record<ReferralStatus, string> = {
 export const MEDICAL_CERTIFICATE_STATUS_LABELS: Record<MedicalCertificateStatus, string> = {
   DRAFT: "Borrador",
   ISSUED: "Emitido",
+  SIGNED: "Firmado",
   VOID: "Anulado",
 }
 
 export const MEDICAL_CERTIFICATE_STATUS_COLORS: Record<MedicalCertificateStatus, string> = {
   DRAFT: "bg-slate-100 text-slate-800",
   ISSUED: "bg-green-100 text-green-800",
+  SIGNED: "bg-emerald-100 text-emerald-800",
   VOID: "bg-red-100 text-red-800",
 }
 
@@ -172,6 +175,8 @@ export interface MedicalCertificateTemplate {
   description: string | null
   contentTemplate: string
   isSystem: boolean
+  isActive: boolean
+  defaultSignaturePlacement: SignaturePlacementValue | null
 }
 
 export interface MedicalCertificate {
@@ -187,6 +192,7 @@ export interface MedicalCertificate {
   clinicName: string | null
   templateId: string | null
   templateName: string | null
+  templateDefaultSignaturePlacement: SignaturePlacementValue | null
   status: MedicalCertificateStatus
   statusLabel: string
   statusColor: string
@@ -205,6 +211,14 @@ export interface MedicalCertificate {
   issuedAtFormatted: string | null
   issuedById: string | null
   issuedByName: string | null
+  signedAt: string | null
+  signedAtFormatted: string | null
+  signedById: string | null
+  signedByName: string | null
+  signedCertificateId: string | null
+  signedCertificateAlias: string | null
+  signaturePage: number | null
+  signatureRect: string | null
   voidedAt: string | null
   voidedAtFormatted: string | null
   voidedById: string | null
@@ -387,6 +401,8 @@ export function toMedicalCertificateTemplate(
     description: raw.description ?? null,
     contentTemplate: raw.contentTemplate,
     isSystem: raw.isSystem,
+    isActive: raw.isActive,
+    defaultSignaturePlacement: toSignaturePlacementValue(raw.defaultSignaturePlacement),
   }
 }
 
@@ -410,6 +426,7 @@ export function toMedicalCertificate(raw: MedicalCertificateResponse): MedicalCe
     clinicName: raw.clinicName ?? null,
     templateId: raw.templateId ?? null,
     templateName: raw.templateName ?? null,
+    templateDefaultSignaturePlacement: toSignaturePlacementValue(raw.templateDefaultSignaturePlacement),
     status: raw.status,
     statusLabel: MEDICAL_CERTIFICATE_STATUS_LABELS[raw.status] ?? raw.status,
     statusColor: MEDICAL_CERTIFICATE_STATUS_COLORS[raw.status] ?? "",
@@ -428,6 +445,14 @@ export function toMedicalCertificate(raw: MedicalCertificateResponse): MedicalCe
     issuedAtFormatted: raw.issuedAt ? formatDateTime(raw.issuedAt) : null,
     issuedById: raw.issuedById ?? null,
     issuedByName: raw.issuedByName ?? null,
+    signedAt: raw.signedAt ?? null,
+    signedAtFormatted: raw.signedAt ? formatDateTime(raw.signedAt) : null,
+    signedById: raw.signedById ?? null,
+    signedByName: raw.signedByName ?? null,
+    signedCertificateId: raw.signedCertificateId ?? null,
+    signedCertificateAlias: raw.signedCertificateAlias ?? null,
+    signaturePage: raw.signaturePage ?? null,
+    signatureRect: raw.signatureRect ?? null,
     voidedAt: raw.voidedAt ?? null,
     voidedAtFormatted: raw.voidedAt ? formatDateTime(raw.voidedAt) : null,
     voidedById: raw.voidedById ?? null,
@@ -443,4 +468,40 @@ export function toMedicalCertificate(raw: MedicalCertificateResponse): MedicalCe
 
 export function toMedicalCertificateList(raw: MedicalCertificateResponse[]): MedicalCertificate[] {
   return raw.map(toMedicalCertificate)
+}
+
+function toSignaturePlacementValue(
+  raw?: SignaturePlacementValue | null
+): SignaturePlacementValue | null {
+  if (!raw) return null
+  if (
+    typeof raw.x !== "number" ||
+    typeof raw.y !== "number" ||
+    typeof raw.width !== "number" ||
+    typeof raw.height !== "number"
+  ) {
+    return null
+  }
+
+  if (raw.x < 0 || raw.y < 0 || raw.width <= 0 || raw.height <= 0) {
+    return null
+  }
+
+  if (raw.pageMode !== "LAST" && raw.pageMode !== "INDEX") {
+    return null
+  }
+
+  const pageNumber =
+    raw.pageMode === "INDEX" && typeof raw.pageNumber === "number" && raw.pageNumber > 0
+      ? Math.round(raw.pageNumber)
+      : undefined
+
+  return {
+    pageMode: raw.pageMode,
+    pageNumber,
+    x: Math.round(raw.x),
+    y: Math.round(raw.y),
+    width: Math.round(raw.width),
+    height: Math.round(raw.height),
+  }
 }

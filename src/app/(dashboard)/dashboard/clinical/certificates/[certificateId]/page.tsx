@@ -2,7 +2,7 @@
 
 import { use, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, FileText, Printer, Save, Send, Ban } from "lucide-react"
+import { ArrowLeft, FileText, Printer, Save, Send, Ban, PenLine, ShieldCheck, Download } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,12 +12,27 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
+import { Switch } from "@/components/ui/switch"
+import {
+  PdfSignaturePlacementPicker,
+  type SignaturePlacementState,
+} from "@/components/clinical/pdf-signature-placement-picker"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   useMedicalCertificate,
   useUpdateMedicalCertificate,
   useIssueMedicalCertificate,
+  useSignMedicalCertificate,
   useVoidMedicalCertificate,
 } from "@/hooks/use-clinical"
+import type { SignMedicalCertificateRequest } from "@/types/clinical.model"
 import type { ApiError } from "@/types/api"
 
 interface MedicalCertificateDetailPageProps {
@@ -35,18 +50,32 @@ type DraftOverrides = {
   content?: string
 }
 
+const DEFAULT_SIGNATURE_PLACEMENT: SignaturePlacementState = {
+  pageNumber: 1,
+  x: 340,
+  y: 40,
+  width: 220,
+  height: 90,
+}
+
 export default function MedicalCertificateDetailPage({ params }: MedicalCertificateDetailPageProps) {
   const { certificateId } = use(params)
 
   const { data: certificate, isLoading } = useMedicalCertificate(certificateId)
   const updateMutation = useUpdateMedicalCertificate(certificateId)
   const issueMutation = useIssueMedicalCertificate(certificateId)
+  const signMutation = useSignMedicalCertificate(certificateId)
   const voidMutation = useVoidMedicalCertificate(certificateId)
 
   const [overrides, setOverrides] = useState<DraftOverrides>({})
   const [voidReason, setVoidReason] = useState("")
+  const [isSignDialogOpen, setIsSignDialogOpen] = useState(false)
+  const [useCustomPlacement, setUseCustomPlacement] = useState(false)
+  const [signaturePlacement, setSignaturePlacement] = useState<SignaturePlacementState>(DEFAULT_SIGNATURE_PLACEMENT)
 
   const isDraft = certificate?.status === "DRAFT"
+  const isIssued = certificate?.status === "ISSUED"
+  const isSigned = certificate?.status === "SIGNED"
   const isVoided = certificate?.status === "VOID"
 
   const title = overrides.title ?? certificate?.title ?? ""
@@ -57,6 +86,27 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
   const diagnosisSummary = overrides.diagnosisSummary ?? certificate?.diagnosisSummary ?? ""
   const purpose = overrides.purpose ?? certificate?.purpose ?? ""
   const content = overrides.content ?? toEditorHtml(certificate?.content ?? "")
+
+  function openSignDialog() {
+    if (!certificate) return
+    const templateDefault = certificate.templateDefaultSignaturePlacement
+    if (!templateDefault) {
+      setUseCustomPlacement(false)
+      setSignaturePlacement(DEFAULT_SIGNATURE_PLACEMENT)
+      setIsSignDialogOpen(true)
+      return
+    }
+
+    setUseCustomPlacement(true)
+    setSignaturePlacement({
+      pageNumber: templateDefault.pageMode === "INDEX" ? Math.max(1, templateDefault.pageNumber ?? 1) : 1,
+      x: Math.max(0, Math.round(templateDefault.x)),
+      y: Math.max(0, Math.round(templateDefault.y)),
+      width: Math.max(1, Math.round(templateDefault.width)),
+      height: Math.max(1, Math.round(templateDefault.height)),
+    })
+    setIsSignDialogOpen(true)
+  }
 
   function updateField<K extends keyof DraftOverrides>(field: K, value: DraftOverrides[K]) {
     setOverrides((prev) => ({ ...prev, [field]: value }))
@@ -122,6 +172,82 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
     }
   }
 
+  async function handleSign() {
+    if (!certificate || !isIssued) return
+
+    const payload = buildSignPayload(useCustomPlacement, signaturePlacement)
+    if (!payload) {
+      toast.error("Configura una posición de firma válida")
+      return
+    }
+
+    try {
+      await signMutation.mutateAsync(payload)
+      toast.success("Certificado firmado digitalmente")
+      setIsSignDialogOpen(false)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) ?? "Error al firmar certificado")
+    }
+  }
+
+  function handlePrintCertificate() {
+    const pdfUrl = `/api/bff/v1/clinical/medical-certificates/${certificateId}/pdf`
+    const pdfWindow = window.open(pdfUrl, "_blank", "noopener,noreferrer")
+    if (!pdfWindow) {
+      toast.error("No se pudo abrir el PDF. Verifica el bloqueo de ventanas emergentes.")
+      return
+    }
+  }
+
+  async function handleDownloadCertificate() {
+    try {
+      const response = await fetch(
+        `/api/bff/v1/clinical/medical-certificates/${certificateId}/pdf?download=true`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Accept: "application/pdf",
+          },
+        }
+      )
+
+      if (!response.ok) {
+        let errorMessage = "No se pudo descargar el certificado en PDF"
+        try {
+          const payload = (await response.json()) as ApiError
+          if (payload?.message) errorMessage = payload.message
+        } catch {
+          // ignore JSON parsing errors for non-JSON responses
+        }
+        toast.error(errorMessage)
+        return
+      }
+
+      const contentType = response.headers.get("content-type") ?? ""
+      if (!contentType.toLowerCase().includes("application/pdf")) {
+        toast.error("La respuesta no es un PDF válido")
+        return
+      }
+
+      const blob = await response.blob()
+      const disposition = response.headers.get("content-disposition")
+      const fallbackName = `certificado-medico-${certificateId}.pdf`
+      const fileName = getFileNameFromDisposition(disposition) ?? fallbackName
+
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = blobUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(blobUrl)
+    } catch {
+      toast.error("No se pudo descargar el certificado en PDF")
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -164,7 +290,11 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={() => window.print()}>
+          <Button type="button" variant="outline" onClick={handleDownloadCertificate}>
+            <Download className="mr-1 h-4 w-4" />
+            Descargar PDF
+          </Button>
+          <Button type="button" variant="outline" onClick={handlePrintCertificate}>
             <Printer className="mr-1 h-4 w-4" />
             Imprimir
           </Button>
@@ -189,8 +319,73 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
               </Button>
             </>
           )}
+          {isIssued && (
+            <Button
+              type="button"
+              onClick={openSignDialog}
+              disabled={signMutation.isPending}
+            >
+              <PenLine className="mr-1 h-4 w-4" />
+              Firmar digitalmente
+            </Button>
+          )}
         </div>
       </div>
+
+      <Dialog open={isSignDialogOpen} onOpenChange={setIsSignDialogOpen}>
+        <DialogContent className="sm:max-w-5xl max-h-[92vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Firmar certificado</DialogTitle>
+            <DialogDescription>
+              Se usará por defecto la última ubicación guardada para esta plantilla. También puedes ajustarla visualmente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Seleccionar ubicación visual</p>
+                <p className="text-xs text-muted-foreground">
+                  Si está desactivado, se usa la posición predeterminada.
+                </p>
+              </div>
+              <Switch
+                checked={useCustomPlacement}
+                onCheckedChange={(checked) => setUseCustomPlacement(Boolean(checked))}
+              />
+            </div>
+
+            {useCustomPlacement && (
+              <PdfSignaturePlacementPicker
+                pdfUrl={`/api/bff/v1/clinical/medical-certificates/${certificateId}/pdf`}
+                documentLabel="certificado"
+                value={signaturePlacement}
+                onChange={setSignaturePlacement}
+                disabled={signMutation.isPending}
+              />
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSignDialogOpen(false)}
+              disabled={signMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSign}
+              disabled={signMutation.isPending}
+            >
+              <PenLine className="mr-1 h-4 w-4" />
+              {signMutation.isPending ? "Firmando..." : "Confirmar firma"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -291,6 +486,41 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
             />
           </div>
 
+          {(isIssued || isSigned) && (
+            <div className="rounded-md border bg-muted/20 p-4 space-y-2">
+              <p className="text-sm font-medium flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                Firma electrónica
+              </p>
+              {isSigned ? (
+                <div className="space-y-1 text-sm">
+                  <p>
+                    Firmado por:{" "}
+                    <span className="font-medium">
+                      {certificate.signedByName ?? certificate.doctorName}
+                    </span>
+                  </p>
+                  <p>
+                    Fecha de firma:{" "}
+                    <span className="font-medium">
+                      {certificate.signedAtFormatted ?? "—"}
+                    </span>
+                  </p>
+                  <p>
+                    Certificado usado:{" "}
+                    <span className="font-medium">
+                      {certificate.signedCertificateAlias ?? "—"}
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Este certificado ya está emitido y listo para ser firmado digitalmente.
+                </p>
+              )}
+            </div>
+          )}
+
           {!isVoided && (
             <div className="rounded-md border border-dashed p-4 space-y-3">
               <p className="text-sm font-medium">Anular certificado</p>
@@ -366,4 +596,63 @@ function getApiErrorMessage(error: unknown): string | null {
     }
   }
   return null
+}
+
+function getFileNameFromDisposition(disposition: string | null): string | null {
+  if (!disposition) return null
+
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim())
+    } catch {
+      return utf8Match[1].trim()
+    }
+  }
+
+  const plainMatch = disposition.match(/filename=\"?([^\";]+)\"?/i)
+  if (plainMatch?.[1]) {
+    return plainMatch[1].trim()
+  }
+
+  return null
+}
+
+function buildSignPayload(
+  useCustomPlacement: boolean,
+  state: SignaturePlacementState
+): SignMedicalCertificateRequest | null {
+  if (!useCustomPlacement) {
+    return {}
+  }
+
+  if (
+    Number.isNaN(state.x) ||
+    Number.isNaN(state.y) ||
+    Number.isNaN(state.width) ||
+    Number.isNaN(state.height) ||
+    Number.isNaN(state.pageNumber) ||
+    state.pageNumber < 1 ||
+    state.x < 0 ||
+    state.y < 0 ||
+    state.width <= 0 ||
+    state.height <= 0
+  ) {
+    return null
+  }
+
+  return {
+    signaturePlacement: {
+      pageMode: "INDEX",
+      pageNumber: Math.round(state.pageNumber),
+      x: roundValue(state.x),
+      y: roundValue(state.y),
+      width: roundValue(state.width),
+      height: roundValue(state.height),
+    },
+  }
+}
+
+function roundValue(value: number): number {
+  return Math.round(value)
 }

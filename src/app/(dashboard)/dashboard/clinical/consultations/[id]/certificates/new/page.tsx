@@ -144,6 +144,15 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
     setOverrides((prev) => ({ ...prev, [field]: value }))
   }
 
+  function handleTemplateChange(nextTemplateId: string) {
+    setOverrides((prev) => {
+      const next = { ...prev, templateId: nextTemplateId }
+      // Always rehydrate editor content from selected template when template changes.
+      delete next.content
+      return next
+    })
+  }
+
   function resetField(field: keyof FormOverrides) {
     setOverrides((prev) => {
       const next = { ...prev }
@@ -250,7 +259,7 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
               <Label htmlFor="medical-certificate-template">Plantilla</Label>
               <Select
                 value={selectedTemplateId}
-                onValueChange={(value) => setField("templateId", value ?? "")}
+                onValueChange={(value) => handleTemplateChange(value ?? "")}
                 disabled={templates.length === 0}
               >
                 <SelectTrigger id="medical-certificate-template">

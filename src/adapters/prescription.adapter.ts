@@ -61,6 +61,14 @@ export interface Prescription {
   dispensedAt: string | null
   dispensedAtFormatted: string | null
   dispensedByName: string | null
+  signedAt: string | null
+  signedAtFormatted: string | null
+  signedById: string | null
+  signedByName: string | null
+  signedCertificateId: string | null
+  signedCertificateAlias: string | null
+  signaturePage: number | null
+  signatureRect: string | null
   items: PrescriptionItem[]
   totalItems: number
   pendingItems: number
@@ -136,6 +144,14 @@ export function toPrescription(raw: PrescriptionResponse): Prescription {
     dispensedAt: raw.dispensedAt ?? null,
     dispensedAtFormatted: formatDateTime(raw.dispensedAt),
     dispensedByName: raw.dispensedByName ?? null,
+    signedAt: raw.signedAt ?? null,
+    signedAtFormatted: formatDateTime(raw.signedAt),
+    signedById: raw.signedById ?? null,
+    signedByName: raw.signedByName ?? null,
+    signedCertificateId: raw.signedCertificateId ?? null,
+    signedCertificateAlias: raw.signedCertificateAlias ?? null,
+    signaturePage: raw.signaturePage ?? null,
+    signatureRect: raw.signatureRect ?? null,
     items,
     totalItems: items.length,
     pendingItems: items.filter((i) => i.isPending).length,

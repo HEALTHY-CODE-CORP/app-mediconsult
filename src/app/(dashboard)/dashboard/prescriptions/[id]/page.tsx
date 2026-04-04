@@ -1,8 +1,24 @@
 "use client"
 
-import { use, useState, useMemo } from "react"
+import { use, useMemo, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
+import { toast } from "sonner"
+import {
+  ArrowLeft,
+  Calendar,
+  Download,
+  FileText,
+  Package,
+  PenLine,
+  Pill,
+  Printer,
+  ShieldCheck,
+  Stethoscope,
+  Store,
+  User,
+  XCircle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -20,7 +36,20 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { ConfirmButton } from "@/components/shared/confirm-button"
+import {
+  PdfSignaturePlacementPicker,
+  type SignaturePlacementState,
+} from "@/components/clinical/pdf-signature-placement-picker"
 import { PrescriptionItemsTable } from "@/components/prescriptions/prescription-items-table"
 import { StockCheckTable } from "@/components/prescriptions/stock-check-table"
 import {
@@ -28,23 +57,22 @@ import {
   useCancelPrescription,
   useAssignPharmacy,
   useStockCheck,
+  useSignPrescription,
 } from "@/hooks/use-prescriptions"
 import { usePharmacies } from "@/hooks/use-organizations"
-import {
-  ArrowLeft,
-  User,
-  Stethoscope,
-  Calendar,
-  Store,
-  FileText,
-  Package,
-  XCircle,
-  Pill,
-} from "lucide-react"
-import { toast } from "sonner"
+import type { ApiError } from "@/types/api"
+import type { SignPrescriptionRequest } from "@/types/prescription.model"
 
 interface PrescriptionDetailPageProps {
   params: Promise<{ id: string }>
+}
+
+const DEFAULT_SIGNATURE_PLACEMENT: SignaturePlacementState = {
+  pageNumber: 1,
+  x: 120,
+  y: 30,
+  width: 210,
+  height: 80,
 }
 
 export default function PrescriptionDetailPage({
@@ -61,8 +89,12 @@ export default function PrescriptionDetailPage({
   const { data: pharmacies = [] } = usePharmacies()
   const cancelMutation = useCancelPrescription()
   const assignPharmacyMutation = useAssignPharmacy(id)
+  const signMutation = useSignPrescription(id)
 
   const [assignPharmacyId, setAssignPharmacyId] = useState("")
+  const [isSignDialogOpen, setIsSignDialogOpen] = useState(false)
+  const [useCustomPlacement, setUseCustomPlacement] = useState(false)
+  const [signaturePlacement, setSignaturePlacement] = useState<SignaturePlacementState>(DEFAULT_SIGNATURE_PLACEMENT)
 
   const pharmacyItems = useMemo(
     () => Object.fromEntries(pharmacies.map((p) => [p.id, p.name])),
@@ -92,6 +124,98 @@ export default function PrescriptionDetailPage({
       setAssignPharmacyId("")
     } catch {
       toast.error("Error al asignar farmacia")
+    }
+  }
+
+  function openSignDialog() {
+    const rect = parseSignatureRect(prescription?.signatureRect)
+    const page = prescription?.signaturePage
+    if (rect && page && page > 0) {
+      setUseCustomPlacement(true)
+      setSignaturePlacement({
+        pageNumber: page,
+        x: Math.max(0, Math.round(rect.x)),
+        y: Math.max(0, Math.round(rect.y)),
+        width: Math.max(1, Math.round(rect.width)),
+        height: Math.max(1, Math.round(rect.height)),
+      })
+    } else {
+      setUseCustomPlacement(false)
+      setSignaturePlacement(DEFAULT_SIGNATURE_PLACEMENT)
+    }
+    setIsSignDialogOpen(true)
+  }
+
+  async function handleSignPrescription() {
+    const payload = buildSignPayload(useCustomPlacement, signaturePlacement)
+    if (!payload) {
+      toast.error("Configura una posición de firma válida")
+      return
+    }
+
+    try {
+      await signMutation.mutateAsync(payload)
+      toast.success("Receta firmada digitalmente")
+      setIsSignDialogOpen(false)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) ?? "No se pudo firmar la receta")
+    }
+  }
+
+  function handlePrintPrescription() {
+    const pdfUrl = `/api/bff/v1/prescriptions/${id}/pdf`
+    const pdfWindow = window.open(pdfUrl, "_blank", "noopener,noreferrer")
+    if (!pdfWindow) {
+      toast.error("No se pudo abrir el PDF. Verifica el bloqueo de ventanas emergentes.")
+    }
+  }
+
+  async function handleDownloadPrescription() {
+    try {
+      const response = await fetch(
+        `/api/bff/v1/prescriptions/${id}/pdf?download=true`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            Accept: "application/pdf",
+          },
+        }
+      )
+
+      if (!response.ok) {
+        let errorMessage = "No se pudo descargar la receta en PDF"
+        try {
+          const payload = (await response.json()) as ApiError
+          if (payload?.message) errorMessage = payload.message
+        } catch {
+          // ignore non-json payloads
+        }
+        toast.error(errorMessage)
+        return
+      }
+
+      const contentType = response.headers.get("content-type") ?? ""
+      if (!contentType.toLowerCase().includes("application/pdf")) {
+        toast.error("La respuesta no es un PDF válido")
+        return
+      }
+
+      const blob = await response.blob()
+      const disposition = response.headers.get("content-disposition")
+      const fallbackName = `receta-${id}.pdf`
+      const fileName = getFileNameFromDisposition(disposition) ?? fallbackName
+
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = blobUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(blobUrl)
+    } catch {
+      toast.error("No se pudo descargar la receta en PDF")
     }
   }
 
@@ -129,13 +253,15 @@ export default function PrescriptionDetailPage({
   const isPartial = prescription.status === "PARTIALLY_DISPENSED"
   const isCancelled = prescription.status === "CANCELLED"
   const isDispensed = prescription.status === "DISPENSED"
+  const isSigned = Boolean(prescription.signedAt)
   const canCancel = (isPending || isPartial) && isDoctor
   const canAssignPharmacy = !prescription.pharmacyId && isDoctor && !isCancelled && !isDispensed
+  const canSign = isDoctor && !isCancelled && !isSigned
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -158,7 +284,25 @@ export default function PrescriptionDetailPage({
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={handleDownloadPrescription}>
+            <Download className="mr-1 h-4 w-4" />
+            Descargar PDF
+          </Button>
+          <Button type="button" variant="outline" onClick={handlePrintPrescription}>
+            <Printer className="mr-1 h-4 w-4" />
+            Imprimir
+          </Button>
+          {canSign && (
+            <Button
+              type="button"
+              onClick={openSignDialog}
+              disabled={signMutation.isPending}
+            >
+              <PenLine className="mr-1 h-4 w-4" />
+              Firmar digitalmente
+            </Button>
+          )}
           {canCancel && (
             <ConfirmButton
               variant="destructive"
@@ -176,6 +320,61 @@ export default function PrescriptionDetailPage({
           )}
         </div>
       </div>
+
+      <Dialog open={isSignDialogOpen} onOpenChange={setIsSignDialogOpen}>
+        <DialogContent className="sm:max-w-5xl max-h-[92vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Firmar receta</DialogTitle>
+            <DialogDescription>
+              Puedes usar la ubicación predeterminada o ajustar visualmente el área de firma.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Seleccionar ubicación visual</p>
+                <p className="text-xs text-muted-foreground">
+                  Si está desactivado, se usa la posición predeterminada.
+                </p>
+              </div>
+              <Switch
+                checked={useCustomPlacement}
+                onCheckedChange={(checked) => setUseCustomPlacement(Boolean(checked))}
+              />
+            </div>
+
+            {useCustomPlacement && (
+              <PdfSignaturePlacementPicker
+                pdfUrl={`/api/bff/v1/prescriptions/${id}/pdf`}
+                documentLabel="receta"
+                value={signaturePlacement}
+                onChange={setSignaturePlacement}
+                disabled={signMutation.isPending}
+              />
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSignDialogOpen(false)}
+              disabled={signMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSignPrescription}
+              disabled={signMutation.isPending}
+            >
+              <PenLine className="mr-1 h-4 w-4" />
+              {signMutation.isPending ? "Firmando..." : "Confirmar firma"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Info cards */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -216,6 +415,39 @@ export default function PrescriptionDetailPage({
                 <p className="text-sm whitespace-pre-wrap">{prescription.notes}</p>
               </div>
             )}
+
+            <div className="rounded-md border bg-muted/20 p-3">
+              <p className="text-sm font-medium flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                Firma electrónica
+              </p>
+              {isSigned ? (
+                <div className="mt-2 space-y-1 text-sm">
+                  <p>
+                    Firmado por:{" "}
+                    <span className="font-medium">
+                      {prescription.signedByName ?? prescription.doctorName}
+                    </span>
+                  </p>
+                  <p>
+                    Fecha de firma:{" "}
+                    <span className="font-medium">
+                      {prescription.signedAtFormatted ?? "—"}
+                    </span>
+                  </p>
+                  <p>
+                    Certificado usado:{" "}
+                    <span className="font-medium">
+                      {prescription.signedCertificateAlias ?? "—"}
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Esta receta aún no está firmada digitalmente.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -321,7 +553,7 @@ function InfoRow({
   label,
   value,
 }: {
-  icon?: React.ReactNode
+  icon?: ReactNode
   label: string
   value: string | null
 }) {
@@ -334,4 +566,100 @@ function InfoRow({
       </div>
     </div>
   )
+}
+
+function parseSignatureRect(signatureRect: string | null | undefined): {
+  x: number
+  y: number
+  width: number
+  height: number
+} | null {
+  if (!signatureRect) return null
+  try {
+    const parsed = JSON.parse(signatureRect) as Record<string, unknown>
+    const x = Number(parsed.x)
+    const y = Number(parsed.y)
+    const width = Number(parsed.width)
+    const height = Number(parsed.height)
+    if (
+      Number.isFinite(x) &&
+      Number.isFinite(y) &&
+      Number.isFinite(width) &&
+      Number.isFinite(height)
+    ) {
+      return { x, y, width, height }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function getApiErrorMessage(error: unknown): string | null {
+  if (error && typeof error === "object" && "message" in error) {
+    const apiError = error as ApiError
+    if (typeof apiError.message === "string" && apiError.message.trim().length > 0) {
+      return apiError.message
+    }
+  }
+  return null
+}
+
+function getFileNameFromDisposition(disposition: string | null): string | null {
+  if (!disposition) return null
+
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim())
+    } catch {
+      return utf8Match[1].trim()
+    }
+  }
+
+  const plainMatch = disposition.match(/filename=\"?([^\";]+)\"?/i)
+  if (plainMatch?.[1]) {
+    return plainMatch[1].trim()
+  }
+
+  return null
+}
+
+function buildSignPayload(
+  useCustomPlacement: boolean,
+  state: SignaturePlacementState
+): SignPrescriptionRequest | null {
+  if (!useCustomPlacement) {
+    return {}
+  }
+
+  if (
+    Number.isNaN(state.x) ||
+    Number.isNaN(state.y) ||
+    Number.isNaN(state.width) ||
+    Number.isNaN(state.height) ||
+    Number.isNaN(state.pageNumber) ||
+    state.pageNumber < 1 ||
+    state.x < 0 ||
+    state.y < 0 ||
+    state.width <= 0 ||
+    state.height <= 0
+  ) {
+    return null
+  }
+
+  return {
+    signaturePlacement: {
+      pageMode: "INDEX",
+      pageNumber: Math.round(state.pageNumber),
+      x: roundValue(state.x),
+      y: roundValue(state.y),
+      width: roundValue(state.width),
+      height: roundValue(state.height),
+    },
+  }
+}
+
+function roundValue(value: number): number {
+  return Math.round(value)
 }

@@ -14,6 +14,19 @@ export interface CreatePrescriptionRequest {
   }[]
 }
 
+export interface PrescriptionSignaturePlacementRequest {
+  pageMode?: "LAST" | "INDEX"
+  pageNumber?: number
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+}
+
+export interface SignPrescriptionRequest {
+  signaturePlacement?: PrescriptionSignaturePlacementRequest
+}
+
 export interface PrescriptionResponse {
   id: string
   consultationId: string
@@ -31,6 +44,13 @@ export interface PrescriptionResponse {
   prescribedAt: string
   dispensedAt?: string
   dispensedByName?: string
+  signedAt?: string
+  signedById?: string
+  signedByName?: string
+  signedCertificateId?: string
+  signedCertificateAlias?: string
+  signaturePage?: number
+  signatureRect?: string
   items: PrescriptionItemResponse[]
   createdAt: string
   updatedAt: string

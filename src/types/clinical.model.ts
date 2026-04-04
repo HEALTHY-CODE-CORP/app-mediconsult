@@ -154,7 +154,16 @@ export interface ReferralResponse {
   createdAt: string
 }
 
-export type MedicalCertificateStatus = "DRAFT" | "ISSUED" | "VOID"
+export type MedicalCertificateStatus = "DRAFT" | "ISSUED" | "SIGNED" | "VOID"
+
+export interface SignaturePlacementValue {
+  pageMode: "LAST" | "INDEX"
+  pageNumber?: number
+  x: number
+  y: number
+  width: number
+  height: number
+}
 
 export interface MedicalCertificateTemplateResponse {
   id: string
@@ -162,6 +171,20 @@ export interface MedicalCertificateTemplateResponse {
   description?: string
   contentTemplate: string
   isSystem: boolean
+  isActive: boolean
+  defaultSignaturePlacement?: SignaturePlacementValue
+}
+
+export interface CreateMedicalCertificateTemplateRequest {
+  name: string
+  description?: string
+  contentTemplate: string
+}
+
+export interface UpdateMedicalCertificateTemplateRequest {
+  name: string
+  description?: string
+  contentTemplate: string
 }
 
 export interface CreateMedicalCertificateRequest {
@@ -191,6 +214,19 @@ export interface VoidMedicalCertificateRequest {
   reason: string
 }
 
+export interface SignaturePlacementRequest {
+  pageMode?: "LAST" | "INDEX"
+  pageNumber?: number
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+}
+
+export interface SignMedicalCertificateRequest {
+  signaturePlacement?: SignaturePlacementRequest
+}
+
 export interface MedicalCertificateResponse {
   id: string
   consultationId: string
@@ -204,6 +240,7 @@ export interface MedicalCertificateResponse {
   clinicName?: string
   templateId?: string
   templateName?: string
+  templateDefaultSignaturePlacement?: SignaturePlacementValue
   status: MedicalCertificateStatus
   title: string
   certificateDate: string
@@ -216,6 +253,13 @@ export interface MedicalCertificateResponse {
   issuedAt?: string
   issuedById?: string
   issuedByName?: string
+  signedAt?: string
+  signedById?: string
+  signedByName?: string
+  signedCertificateId?: string
+  signedCertificateAlias?: string
+  signaturePage?: number
+  signatureRect?: string
   voidedAt?: string
   voidedById?: string
   voidedByName?: string

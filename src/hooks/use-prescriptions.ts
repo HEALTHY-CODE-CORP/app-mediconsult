@@ -3,6 +3,7 @@ import api from "@/lib/axios"
 import type {
   PrescriptionResponse,
   CreatePrescriptionRequest,
+  SignPrescriptionRequest,
   StockAvailabilityResponse,
 } from "@/types/prescription.model"
 import {
@@ -151,6 +152,21 @@ export function useCancelPrescription() {
     mutationFn: async (id: string) => {
       const { data } = await api.patch<PrescriptionResponse>(
         `/prescriptions/${id}/cancel`
+      )
+      return toPrescription(data)
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: PRESCRIPTIONS_KEY }),
+  })
+}
+
+export function useSignPrescription(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload?: SignPrescriptionRequest) => {
+      const { data } = await api.patch<PrescriptionResponse>(
+        `/prescriptions/${id}/sign`,
+        payload
       )
       return toPrescription(data)
     },
