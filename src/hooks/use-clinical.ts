@@ -22,6 +22,8 @@ import type {
   UpdateMedicalCertificateRequest,
   VoidMedicalCertificateRequest,
   SignMedicalCertificateRequest,
+  SendMedicalCertificateEmailRequest,
+  SendMedicalCertificateEmailResponse,
 } from "@/types/clinical.model"
 import {
   toMedicalRecord,
@@ -583,6 +585,22 @@ export function useVoidMedicalCertificate(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates", id] })
       queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates"] })
+    },
+  })
+}
+
+export function useSendMedicalCertificateEmail(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload?: SendMedicalCertificateEmailRequest) => {
+      const { data } = await api.post<SendMedicalCertificateEmailResponse>(
+        `/clinical/medical-certificates/${id}/email`,
+        payload ?? {}
+      )
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "medical-certificates", id] })
     },
   })
 }

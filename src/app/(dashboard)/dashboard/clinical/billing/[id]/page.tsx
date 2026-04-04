@@ -1,6 +1,6 @@
 "use client"
 
-import { use } from "react"
+import { use, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,12 +12,14 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmButton } from "@/components/shared/confirm-button"
+import { EmailRecipientDialog } from "@/components/shared/email-recipient-dialog"
 import {
   useInvoice,
   useSriInvoiceRequest,
   useCancelInvoice,
   useSriSubmit,
   useSriAuthorize,
+  useSendInvoiceEmail,
 } from "@/hooks/use-billing"
 import {
   ArrowLeft,
@@ -30,6 +32,7 @@ import {
   Copy,
   CheckCircle,
   Stethoscope,
+  Mail,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { ApiError } from "@/types/api"
@@ -49,6 +52,9 @@ export default function ConsultationInvoiceDetailPage({
   const sriSubmitMutation = useSriSubmit()
   const sriAuthorizeMutation = useSriAuthorize()
   const cancelMutation = useCancelInvoice()
+  const sendEmailMutation = useSendInvoiceEmail()
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [recipientEmail, setRecipientEmail] = useState("")
   const sriEnvironment = invoice?.ambiente === "2" ? "2" : "1"
 
   async function handleCancel() {
@@ -107,6 +113,29 @@ export default function ConsultationInvoiceDetailPage({
           ? (error as ApiError).message
           : null
       toast.error(message || "Error al consultar autorización SRI")
+    }
+  }
+
+  function openEmailDialog() {
+    setRecipientEmail(invoice?.defaultRecipientEmail ?? "")
+    setIsEmailDialogOpen(true)
+  }
+
+  async function handleSendByEmail() {
+    const email = recipientEmail.trim()
+    try {
+      const response = await sendEmailMutation.mutateAsync({
+        invoiceId: id,
+        payload: email ? { recipientEmail: email } : {},
+      })
+      toast.success(`Factura enviada a ${response.recipientEmail}`)
+      setIsEmailDialogOpen(false)
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? (error as ApiError).message
+          : null
+      toast.error(message || "No se pudo enviar la factura por correo")
     }
   }
 
@@ -183,6 +212,17 @@ export default function ConsultationInvoiceDetailPage({
           </div>
         </div>
         <div className="flex gap-2">
+          {invoice.status === "AUTHORIZED" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openEmailDialog}
+              disabled={sendEmailMutation.isPending}
+            >
+              <Mail className="mr-1 h-4 w-4" />
+              Enviar por correo
+            </Button>
+          )}
           {canCancel && (
             <ConfirmButton
               variant="destructive"
@@ -200,6 +240,18 @@ export default function ConsultationInvoiceDetailPage({
           )}
         </div>
       </div>
+
+      <EmailRecipientDialog
+        open={isEmailDialogOpen}
+        onOpenChange={setIsEmailDialogOpen}
+        title="Enviar factura por correo"
+        description="Puedes ajustar el correo destino antes de enviar los adjuntos XML y PDF."
+        email={recipientEmail}
+        onEmailChange={setRecipientEmail}
+        onConfirm={handleSendByEmail}
+        isSubmitting={sendEmailMutation.isPending}
+        confirmLabel="Enviar factura"
+      />
 
       {/* Info cards */}
       <div className="grid gap-6 lg:grid-cols-2">

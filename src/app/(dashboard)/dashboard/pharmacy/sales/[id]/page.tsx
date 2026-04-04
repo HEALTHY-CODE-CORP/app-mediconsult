@@ -371,7 +371,7 @@ function InvoiceCard({ sale }: { sale: Sale }) {
       return
     }
     try {
-      await createMutation.mutateAsync({
+      const createdInvoice = await createMutation.mutateAsync({
         saleId,
         compradorTipoId: tipoId,
         compradorIdentificacion: identificacion,
@@ -381,6 +381,14 @@ function InvoiceCard({ sale }: { sale: Sale }) {
       })
       toast.success("Factura creada exitosamente")
       setShowForm(false)
+      const params = new URLSearchParams({
+        autoflow: "1",
+      })
+      const recipientEmail = email.trim()
+      if (recipientEmail) {
+        params.set("recipientEmail", recipientEmail)
+      }
+      router.push(`/dashboard/pharmacy/billing/${createdInvoice.id}?${params.toString()}`)
     } catch (error) {
       if (isInvoiceAlreadyExistsError(error)) {
         const existing = await refetch()

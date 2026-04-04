@@ -2,7 +2,7 @@
 
 import { use, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, FileText, Printer, Save, Send, Ban, PenLine, ShieldCheck, Download } from "lucide-react"
+import { ArrowLeft, FileText, Printer, Save, Send, Ban, PenLine, ShieldCheck, Download, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { RichTextEditor } from "@/components/ui/rich-text-editor"
 import { Switch } from "@/components/ui/switch"
+import { EmailRecipientDialog } from "@/components/shared/email-recipient-dialog"
 import {
   PdfSignaturePlacementPicker,
   type SignaturePlacementState,
@@ -31,6 +32,7 @@ import {
   useIssueMedicalCertificate,
   useSignMedicalCertificate,
   useVoidMedicalCertificate,
+  useSendMedicalCertificateEmail,
 } from "@/hooks/use-clinical"
 import type { SignMedicalCertificateRequest } from "@/types/clinical.model"
 import type { ApiError } from "@/types/api"
@@ -66,10 +68,13 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
   const issueMutation = useIssueMedicalCertificate(certificateId)
   const signMutation = useSignMedicalCertificate(certificateId)
   const voidMutation = useVoidMedicalCertificate(certificateId)
+  const sendByEmailMutation = useSendMedicalCertificateEmail(certificateId)
 
   const [overrides, setOverrides] = useState<DraftOverrides>({})
   const [voidReason, setVoidReason] = useState("")
   const [isSignDialogOpen, setIsSignDialogOpen] = useState(false)
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [recipientEmail, setRecipientEmail] = useState("")
   const [useCustomPlacement, setUseCustomPlacement] = useState(false)
   const [signaturePlacement, setSignaturePlacement] = useState<SignaturePlacementState>(DEFAULT_SIGNATURE_PLACEMENT)
 
@@ -248,6 +253,24 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
     }
   }
 
+  async function handleSendCertificateByEmail() {
+    const email = recipientEmail.trim()
+    try {
+      const response = await sendByEmailMutation.mutateAsync(
+        email ? { recipientEmail: email } : {}
+      )
+      toast.success(`Certificado enviado a ${response.recipientEmail}`)
+      setIsEmailDialogOpen(false)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) ?? "No se pudo enviar el certificado por correo")
+    }
+  }
+
+  function openEmailDialog() {
+    setRecipientEmail(certificate?.patientEmail ?? "")
+    setIsEmailDialogOpen(true)
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -290,6 +313,17 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {!isVoided && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openEmailDialog}
+              disabled={sendByEmailMutation.isPending}
+            >
+              <Mail className="mr-1 h-4 w-4" />
+              Enviar por correo
+            </Button>
+          )}
           <Button type="button" variant="outline" onClick={handleDownloadCertificate}>
             <Download className="mr-1 h-4 w-4" />
             Descargar PDF
@@ -386,6 +420,18 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EmailRecipientDialog
+        open={isEmailDialogOpen}
+        onOpenChange={setIsEmailDialogOpen}
+        title="Enviar certificado por correo"
+        description="Puedes ajustar el correo destino antes de enviar el PDF del certificado."
+        email={recipientEmail}
+        onEmailChange={setRecipientEmail}
+        onConfirm={handleSendCertificateByEmail}
+        isSubmitting={sendByEmailMutation.isPending}
+        confirmLabel="Enviar certificado"
+      />
 
       <Card>
         <CardHeader>

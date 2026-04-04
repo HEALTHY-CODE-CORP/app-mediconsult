@@ -35,6 +35,16 @@ export interface SriAuthorizationResponse {
   ambiente: string
 }
 
+export interface SendInvoiceEmailRequest {
+  recipientEmail?: string
+}
+
+export interface SendInvoiceEmailResponse {
+  invoiceId: string
+  recipientEmail: string
+  sentAt: string
+}
+
 export interface InvoiceResponse {
   id: string
   invoiceType: InvoiceType
@@ -60,6 +70,7 @@ export interface InvoiceResponse {
   compradorRazonSocial: string
   compradorDireccion?: string
   compradorEmail?: string
+  defaultRecipientEmail?: string
   subtotal?: NumericLike
   totalIva0?: NumericLike
   totalIva12?: NumericLike
@@ -74,6 +85,10 @@ export interface InvoiceResponse {
   sriErrors?: string
   sriNumeroAutorizacion?: string
   sriFechaAutorizacion?: string
+  emailedAt?: string
+  emailedTo?: string
+  hasAuthorizedXml?: boolean
+  hasAuthorizedPdf?: boolean
   createdAt: string
   updatedAt: string
 }

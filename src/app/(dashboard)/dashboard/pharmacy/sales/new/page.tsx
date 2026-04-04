@@ -231,7 +231,7 @@ function NewSaleContent() {
       selectedCustomer?.type === "CUSTOMER" ? selectedCustomer.customerId ?? undefined : undefined
 
     try {
-      await createMutation.mutateAsync({
+      const createdSale = await createMutation.mutateAsync({
         pharmacyId,
         cashSessionId: sessionId || undefined,
         prescriptionId: prescriptionId || undefined,
@@ -247,7 +247,7 @@ function NewSaleContent() {
         })),
       })
       toast.success("Venta registrada")
-      router.push("/dashboard/pharmacy/sales")
+      router.push(`/dashboard/pharmacy/sales/${createdSale.id}`)
     } catch {
       toast.error("Error al registrar la venta")
     }

@@ -214,6 +214,16 @@ export interface VoidMedicalCertificateRequest {
   reason: string
 }
 
+export interface SendMedicalCertificateEmailRequest {
+  recipientEmail?: string
+}
+
+export interface SendMedicalCertificateEmailResponse {
+  certificateId: string
+  recipientEmail: string
+  sentAt: string
+}
+
 export interface SignaturePlacementRequest {
   pageMode?: "LAST" | "INDEX"
   pageNumber?: number
@@ -232,6 +242,7 @@ export interface MedicalCertificateResponse {
   consultationId: string
   patientId: string
   patientName: string
+  patientEmail?: string
   patientIdType: string
   patientIdNumber: string
   doctorId: string

@@ -184,6 +184,7 @@ export interface MedicalCertificate {
   consultationId: string
   patientId: string
   patientName: string
+  patientEmail: string | null
   patientIdType: string
   patientIdNumber: string
   doctorId: string
@@ -418,6 +419,7 @@ export function toMedicalCertificate(raw: MedicalCertificateResponse): MedicalCe
     consultationId: raw.consultationId,
     patientId: raw.patientId,
     patientName: raw.patientName,
+    patientEmail: raw.patientEmail ?? null,
     patientIdType: raw.patientIdType,
     patientIdNumber: raw.patientIdNumber,
     doctorId: raw.doctorId,

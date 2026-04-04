@@ -81,6 +81,7 @@ export interface Invoice {
   compradorRazonSocial: string
   compradorDireccion: string | null
   compradorEmail: string | null
+  defaultRecipientEmail: string | null
   totalSinImpuestos: number
   totalSinImpuestosFormatted: string
   totalDescuento: number
@@ -187,6 +188,7 @@ export function toInvoice(raw: InvoiceResponse): Invoice {
     compradorRazonSocial: raw.compradorRazonSocial,
     compradorDireccion: raw.compradorDireccion ?? null,
     compradorEmail: raw.compradorEmail ?? null,
+    defaultRecipientEmail: raw.defaultRecipientEmail ?? raw.compradorEmail ?? null,
     totalSinImpuestos,
     totalSinImpuestosFormatted: fmt(totalSinImpuestos),
     totalDescuento,

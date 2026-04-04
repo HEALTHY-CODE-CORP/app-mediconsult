@@ -1,7 +1,8 @@
 "use client"
 
-import { use } from "react"
+import { use, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -12,12 +13,14 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmButton } from "@/components/shared/confirm-button"
+import { EmailRecipientDialog } from "@/components/shared/email-recipient-dialog"
 import {
   useInvoice,
   useSriInvoiceRequest,
   useCancelInvoice,
   useSriSubmit,
   useSriAuthorize,
+  useSendInvoiceEmail,
 } from "@/hooks/use-billing"
 import {
   ArrowLeft,
@@ -29,6 +32,7 @@ import {
   XCircle,
   Copy,
   CheckCircle,
+  Mail,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { ApiError } from "@/types/api"
@@ -39,6 +43,8 @@ interface InvoiceDetailPageProps {
 
 export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   const { id } = use(params)
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: invoice, isLoading } = useInvoice(id)
   const { data: sriRequest } = useSriInvoiceRequest(
     invoice?.status === "PENDING" || invoice?.status === "DRAFT" ? id : ""
@@ -46,7 +52,16 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   const sriSubmitMutation = useSriSubmit()
   const sriAuthorizeMutation = useSriAuthorize()
   const cancelMutation = useCancelInvoice()
+  const sendEmailMutation = useSendInvoiceEmail()
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
+  const [recipientEmail, setRecipientEmail] = useState("")
+  const [isAutoFlowRunning, setIsAutoFlowRunning] = useState(false)
+  const [autoFlowProgress, setAutoFlowProgress] = useState(0)
+  const [autoFlowMessage, setAutoFlowMessage] = useState("")
+  const autoFlowStartedRef = useRef(false)
   const sriEnvironment = invoice?.ambiente === "2" ? "2" : "1"
+  const isAutoFlowRequested = searchParams.get("autoflow") === "1"
+  const autoFlowRecipientEmail = (searchParams.get("recipientEmail") ?? "").trim()
 
   async function handleSubmitToSri() {
     try {
@@ -107,12 +122,158 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
     }
   }
 
+  function openEmailDialog() {
+    setRecipientEmail(invoice?.defaultRecipientEmail ?? "")
+    setIsEmailDialogOpen(true)
+  }
+
+  async function handleSendByEmail() {
+    const email = recipientEmail.trim()
+    try {
+      const response = await sendEmailMutation.mutateAsync({
+        invoiceId: id,
+        payload: email ? { recipientEmail: email } : {},
+      })
+      toast.success(`Factura enviada a ${response.recipientEmail}`)
+      setIsEmailDialogOpen(false)
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? (error as ApiError).message
+          : null
+      toast.error(message || "No se pudo enviar la factura por correo")
+    }
+  }
+
   function copySriRequest() {
     if (sriRequest) {
       navigator.clipboard.writeText(JSON.stringify(sriRequest, null, 2))
       toast.success("XML/JSON copiado al portapapeles")
     }
   }
+
+  useEffect(() => {
+    if (!isAutoFlowRequested || !invoice || autoFlowStartedRef.current) return
+
+    autoFlowStartedRef.current = true
+    setIsAutoFlowRunning(true)
+    setAutoFlowProgress(10)
+    setAutoFlowMessage("Preparando emisión de factura...")
+
+    const runAutoFlow = async () => {
+      let shouldAuthorize = false
+      let shouldSendEmail = false
+
+      try {
+        if (invoice.status === "DRAFT") {
+          setAutoFlowProgress(35)
+          setAutoFlowMessage("Enviando factura al SRI...")
+          const submit = await sriSubmitMutation.mutateAsync({
+            invoiceId: id,
+            isProduction: sriEnvironment === "2",
+          })
+
+          if (submit.isReceived) {
+            toast.success(`Factura enviada al SRI: ${submit.estado}`)
+            shouldAuthorize = true
+            setAutoFlowProgress(55)
+            setAutoFlowMessage("Factura recibida por el SRI, validando autorización...")
+          } else {
+            const firstError = submit.errors[0]
+            toast.error(
+              firstError?.mensaje
+                ? `${submit.estado}: ${firstError.mensaje}`
+                : `SRI respondió: ${submit.estado}`
+            )
+            setAutoFlowProgress(100)
+            setAutoFlowMessage("El SRI devolvió una observación. Revisa el detalle para continuar.")
+          }
+        } else if (invoice.status === "PENDING" && Boolean(invoice.claveAcceso)) {
+          shouldAuthorize = true
+          setAutoFlowProgress(45)
+          setAutoFlowMessage("Factura pendiente, consultando autorización en SRI...")
+        } else if (invoice.status === "AUTHORIZED") {
+          shouldSendEmail = true
+          setAutoFlowProgress(70)
+          setAutoFlowMessage("Factura autorizada. Enviando correo al cliente...")
+        }
+
+        if (shouldAuthorize) {
+          setAutoFlowProgress(70)
+          setAutoFlowMessage("Consultando autorización de la factura en SRI...")
+          const auth = await sriAuthorizeMutation.mutateAsync({
+            invoiceId: id,
+            isProduction: sriEnvironment === "2",
+          })
+
+          if (auth.isAuthorized) {
+            toast.success("Factura autorizada por el SRI")
+            shouldSendEmail = true
+            setAutoFlowProgress(85)
+            setAutoFlowMessage("Factura autorizada. Enviando correo al cliente...")
+          } else {
+            const firstError = auth.errors[0]
+            toast.error(
+              firstError?.mensaje
+                ? `${auth.estado}: ${firstError.mensaje}`
+                : `Estado de autorización: ${auth.estado}`
+            )
+            setAutoFlowProgress(100)
+            setAutoFlowMessage("No se pudo autorizar. Revisa el estado SRI en esta pantalla.")
+          }
+        }
+
+        if (shouldSendEmail) {
+          setAutoFlowProgress(90)
+          setAutoFlowMessage("Enviando factura por correo...")
+          try {
+            const sendResponse = await sendEmailMutation.mutateAsync({
+              invoiceId: id,
+              payload: autoFlowRecipientEmail
+                ? { recipientEmail: autoFlowRecipientEmail }
+                : {},
+            })
+            toast.success(`Factura enviada a ${sendResponse.recipientEmail}`)
+            setAutoFlowProgress(100)
+            setAutoFlowMessage("Proceso completado. Factura emitida, autorizada y enviada.")
+          } catch (error) {
+            const message =
+              error && typeof error === "object" && "message" in error
+                ? (error as ApiError).message
+                : null
+            toast.error(
+              message || "Factura autorizada, pero no se pudo enviar por correo"
+            )
+            setAutoFlowProgress(100)
+            setAutoFlowMessage("Factura autorizada. Falló el envío por correo, puedes reenviar manualmente.")
+          }
+        }
+      } catch (error) {
+        const message =
+          error && typeof error === "object" && "message" in error
+            ? (error as ApiError).message
+            : null
+        toast.error(message || "No se pudo completar el flujo automático de facturación")
+        setAutoFlowProgress(100)
+        setAutoFlowMessage("El flujo automático se detuvo. Revisa el detalle y continúa manualmente.")
+      } finally {
+        setIsAutoFlowRunning(false)
+        router.replace(`/dashboard/pharmacy/billing/${id}`)
+      }
+    }
+
+    void runAutoFlow()
+  }, [
+    id,
+    invoice,
+    isAutoFlowRequested,
+    sriEnvironment,
+    autoFlowRecipientEmail,
+    router,
+    sriSubmitMutation,
+    sriAuthorizeMutation,
+    sendEmailMutation,
+  ])
 
   if (isLoading) {
     return (
@@ -152,6 +313,24 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
 
   return (
     <div className="space-y-6">
+      {isAutoFlowRunning && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">{autoFlowMessage}</p>
+            <p className="text-xs font-medium text-primary">{autoFlowProgress}%</p>
+          </div>
+          <div className="mt-2 h-2 w-full rounded-full bg-primary/15">
+            <div
+              className="h-2 rounded-full bg-primary transition-all duration-300"
+              style={{ width: `${autoFlowProgress}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Estamos procesando emisión, autorización y envío. No cierres esta página.
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
@@ -177,6 +356,17 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
           </div>
         </div>
         <div className="flex gap-2">
+          {invoice.status === "AUTHORIZED" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openEmailDialog}
+              disabled={sendEmailMutation.isPending || isAutoFlowRunning}
+            >
+              <Mail className="mr-1 h-4 w-4" />
+              Enviar por correo
+            </Button>
+          )}
           {canCancel && (
             <ConfirmButton
               variant="destructive"
@@ -186,7 +376,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
               confirmLabel="Sí, anular factura"
               loadingLabel="Anulando..."
               onConfirm={handleCancel}
-              disabled={cancelMutation.isPending}
+              disabled={cancelMutation.isPending || isAutoFlowRunning}
             >
               <XCircle className="mr-1 h-4 w-4" />
               Anular factura
@@ -194,6 +384,18 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
           )}
         </div>
       </div>
+
+      <EmailRecipientDialog
+        open={isEmailDialogOpen}
+        onOpenChange={setIsEmailDialogOpen}
+        title="Enviar factura por correo"
+        description="Puedes ajustar el correo destino antes de enviar los adjuntos XML y PDF."
+        email={recipientEmail}
+        onEmailChange={setRecipientEmail}
+        onConfirm={handleSendByEmail}
+        isSubmitting={sendEmailMutation.isPending || isAutoFlowRunning}
+        confirmLabel="Enviar factura"
+      />
 
       {/* Info cards */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -346,7 +548,11 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
                   {canSubmitSri && (
                     <Button
                       onClick={handleSubmitToSri}
-                      disabled={sriSubmitMutation.isPending || sriAuthorizeMutation.isPending}
+                      disabled={
+                        sriSubmitMutation.isPending ||
+                        sriAuthorizeMutation.isPending ||
+                        isAutoFlowRunning
+                      }
                     >
                       <Send className="mr-2 h-4 w-4" />
                       {sriSubmitMutation.isPending ? "Enviando..." : "Enviar al SRI"}
@@ -356,7 +562,11 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
                     <Button
                       variant="outline"
                       onClick={handleCheckAuthorization}
-                      disabled={sriAuthorizeMutation.isPending || sriSubmitMutation.isPending}
+                      disabled={
+                        sriAuthorizeMutation.isPending ||
+                        sriSubmitMutation.isPending ||
+                        isAutoFlowRunning
+                      }
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
                       {sriAuthorizeMutation.isPending

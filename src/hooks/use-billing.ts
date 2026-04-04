@@ -8,6 +8,8 @@ import type {
   SriInvoiceRequest,
   SriSubmitResult,
   SriAuthorizeResult,
+  SendInvoiceEmailRequest,
+  SendInvoiceEmailResponse,
 } from "@/types/billing.model"
 import { toInvoice, toInvoiceList } from "@/adapters/billing.adapter"
 
@@ -309,6 +311,21 @@ export function useSriAuthorize() {
         `/billing/invoices/${params.invoiceId}/sri-authorize`,
         null,
         { params: { isProduction: params.isProduction ?? false } }
+      )
+      return data
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: BILLING_KEY }),
+  })
+}
+
+export function useSendInvoiceEmail() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (params: { invoiceId: string; payload?: SendInvoiceEmailRequest }) => {
+      const { data } = await api.post<SendInvoiceEmailResponse>(
+        `/billing/invoices/${params.invoiceId}/email`,
+        params.payload ?? {}
       )
       return data
     },
