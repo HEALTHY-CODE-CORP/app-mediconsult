@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { SessionProvider } from "@/providers/session-provider"
 import { QueryProvider } from "@/providers/query-provider"
+import { LogRocketProvider } from "@/providers/logrocket-provider"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
@@ -31,10 +32,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
-          <QueryProvider>
-            {children}
-            <Toaster />
-          </QueryProvider>
+          <LogRocketProvider>
+            <QueryProvider>
+              {children}
+              <Toaster />
+            </QueryProvider>
+          </LogRocketProvider>
         </SessionProvider>
       </body>
     </html>
