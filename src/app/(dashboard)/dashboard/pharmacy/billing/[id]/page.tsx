@@ -575,10 +575,6 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
               </div>
               <div className="space-y-2">
                 <InfoRow
-                  label="N° Autorización"
-                  value={invoice.sriNumeroAutorizacion}
-                />
-                <InfoRow
                   label="Fecha autorización"
                   value={invoice.sriFechaAutorizacionFormatted}
                 />

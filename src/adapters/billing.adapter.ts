@@ -102,7 +102,9 @@ export interface Invoice {
   sriStatus: string | null
   sriErrors: string | null
   sriNumeroAutorizacion: string | null
+  sriAuthorization: string | null
   sriFechaAutorizacion: string | null
+  sriAuthorizationDate: string | null
   sriFechaAutorizacionFormatted: string | null
   createdAt: string
   createdAtFormatted: string
@@ -150,6 +152,9 @@ export function toInvoice(raw: InvoiceResponse): Invoice {
   const totalIva15 = toNumber(raw.totalIva15)
   const totalIva = toNumber(raw.totalIva ?? raw.valorIva)
   const importeTotal = toNumber(raw.importeTotal)
+
+  const sriAuthorization = raw.sriAuthorization ?? raw.sriNumeroAutorizacion ?? null
+  const sriAuthorizationDate = raw.sriAuthorizationDate ?? raw.sriFechaAutorizacion ?? null
 
   return {
     id: raw.id,
@@ -208,9 +213,11 @@ export function toInvoice(raw: InvoiceResponse): Invoice {
     statusColor: INVOICE_STATUS_COLORS[raw.status] ?? "",
     sriStatus: raw.sriStatus ?? null,
     sriErrors: raw.sriErrors ?? null,
-    sriNumeroAutorizacion: raw.sriNumeroAutorizacion ?? null,
-    sriFechaAutorizacion: raw.sriFechaAutorizacion ?? null,
-    sriFechaAutorizacionFormatted: formatDateTime(raw.sriFechaAutorizacion),
+    sriNumeroAutorizacion: sriAuthorization,
+    sriAuthorization,
+    sriFechaAutorizacion: sriAuthorizationDate,
+    sriAuthorizationDate,
+    sriFechaAutorizacionFormatted: formatDateTime(sriAuthorizationDate),
     createdAt: raw.createdAt,
     createdAtFormatted: formatDateTime(raw.createdAt) ?? "—",
     updatedAt: raw.updatedAt,
