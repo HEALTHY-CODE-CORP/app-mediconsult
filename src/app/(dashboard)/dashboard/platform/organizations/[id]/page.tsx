@@ -32,6 +32,7 @@ import {
   useToggleUserActiveByOrg,
 } from "@/hooks/use-users"
 import { ROLE_LABELS } from "@/adapters/user.adapter"
+import { formatDateEc, formatDateTimeEc } from "@/lib/date"
 import {
   ArrowLeft,
   Pencil,
@@ -256,21 +257,13 @@ export default function OrganizationDetailPage({
             {org.planStartedAt && (
               <InfoRow
                 label="Inicio del plan"
-                value={new Date(org.planStartedAt).toLocaleDateString("es-EC", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                value={formatDateEc(org.planStartedAt, org.planStartedAt)}
               />
             )}
             {org.planExpiresAt && (
               <InfoRow
                 label="Expiración del plan"
-                value={new Date(org.planExpiresAt).toLocaleDateString("es-EC", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                value={formatDateEc(org.planExpiresAt, org.planExpiresAt)}
               />
             )}
           </CardContent>
@@ -421,23 +414,11 @@ export default function OrganizationDetailPage({
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <InfoRow
             label="Creada"
-            value={new Date(org.createdAt).toLocaleDateString("es-EC", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            value={formatDateTimeEc(org.createdAt, org.createdAt)}
           />
           <InfoRow
             label="Última actualización"
-            value={new Date(org.updatedAt).toLocaleDateString("es-EC", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            value={formatDateTimeEc(org.updatedAt, org.updatedAt)}
           />
         </CardContent>
       </Card>

@@ -34,6 +34,7 @@ import {
   useVoidMedicalCertificate,
   useSendMedicalCertificateEmail,
 } from "@/hooks/use-clinical"
+import { parseDateEc } from "@/lib/date"
 import type { SignMedicalCertificateRequest } from "@/types/clinical.model"
 import type { ApiError } from "@/types/api"
 
@@ -126,7 +127,15 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
       return
     }
 
-    if (restStartDate && restEndDate && new Date(restEndDate) < new Date(restStartDate)) {
+    const parsedRestStartDate = parseDateEc(restStartDate)
+    const parsedRestEndDate = parseDateEc(restEndDate)
+    if (
+      restStartDate &&
+      restEndDate &&
+      parsedRestStartDate &&
+      parsedRestEndDate &&
+      parsedRestEndDate < parsedRestStartDate
+    ) {
       toast.error("La fecha final de reposo no puede ser menor a la fecha inicial")
       return
     }

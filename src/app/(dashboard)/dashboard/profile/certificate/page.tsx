@@ -19,6 +19,7 @@ import {
   useUploadMyCertificate,
   useDeactivateCertificate,
 } from "@/hooks/use-certificates"
+import { formatDateEc } from "@/lib/date"
 import {
   FileKey,
   Shield,
@@ -266,11 +267,11 @@ export default function MyCertificatePage() {
             <CardContent className="space-y-3">
               <InfoRow
                 label="Válido desde"
-                value={activeCert.validFrom ? new Date(activeCert.validFrom).toLocaleDateString("es-EC") : null}
+                value={activeCert.validFrom ? formatDateEc(activeCert.validFrom, activeCert.validFrom) : null}
               />
               <InfoRow
                 label="Válido hasta"
-                value={activeCert.validUntil ? new Date(activeCert.validUntil).toLocaleDateString("es-EC") : null}
+                value={activeCert.validUntil ? formatDateEc(activeCert.validUntil, activeCert.validUntil) : null}
               />
               <div>
                 <p className="text-xs text-muted-foreground">Estado de firma</p>
@@ -320,7 +321,7 @@ export default function MyCertificatePage() {
                       <p className="text-xs text-muted-foreground">
                         {cert.subjectCn ?? cert.fileName} &middot;{" "}
                         {cert.validUntil
-                          ? `Expira: ${new Date(cert.validUntil).toLocaleDateString("es-EC")}`
+                          ? `Expira: ${formatDateEc(cert.validUntil, cert.validUntil)}`
                           : "Sin fecha"}
                       </p>
                     </div>

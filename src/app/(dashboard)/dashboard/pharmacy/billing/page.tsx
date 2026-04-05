@@ -43,6 +43,7 @@ import {
   type Invoice,
 } from "@/adapters/billing.adapter"
 import type { ApiError } from "@/types/api"
+import { toIsoDateEc } from "@/lib/date"
 
 type FilterMode = "all" | "status" | "dateRange"
 
@@ -117,7 +118,7 @@ export default function BillingPage() {
   const orgSelectedPharmacyByDate = useMemo(
     () =>
       orgSelectedPharmacyInvoices.filter((inv) => {
-        const createdDate = inv.createdAt?.slice(0, 10)
+        const createdDate = toIsoDateEc(inv.createdAt, "")
         return Boolean(
           createdDate &&
             startDate &&

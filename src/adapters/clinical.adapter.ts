@@ -12,6 +12,7 @@ import type {
   MedicalCertificateStatus,
   SignaturePlacementValue,
 } from "@/types/clinical.model"
+import { formatDateEc, formatDateTimeEc } from "@/lib/date"
 
 // ─── Label maps ──────────────────────────────────────────────────────
 
@@ -235,31 +236,11 @@ export interface MedicalCertificate {
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 function formatDateTime(dateStr?: string | null): string {
-  if (!dateStr) return "—"
-  try {
-    return new Intl.DateTimeFormat("es-EC", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(dateStr))
-  } catch {
-    return dateStr
-  }
+  return formatDateTimeEc(dateStr, dateStr ?? "—")
 }
 
 function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return "—"
-  try {
-    return new Intl.DateTimeFormat("es-EC", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date(dateStr))
-  } catch {
-    return dateStr
-  }
+  return formatDateEc(dateStr, dateStr ?? "—")
 }
 
 // ─── Transform functions ─────────────────────────────────────────────

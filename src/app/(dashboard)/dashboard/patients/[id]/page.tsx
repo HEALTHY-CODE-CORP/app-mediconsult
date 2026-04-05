@@ -17,6 +17,7 @@ import { ConfirmButton } from "@/components/shared/confirm-button"
 import { SummaryTile } from "@/components/shared/summary-tile"
 import { PatientAllergies } from "@/components/patients/patient-allergies"
 import { usePatient, useDeletePatient } from "@/hooks/use-patients"
+import { formatDateTimeEc } from "@/lib/date"
 import {
   ArrowLeft,
   Pencil,
@@ -67,13 +68,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     )
   }
 
-  const lastUpdated = new Intl.DateTimeFormat("es-EC", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(patient.updatedAt))
+  const lastUpdated = formatDateTimeEc(patient.updatedAt, patient.updatedAt)
 
   return (
     <div className="space-y-6">

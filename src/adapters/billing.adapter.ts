@@ -5,6 +5,7 @@ import type {
   InvoiceType,
   TipoIdentificacion,
 } from "@/types/billing.model"
+import { formatDateTimeEc } from "@/lib/date"
 
 // ─── Label maps ──────────────────────────────────────────────────────
 
@@ -127,18 +128,7 @@ function toNumber(value: number | string | null | undefined, fallback = 0): numb
 }
 
 function formatDateTime(dateStr?: string | null): string | null {
-  if (!dateStr) return null
-  try {
-    return new Intl.DateTimeFormat("es-EC", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(dateStr))
-  } catch {
-    return dateStr
-  }
+  return dateStr ? formatDateTimeEc(dateStr, dateStr) : null
 }
 
 // ─── Transform functions ─────────────────────────────────────────────

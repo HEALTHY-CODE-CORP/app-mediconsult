@@ -18,6 +18,7 @@ import {
   useCertificatesByOwner,
   useDeactivateCertificate,
 } from "@/hooks/use-certificates"
+import { formatDateEc } from "@/lib/date"
 import {
   ArrowLeft,
   Pencil,
@@ -248,7 +249,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
                   label="Válido hasta"
                   value={
                     activeCertificate.validUntil
-                      ? new Date(activeCertificate.validUntil).toLocaleDateString("es-EC")
+                      ? formatDateEc(activeCertificate.validUntil, activeCertificate.validUntil)
                       : "Sin fecha"
                   }
                 />
@@ -318,7 +319,7 @@ export default function PharmacyDetailPage({ params }: PharmacyDetailPageProps) 
                     <p className="text-xs text-muted-foreground">
                       {certificate.fileName} ·{" "}
                       {certificate.validUntil
-                        ? `Expira: ${new Date(certificate.validUntil).toLocaleDateString("es-EC")}`
+                        ? `Expira: ${formatDateEc(certificate.validUntil, certificate.validUntil)}`
                         : "Sin fecha"}
                     </p>
                   </div>

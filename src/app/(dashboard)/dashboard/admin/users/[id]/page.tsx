@@ -18,6 +18,7 @@ import { ConfirmButton } from "@/components/shared/confirm-button"
 import { useUser, useToggleUserActive, useUpdateUser } from "@/hooks/use-users"
 import { ROLE_LABELS } from "@/adapters/user.adapter"
 import type { Role } from "@/types/auth.model"
+import { formatDateTimeEc } from "@/lib/date"
 import {
   ArrowLeft,
   Pencil,
@@ -141,13 +142,7 @@ export default function UserDetailPage({ params }: UserDetailPageProps) {
     )
   }
 
-  const updatedAtFormatted = new Intl.DateTimeFormat("es-EC", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(user.updatedAt))
+  const updatedAtFormatted = formatDateTimeEc(user.updatedAt, user.updatedAt)
 
   return (
     <div className="space-y-6">

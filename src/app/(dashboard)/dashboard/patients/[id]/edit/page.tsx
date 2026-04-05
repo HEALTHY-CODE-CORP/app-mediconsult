@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { SummaryTile } from "@/components/shared/summary-tile"
 import { PatientForm } from "@/components/patients/patient-form"
 import { usePatient } from "@/hooks/use-patients"
+import { formatDateTimeEc } from "@/lib/date"
 import { ArrowLeft, Clock3, UserRound, FilePenLine } from "lucide-react"
 
 interface EditPatientPageProps {
@@ -38,13 +39,7 @@ export default function EditPatientPage({ params }: EditPatientPageProps) {
     )
   }
 
-  const lastUpdated = new Intl.DateTimeFormat("es-EC", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(patient.updatedAt))
+  const lastUpdated = formatDateTimeEc(patient.updatedAt, patient.updatedAt)
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

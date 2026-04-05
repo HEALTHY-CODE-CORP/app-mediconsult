@@ -2,6 +2,7 @@ import type {
   PlatformFeeResponse,
   FeeStatus,
 } from "@/types/platform-fee.model"
+import { formatDateTimeEc } from "@/lib/date"
 
 export const FEE_STATUS_LABELS: Record<FeeStatus, string> = {
   PENDING: "Pendiente",
@@ -42,18 +43,7 @@ function fmt(value: number): string {
 }
 
 function formatDateTime(dateStr?: string | null): string | null {
-  if (!dateStr) return null
-  try {
-    return new Intl.DateTimeFormat("es-EC", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(dateStr))
-  } catch {
-    return dateStr
-  }
+  return dateStr ? formatDateTimeEc(dateStr, dateStr) : null
 }
 
 export function toPlatformFee(raw: PlatformFeeResponse): PlatformFee {

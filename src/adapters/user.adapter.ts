@@ -1,4 +1,5 @@
 import type { UserResponse, Role } from "@/types/auth.model"
+import { formatDateEc } from "@/lib/date"
 
 // ─── Label maps ──────────────────────────────────────────────────────
 
@@ -72,11 +73,7 @@ export function toUser(raw: UserResponse): User {
     isActive: raw.isActive,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
-    createdAtFormatted: new Date(raw.createdAt).toLocaleDateString("es-EC", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }),
+    createdAtFormatted: formatDateEc(raw.createdAt, raw.createdAt),
   }
 }
 

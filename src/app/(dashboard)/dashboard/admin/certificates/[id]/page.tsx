@@ -29,6 +29,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/axios"
+import { formatDateEc } from "@/lib/date"
 
 export default function CertificateDetailPage({
   params,
@@ -192,11 +193,11 @@ export default function CertificateDetailPage({
           <CardContent className="space-y-3">
             <InfoRow
               label="Válido desde"
-              value={cert.validFrom ? new Date(cert.validFrom).toLocaleDateString("es-EC") : null}
+              value={cert.validFrom ? formatDateEc(cert.validFrom, cert.validFrom) : null}
             />
             <InfoRow
               label="Válido hasta"
-              value={cert.validUntil ? new Date(cert.validUntil).toLocaleDateString("es-EC") : null}
+              value={cert.validUntil ? formatDateEc(cert.validUntil, cert.validUntil) : null}
             />
             <div>
               <p className="text-xs text-muted-foreground">Estado de firma</p>

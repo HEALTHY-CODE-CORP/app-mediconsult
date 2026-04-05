@@ -25,6 +25,7 @@ import {
   useCreateMedicalCertificate,
 } from "@/hooks/use-clinical"
 import { usePatient } from "@/hooks/use-patients"
+import { toIsoDateEc } from "@/lib/date"
 import type { ApiError } from "@/types/api"
 
 interface NewMedicalCertificatePageProps {
@@ -59,6 +60,7 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
   const createMutation = useCreateMedicalCertificate(id)
 
   const [overrides, setOverrides] = useState<FormOverrides>({})
+  const [todayIsoDate] = useState(() => toIsoDateEc(new Date()))
 
   const defaultTemplateId = templates[0]?.id ?? ""
   const selectedTemplateId = overrides.templateId ?? defaultTemplateId
@@ -71,7 +73,7 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
     ? `Certificado medico - ${consultation.patientName}`
     : ""
 
-  const defaultCertificateDate = formatIsoDate(new Date())
+  const defaultCertificateDate = todayIsoDate
   const selectedCertificateDate = overrides.certificateDate ?? defaultCertificateDate
 
   const selectedRestDays = overrides.restDays ?? "0"
@@ -107,7 +109,7 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
       currentDate: formatDateForCertificate(defaultCertificateDate),
       certificateDate: formatDateForCertificate(selectedCertificateDate),
       consultationDate: formatDateForCertificate(
-        consultation ? formatIsoDate(new Date(consultation.consultationDate)) : defaultCertificateDate
+        consultation ? toIsoDateEc(consultation.consultationDate, defaultCertificateDate) : defaultCertificateDate
       ),
       patientName,
       patientIdTypeLabel,
@@ -179,11 +181,7 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
       return
     }
 
-    if (
-      selectedRestStartDate &&
-      selectedRestEndDate &&
-      new Date(selectedRestEndDate) < new Date(selectedRestStartDate)
-    ) {
+    if (selectedRestStartDate && selectedRestEndDate && selectedRestEndDate < selectedRestStartDate) {
       toast.error("La fecha final de reposo no puede ser menor a la fecha inicial")
       return
     }
@@ -417,17 +415,21 @@ function selectedTitleOrDefault(value: string | undefined, fallback: string): st
   return trimmed || fallback
 }
 
-function formatIsoDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, "0")
-  const day = `${date.getDate()}`.padStart(2, "0")
-  return `${year}-${month}-${day}`
-}
-
 function addDaysIsoDate(isoDate: string, days: number): string {
-  const base = new Date(`${isoDate}T00:00:00`)
-  base.setDate(base.getDate() + days)
-  return formatIsoDate(base)
+  const [yearStr, monthStr, dayStr] = isoDate.split("-")
+  const year = Number(yearStr)
+  const month = Number(monthStr)
+  const day = Number(dayStr)
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return isoDate
+  }
+
+  const base = new Date(Date.UTC(year, month - 1, day))
+  base.setUTCDate(base.getUTCDate() + days)
+  const nextYear = base.getUTCFullYear()
+  const nextMonth = `${base.getUTCMonth() + 1}`.padStart(2, "0")
+  const nextDay = `${base.getUTCDate()}`.padStart(2, "0")
+  return `${nextYear}-${nextMonth}-${nextDay}`
 }
 
 function formatDateForCertificate(isoDate: string): string {

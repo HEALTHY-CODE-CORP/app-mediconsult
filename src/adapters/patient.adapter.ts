@@ -7,6 +7,7 @@ import type {
   AllergyType,
   AllergySeverity,
 } from "@/types/patient.model"
+import { formatDateEc } from "@/lib/date"
 
 // ─── Display Label Maps ─────────────────────────────────────────────
 
@@ -104,16 +105,7 @@ export interface Allergy {
 // ─── Transform Functions ─────────────────────────────────────────────
 
 function formatDate(dateStr?: string | null): string | null {
-  if (!dateStr) return null
-  try {
-    return new Intl.DateTimeFormat("es-EC", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date(dateStr))
-  } catch {
-    return dateStr
-  }
+  return dateStr ? formatDateEc(dateStr, dateStr) : null
 }
 
 export function toPatient(response: PatientResponse): Patient {
