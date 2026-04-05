@@ -11,12 +11,24 @@ function isValidDate(date: Date): boolean {
   return !Number.isNaN(date.getTime())
 }
 
-function parseNaiveEcuadorDate(value: string): Date | null {
+/**
+ * Parses date strings without timezone info.
+ *
+ * - Date-only ("2026-04-04"): treated as a calendar date in Ecuador.
+ *   We set UTC to 05:00 so that formatting with timeZone=America/Guayaquil
+ *   (UTC-5) displays the same calendar date (midnight Ecuador = 05:00 UTC).
+ *
+ * - DateTime ("2026-04-04T15:30:00"): treated as UTC because the backend
+ *   server (Railway) runs in UTC. The format functions then convert to
+ *   Ecuador time for display using Intl.DateTimeFormat with timeZone.
+ */
+function parseNaiveDate(value: string): Date | null {
   const dateOnlyMatch = DATE_ONLY_REGEX.exec(value)
   if (dateOnlyMatch) {
     const year = Number(dateOnlyMatch[1])
     const month = Number(dateOnlyMatch[2])
     const day = Number(dateOnlyMatch[3])
+    // 05:00 UTC = 00:00 Ecuador (UTC-5), so the date displays correctly
     return new Date(Date.UTC(year, month - 1, day, 5, 0, 0, 0))
   }
 
@@ -31,7 +43,8 @@ function parseNaiveEcuadorDate(value: string): Date | null {
     const rawFraction = dateTimeMatch[7] ?? ""
     const millis = Number(rawFraction.padEnd(3, "0").slice(0, 3))
 
-    return new Date(Date.UTC(year, month - 1, day, hour + 5, minute, second, millis))
+    // Server sends UTC — keep as-is, no offset needed
+    return new Date(Date.UTC(year, month - 1, day, hour, minute, second, millis))
   }
 
   return null
@@ -56,7 +69,7 @@ export function parseDateEc(value: DateInput): Date | null {
   const text = value.trim()
   if (!text) return null
 
-  const naiveParsed = parseNaiveEcuadorDate(text)
+  const naiveParsed = parseNaiveDate(text)
   if (naiveParsed) return naiveParsed
 
   const parsed = new Date(normalizeFraction(text))
