@@ -33,6 +33,8 @@ import {
   Copy,
   CheckCircle,
   Mail,
+  Printer,
+  Download,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { ApiError } from "@/types/api"
@@ -142,6 +144,60 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
           ? (error as ApiError).message
           : null
       toast.error(message || "No se pudo enviar la factura por correo")
+    }
+  }
+
+  function handlePrintInvoice() {
+    const pdfUrl = `/api/bff/v1/billing/invoices/${id}/pdf`
+    const pdfWindow = window.open(pdfUrl, "_blank", "noopener,noreferrer")
+    if (!pdfWindow) {
+      toast.error("No se pudo abrir el PDF. Verifica el bloqueo de ventanas emergentes.")
+    }
+  }
+
+  async function handleDownloadInvoice() {
+    try {
+      const response = await fetch(`/api/bff/v1/billing/invoices/${id}/pdf?download=true`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          Accept: "application/pdf",
+        },
+      })
+
+      if (!response.ok) {
+        let errorMessage = "No se pudo descargar la factura en PDF"
+        try {
+          const payload = (await response.json()) as ApiError
+          if (payload?.message) errorMessage = payload.message
+        } catch {
+          // ignore non-JSON errors
+        }
+        toast.error(errorMessage)
+        return
+      }
+
+      const contentType = response.headers.get("content-type") ?? ""
+      if (!contentType.toLowerCase().includes("application/pdf")) {
+        toast.error("La respuesta no es un PDF válido")
+        return
+      }
+
+      const blob = await response.blob()
+      const disposition = response.headers.get("content-disposition")
+      const fallbackName = `factura-${invoice?.numeroFactura ?? id}.pdf`
+      const fileName = getFileNameFromDisposition(disposition) ?? fallbackName
+
+      const blobUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = blobUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(blobUrl)
+    } catch {
+      toast.error("No se pudo descargar la factura en PDF")
     }
   }
 
@@ -356,6 +412,28 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
           </div>
         </div>
         <div className="flex gap-2">
+          {invoice.status === "AUTHORIZED" && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrintInvoice}
+                disabled={isAutoFlowRunning}
+              >
+                <Printer className="mr-1 h-4 w-4" />
+                Imprimir
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadInvoice}
+                disabled={isAutoFlowRunning}
+              >
+                <Download className="mr-1 h-4 w-4" />
+                Descargar PDF
+              </Button>
+            </>
+          )}
           {invoice.status === "AUTHORIZED" && (
             <Button
               variant="outline"
@@ -638,4 +716,15 @@ function ValueBox({ label, value }: { label: string; value: string }) {
       <p className="text-lg font-semibold">{value}</p>
     </div>
   )
+}
+
+function getFileNameFromDisposition(disposition: string | null): string | null {
+  if (!disposition) return null
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+  if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1])
+
+  const asciiMatch = disposition.match(/filename="?([^";]+)"?/i)
+  if (asciiMatch?.[1]) return asciiMatch[1]
+
+  return null
 }
