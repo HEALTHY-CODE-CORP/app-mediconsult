@@ -37,8 +37,6 @@ export default function NewUserPage() {
 
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
-    confirmPassword: "",
     firstName: "",
     lastName: "",
     phone: "",
@@ -85,14 +83,6 @@ export default function NewUserPage() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Correo electrónico inválido"
     }
-    if (!formData.password) {
-      newErrors.password = "La contraseña es requerida"
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Mínimo 8 caracteres"
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Las contraseñas no coinciden"
-    }
     if (selectedRoles.length === 0) {
       newErrors.roles = "Selecciona al menos un rol"
     }
@@ -115,13 +105,12 @@ export default function NewUserPage() {
       await mutation.mutateAsync({
         organizationId,
         email: formData.email,
-        password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone || undefined,
         roles: selectedRoles,
       })
-      toast.success("Usuario creado exitosamente")
+      toast.success("Usuario creado. Se envió un correo con las credenciales de acceso.")
       router.push("/dashboard/admin/users")
     } catch (error) {
       const apiError = error as ApiError | undefined
@@ -203,46 +192,6 @@ export default function NewUserPage() {
                 onChange={(e) => updateField("phone", e.target.value)}
                 placeholder="0999999999"
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Credentials */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Credenciales de acceso</CardTitle>
-            <CardDescription>
-              Contraseña para el inicio de sesión (mínimo 8 caracteres)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña *</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => updateField("password", e.target.value)}
-                placeholder="Mínimo 8 caracteres"
-              />
-              {errors.password && (
-                <p className="text-xs text-destructive">{errors.password}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar contraseña *</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => updateField("confirmPassword", e.target.value)}
-                placeholder="Repite la contraseña"
-              />
-              {errors.confirmPassword && (
-                <p className="text-xs text-destructive">
-                  {errors.confirmPassword}
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>

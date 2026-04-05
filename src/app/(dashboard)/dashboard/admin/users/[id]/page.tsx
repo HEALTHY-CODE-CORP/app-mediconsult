@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmButton } from "@/components/shared/confirm-button"
-import { useUser, useToggleUserActive, useUpdateUser } from "@/hooks/use-users"
+import { useUser, useToggleUserActive, useUpdateUser, useResendCredentials } from "@/hooks/use-users"
 import { ROLE_LABELS } from "@/adapters/user.adapter"
 import type { Role } from "@/types/auth.model"
 import { formatDateTimeEc } from "@/lib/date"
@@ -28,6 +28,7 @@ import {
   Calendar,
   Power,
   UserRound,
+  KeyRound,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -57,6 +58,7 @@ export default function UserDetailPage({ params }: UserDetailPageProps) {
   const { data: user, isLoading } = useUser(id)
   const toggleMutation = useToggleUserActive()
   const updateUserMutation = useUpdateUser(id)
+  const resendMutation = useResendCredentials()
   const [consultationPriceOverride, setConsultationPriceOverride] = useState<string | null>(null)
 
   const hasNonEditableRoles = user
@@ -174,6 +176,26 @@ export default function UserDetailPage({ params }: UserDetailPageProps) {
             <Pencil className="mr-1 h-4 w-4" />
             Editar
           </Button>
+          <ConfirmButton
+            variant="outline"
+            size="sm"
+            title="Reenviar credenciales"
+            description="Se generará una nueva contraseña y se enviará al correo del usuario. La contraseña actual dejará de funcionar."
+            confirmLabel="Reenviar"
+            loadingLabel="Enviando..."
+            onConfirm={async () => {
+              try {
+                await resendMutation.mutateAsync(user.id)
+                toast.success("Credenciales enviadas al correo del usuario")
+              } catch {
+                toast.error("Error al reenviar credenciales")
+              }
+            }}
+            disabled={resendMutation.isPending}
+          >
+            <KeyRound className="mr-1 h-4 w-4" />
+            Reenviar credenciales
+          </ConfirmButton>
           <ConfirmButton
             variant="outline"
             size="sm"

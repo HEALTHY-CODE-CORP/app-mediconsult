@@ -135,6 +135,36 @@ export function useToggleUserActive() {
   })
 }
 
+// ─── Resend credentials (org admin — own org) ──────────────────────
+export function useResendCredentials() {
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data } = await api.post<{ message: string }>(
+        `/auth/users/${userId}/resend-credentials`
+      )
+      return data
+    },
+  })
+}
+
+// ─── Resend credentials by organization (SUPER_ADMIN) ───────────────
+export function useResendCredentialsByOrg() {
+  return useMutation({
+    mutationFn: async ({
+      organizationId,
+      userId,
+    }: {
+      organizationId: string
+      userId: string
+    }) => {
+      const { data } = await api.post<{ message: string }>(
+        `/auth/users/organization/${organizationId}/${userId}/resend-credentials`
+      )
+      return data
+    },
+  })
+}
+
 // ─── Toggle active by organization (SUPER_ADMIN) ────────────────────
 export function useToggleUserActiveByOrg() {
   const queryClient = useQueryClient()
