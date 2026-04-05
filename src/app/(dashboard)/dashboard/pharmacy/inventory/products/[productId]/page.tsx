@@ -258,7 +258,6 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
             <CardTitle>Precios y stock</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <InfoRow label="Precio de compra" value={product.purchasePriceFormatted} />
             <InfoRow label="Precio de venta" value={product.sellingPriceFormatted} />
             <InfoRow label="Stock actual" value={String(product.currentStock)} />
             <InfoRow label="Stock mínimo" value={String(product.minStock)} />

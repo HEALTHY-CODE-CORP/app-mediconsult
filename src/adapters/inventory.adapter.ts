@@ -33,7 +33,6 @@ export interface Product {
   activeIngredient: string | null
   presentation: string | null
   concentration: string | null
-  purchasePrice: number
   sellingPrice: number
   minStock: number
   currentStock: number
@@ -44,7 +43,6 @@ export interface Product {
   displayName: string
   /** formatted price "$12.50" */
   sellingPriceFormatted: string
-  purchasePriceFormatted: string
   /** "Activo" | "Inactivo" */
   statusLabel: string
   createdAt: string
@@ -126,7 +124,6 @@ export function toProduct(raw: ProductResponse): Product {
     activeIngredient: raw.activeIngredient ?? null,
     presentation: raw.presentation ?? null,
     concentration: raw.concentration ?? null,
-    purchasePrice: raw.purchasePrice,
     sellingPrice: raw.sellingPrice,
     minStock: raw.minStock,
     currentStock: raw.currentStock,
@@ -135,7 +132,6 @@ export function toProduct(raw: ProductResponse): Product {
     isLowStock: raw.isLowStock,
     displayName: parts.join(" "),
     sellingPriceFormatted: formatCurrency(raw.sellingPrice) ?? "$0.00",
-    purchasePriceFormatted: formatCurrency(raw.purchasePrice) ?? "$0.00",
     statusLabel: raw.isActive ? "Activo" : "Inactivo",
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,

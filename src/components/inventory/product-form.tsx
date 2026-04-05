@@ -30,7 +30,6 @@ interface FormState {
   activeIngredient: string
   presentation: string
   concentration: string
-  purchasePrice: string
   sellingPrice: string
   minStock: string
   requiresPrescription: boolean
@@ -44,7 +43,6 @@ function toFormState(product?: Product): FormState {
     activeIngredient: product?.activeIngredient ?? "",
     presentation: product?.presentation ?? "",
     concentration: product?.concentration ?? "",
-    purchasePrice: product?.purchasePrice?.toString() ?? "",
     sellingPrice: product?.sellingPrice?.toString() ?? "",
     minStock: product?.minStock?.toString() ?? "5",
     requiresPrescription: product?.requiresPrescription ?? false,
@@ -79,7 +77,6 @@ export function ProductForm({ pharmacyId, product }: ProductFormProps) {
       activeIngredient: form.activeIngredient.trim() || undefined,
       presentation: form.presentation.trim() || undefined,
       concentration: form.concentration.trim() || undefined,
-      purchasePrice: parseFloat(form.purchasePrice) || 0,
       sellingPrice: parseFloat(form.sellingPrice) || 0,
       minStock: parseInt(form.minStock) || 5,
       requiresPrescription: form.requiresPrescription,
@@ -176,19 +173,7 @@ export function ProductForm({ pharmacyId, product }: ProductFormProps) {
           </div>
 
           {/* Pricing */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="purchasePrice">Precio de compra ($)</Label>
-              <Input
-                id="purchasePrice"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.purchasePrice}
-                onChange={(e) => updateField("purchasePrice", e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="sellingPrice">Precio de venta ($)</Label>
               <Input

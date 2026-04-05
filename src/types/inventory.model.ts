@@ -8,7 +8,6 @@ export interface CreateProductRequest {
   activeIngredient?: string
   presentation?: string
   concentration?: string
-  purchasePrice: number
   sellingPrice: number
   minStock: number
   requiresPrescription: boolean
@@ -25,7 +24,6 @@ export interface ProductResponse {
   activeIngredient?: string
   presentation?: string
   concentration?: string
-  purchasePrice: number
   sellingPrice: number
   minStock: number
   currentStock: number
