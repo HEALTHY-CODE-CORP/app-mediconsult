@@ -140,7 +140,8 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
     selectedPurpose,
   ])
 
-  const selectedContent = overrides.content ?? toEditorHtml(autoContent)
+  const autoEditorContent = useMemo(() => toEditorHtml(autoContent), [autoContent])
+  const selectedContent = overrides.content ?? autoEditorContent
 
   function setField<K extends keyof FormOverrides>(field: K, value: FormOverrides[K]) {
     setOverrides((prev) => ({ ...prev, [field]: value }))
@@ -161,6 +162,22 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
       delete next[field]
       return next
     })
+  }
+
+  function handleContentChange(nextValue: string, meta?: { hasFocus: boolean }) {
+    // TinyMCE can emit change events while syncing external value updates.
+    // We ignore those so template variables remain reactive until user edits manually.
+    if (!meta?.hasFocus) return
+
+    const normalizedIncoming = normalizeEditorHtml(nextValue)
+    const normalizedAuto = normalizeEditorHtml(autoEditorContent)
+
+    if (normalizedIncoming === normalizedAuto) {
+      resetField("content")
+      return
+    }
+
+    setField("content", nextValue)
   }
 
   async function handleSubmit() {
@@ -364,7 +381,7 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
             </div>
             <RichTextEditor
               value={selectedContent}
-              onChange={(value) => setField("content", value)}
+              onChange={handleContentChange}
               height={460}
             />
             <p className="text-xs text-muted-foreground">
@@ -470,6 +487,13 @@ function toEditorHtml(content: string): string {
     .split(/\n{2,}/)
     .map((block) => `<p>${escapeHtml(block).replace(/\n/g, "<br />")}</p>`)
     .join("")
+}
+
+function normalizeEditorHtml(input: string): string {
+  return input
+    .replaceAll("&nbsp;", " ")
+    .replaceAll(/\s+/g, " ")
+    .trim()
 }
 
 function decodeEscapedLineBreaks(input: string): string {

@@ -22,7 +22,7 @@ const TinyEditor = dynamic(
 
 interface RichTextEditorProps {
   value: string
-  onChange: (value: string) => void
+  onChange: (value: string, meta?: { hasFocus: boolean }) => void
   disabled?: boolean
   height?: number
   className?: string
@@ -41,7 +41,9 @@ export function RichTextEditor({
         apiKey={TINYMCE_API_KEY || "no-api-key"}
         value={value}
         disabled={disabled}
-        onEditorChange={(nextValue) => onChange(nextValue)}
+        onEditorChange={(nextValue, editor) =>
+          onChange(nextValue, { hasFocus: editor.hasFocus() })
+        }
         init={{
           height,
           menubar: false,
