@@ -74,6 +74,7 @@ export interface CreateConsultationRequest {
   medicalRecordId: string
   clinicId: string
   vitalSignsId?: string
+  cost?: number
   reasonForVisit: string
   currentIllness?: string
   physicalExamination?: string
@@ -85,6 +86,7 @@ export interface CreateConsultationRequest {
 }
 
 export interface UpdateConsultationRequest {
+  cost?: number
   reasonForVisit?: string
   currentIllness?: string
   physicalExamination?: string
@@ -104,6 +106,7 @@ export interface ConsultationResponse {
   doctorName: string
   clinicId: string
   clinicName: string
+  cost: number
   vitalSignsId?: string
   consultationDate: string
   reasonForVisit: string

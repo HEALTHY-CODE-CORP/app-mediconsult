@@ -160,6 +160,38 @@ export function useDeleteClinic() {
   })
 }
 
+export function useUploadClinicLogo() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ clinicId, file }: { clinicId: string; file: File }) => {
+      const formData = new FormData()
+      formData.append("file", file)
+      const { data } = await api.post<ClinicResponse>(`/clinics/${clinicId}/logo`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      return toClinic(data)
+    },
+    onSuccess: (clinic) => {
+      queryClient.invalidateQueries({ queryKey: CLINICS_KEY })
+      queryClient.invalidateQueries({ queryKey: [...CLINICS_KEY, clinic.id] })
+    },
+  })
+}
+
+export function useDeleteClinicLogo() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (clinicId: string) => {
+      const { data } = await api.delete<ClinicResponse>(`/clinics/${clinicId}/logo`)
+      return toClinic(data)
+    },
+    onSuccess: (clinic) => {
+      queryClient.invalidateQueries({ queryKey: CLINICS_KEY })
+      queryClient.invalidateQueries({ queryKey: [...CLINICS_KEY, clinic.id] })
+    },
+  })
+}
+
 // ─── Clinic ↔ Pharmacy linking ───────────────────────────────────────
 
 export function useClinicPharmacies(clinicId: string) {

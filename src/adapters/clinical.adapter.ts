@@ -124,6 +124,8 @@ export interface Consultation {
   doctorName: string
   clinicId: string
   clinicName: string
+  cost: number
+  costFormatted: string
   vitalSignsId: string | null
   consultationDate: string
   consultationDateFormatted: string
@@ -311,6 +313,8 @@ export function toConsultation(raw: ConsultationResponse): Consultation {
     doctorName: raw.doctorName,
     clinicId: raw.clinicId,
     clinicName: raw.clinicName,
+    cost: raw.cost,
+    costFormatted: `$${Number(raw.cost).toFixed(2)}`,
     vitalSignsId: raw.vitalSignsId ?? null,
     consultationDate: raw.consultationDate,
     consultationDateFormatted: formatDateTime(raw.consultationDate),

@@ -62,6 +62,7 @@ const TEMPLATE_VARIABLES = [
   "{{patientIdNumber}}",
   "{{doctorName}}",
   "{{clinicName}}",
+  "{{clinicLogo}}",
   "{{diagnosisSummary}}",
   "{{restDays}}",
   "{{restStartDate}}",

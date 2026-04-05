@@ -71,7 +71,7 @@ export function NewConsultationInvoiceContent() {
   }>({})
   const [formaPago, setFormaPago] = useState("01")
   const [issuerType, setIssuerType] = useState<ConsultationIssuerType>("CLINIC")
-  const [consultationPriceOverride, setConsultationPriceOverride] = useState("")
+  const [consultationPriceOverride, setConsultationPriceOverride] = useState<string | null>(null)
 
   function getApiErrorMessage(error: unknown): string | null {
     const axiosError = error as AxiosError<{ message?: string; error?: string }>
@@ -110,7 +110,8 @@ export function NewConsultationInvoiceContent() {
       return
     }
 
-    const trimmedPrice = consultationPriceOverride.trim()
+    const effectivePrice = consultationPriceOverride ?? (consultation?.cost?.toString() ?? "0")
+    const trimmedPrice = effectivePrice.trim()
     let parsedConsultationPrice: number | undefined
     if (trimmedPrice.length > 0) {
       parsedConsultationPrice = Number(trimmedPrice)
@@ -450,7 +451,7 @@ export function NewConsultationInvoiceContent() {
 
               <div className="space-y-2">
                 <Label htmlFor="consultation-invoice-custom-price">
-                  Precio de consulta (opcional)
+                  Precio de consulta
                 </Label>
                 <Input
                   id="consultation-invoice-custom-price"
@@ -458,14 +459,14 @@ export function NewConsultationInvoiceContent() {
                   step="0.01"
                   min="0"
                   inputMode="decimal"
-                  value={consultationPriceOverride}
+                  value={consultationPriceOverride ?? consultation.cost.toString()}
                   onChange={(e) => setConsultationPriceOverride(e.target.value)}
-                  placeholder="Dejar vacío para usar precio configurado"
+                  placeholder="0.00"
                 />
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Si no defines un precio manual, se usa la configuración por defecto: precio del médico y, si no existe, el precio del consultorio.
+              Precio asignado al crear la consulta. Puedes ajustarlo si es necesario.
             </p>
           </CardContent>
         </Card>

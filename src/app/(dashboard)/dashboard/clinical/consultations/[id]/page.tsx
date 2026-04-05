@@ -203,8 +203,8 @@ export default function ConsultationDetailPage({
             />
             <SummaryTile
               icon={<Receipt className="h-4 w-4 text-muted-foreground" />}
-              label="Facturación"
-              value={billingStatus}
+              label="Costo"
+              value={consultation.costFormatted}
             />
             <SummaryTile
               icon={<ClipboardCheck className="h-4 w-4 text-muted-foreground" />}

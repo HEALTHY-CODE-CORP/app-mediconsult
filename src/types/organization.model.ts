@@ -57,6 +57,8 @@ export interface ClinicResponse {
   billingAccountingRequired: boolean
   sriEnvironment: "1" | "2"
   consultationPrice: number
+  hasLogo: boolean
+  logoUploadedAt?: string
   isActive: boolean
   createdAt: string
   updatedAt: string

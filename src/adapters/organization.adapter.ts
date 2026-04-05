@@ -51,6 +51,9 @@ export interface Clinic {
   sriEnvironmentLabel: string
   consultationPrice: number
   consultationPriceFormatted: string
+  hasLogo: boolean
+  logoUploadedAt: string | null
+  logoUrl: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -151,6 +154,9 @@ export function toClinic(r: ClinicResponse): Clinic {
     sriEnvironmentLabel: SRI_ENVIRONMENT_LABELS[sriEnvironment],
     consultationPrice: r.consultationPrice,
     consultationPriceFormatted: `$${r.consultationPrice.toFixed(2)}`,
+    hasLogo: r.hasLogo ?? false,
+    logoUploadedAt: r.logoUploadedAt ?? null,
+    logoUrl: r.hasLogo ? `/api/bff/v1/clinics/${r.id}/logo` : null,
     isActive: r.isActive,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,

@@ -121,7 +121,7 @@ const orgNavigation: NavGroup[] = [
         title: "Plantillas certificados",
         href: "/dashboard/clinical/medical-certificate-templates",
         icon: FileText,
-        roles: CLINICAL_STAFF,
+        roles: ["ADMIN", "DOCTOR"] as Role[],
       },
     ],
   },

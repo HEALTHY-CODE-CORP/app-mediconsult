@@ -122,6 +122,17 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {clinic.logoUrl ? (
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <p className="mb-2 text-xs text-muted-foreground">Logo de la clínica</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={clinic.logoUrl}
+                  alt={`Logo de ${clinic.name}`}
+                  className="max-h-20 w-auto object-contain"
+                />
+              </div>
+            ) : null}
             <InfoRow icon={<MapPin className="h-4 w-4" />} label="Dirección" value={clinic.address} />
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Teléfono" value={clinic.phone} />
             <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={clinic.email} />

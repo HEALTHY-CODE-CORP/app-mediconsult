@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +23,8 @@ import {
 import { toast } from "sonner"
 import type { CreateClinicRequest, CreatePharmacyRequest } from "@/types/organization.model"
 import type { Clinic, Pharmacy } from "@/adapters/organization.adapter"
+import { useDeleteClinicLogo, useUploadClinicLogo } from "@/hooks/use-organizations"
+import { ImagePlus, Trash2 } from "lucide-react"
 
 type EntityType = "clinic" | "pharmacy"
 type FormData = CreateClinicRequest | CreatePharmacyRequest
@@ -41,6 +43,20 @@ const ENTITY_LABELS: Record<EntityType, { singular: string; article: string }> =
   pharmacy: { singular: "Farmacia", article: "la farmacia" },
 }
 
+const MAX_CLINIC_LOGO_SIZE_BYTES = 2 * 1024 * 1024
+const CLINIC_LOGO_ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"]
+
+function validateClinicLogo(file: File | null): string | null {
+  if (!file) return null
+  if (!CLINIC_LOGO_ACCEPTED_TYPES.includes(file.type)) {
+    return "Formato no válido. Solo se aceptan PNG, JPG/JPEG o WEBP."
+  }
+  if (file.size > MAX_CLINIC_LOGO_SIZE_BYTES) {
+    return "El logo no puede superar 2 MB."
+  }
+  return null
+}
+
 export function EntityForm({
   entity,
   entityType,
@@ -56,6 +72,8 @@ export function EntityForm({
   const clinicEntity = isClinic ? (entity as Clinic | undefined) : undefined
   const pharmacyEntity = isPharmacy ? (entity as Pharmacy | undefined) : undefined
   const billingSource = isPharmacy ? pharmacyEntity : clinicEntity
+  const uploadLogoMutation = useUploadClinicLogo()
+  const deleteLogoMutation = useDeleteClinicLogo()
 
   const [formData, setFormData] = useState({
     name: entity?.name ?? "",
@@ -74,6 +92,25 @@ export function EntityForm({
     sriEnvironment:
       (isPharmacy ? pharmacyEntity?.sriEnvironment : clinicEntity?.sriEnvironment) ?? "1",
   })
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoError, setLogoError] = useState<string | null>(null)
+  const [removeCurrentLogo, setRemoveCurrentLogo] = useState(false)
+
+  const selectedLogoPreviewUrl = useMemo(
+    () => (logoFile ? URL.createObjectURL(logoFile) : null),
+    [logoFile]
+  )
+
+  useEffect(() => {
+    return () => {
+      if (selectedLogoPreviewUrl) {
+        URL.revokeObjectURL(selectedLogoPreviewUrl)
+      }
+    }
+  }, [selectedLogoPreviewUrl])
+
+  const existingLogoUrl = clinicEntity?.hasLogo ? clinicEntity.logoUrl : null
+  const logoPreviewUrl = selectedLogoPreviewUrl ?? (!removeCurrentLogo ? existingLogoUrl : null)
 
   function updateField(
     key: Exclude<keyof typeof formData, "billingAccountingRequired">,
@@ -139,6 +176,20 @@ export function EntityForm({
     e.preventDefault()
     try {
       const result = await onSubmit(toPayload())
+
+      if (isClinic) {
+        const clinicId = result.id
+        try {
+          if (logoFile) {
+            await uploadLogoMutation.mutateAsync({ clinicId, file: logoFile })
+          } else if (removeCurrentLogo && clinicEntity?.hasLogo) {
+            await deleteLogoMutation.mutateAsync(clinicId)
+          }
+        } catch {
+          toast.error("La clínica se guardó, pero no se pudo actualizar el logo.")
+        }
+      }
+
       toast.success(
         mode === "create"
           ? `${labels.singular} creada exitosamente`
@@ -147,7 +198,7 @@ export function EntityForm({
       if (mode === "create") {
         router.push(`${backUrl}/${result.id}`)
       } else {
-        router.push(`${backUrl}/${entity!.id}`)
+        router.push(`${backUrl}/${result.id}`)
       }
     } catch {
       toast.error(
@@ -207,6 +258,67 @@ export function EntityForm({
               placeholder="correo@ejemplo.com"
             />
           </div>
+
+          {isClinic && (
+            <div className="col-span-full space-y-3 rounded-xl border border-dashed p-4">
+              <div className="space-y-1">
+                <Label htmlFor="clinic-logo">Logo de la clínica (opcional)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Formatos aceptados: PNG, JPG/JPEG, WEBP (máx. 2 MB).
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Input
+                  id="clinic-logo"
+                  type="file"
+                  accept={CLINIC_LOGO_ACCEPTED_TYPES.join(",")}
+                  onChange={(e) => {
+                    const nextFile = e.target.files?.[0] ?? null
+                    const error = validateClinicLogo(nextFile)
+                    if (error) {
+                      setLogoFile(null)
+                      setLogoError(error)
+                      return
+                    }
+                    setLogoError(null)
+                    setLogoFile(nextFile)
+                    setRemoveCurrentLogo(false)
+                  }}
+                />
+
+                {clinicEntity?.hasLogo && !logoFile && (
+                  <Button
+                    type="button"
+                    variant={removeCurrentLogo ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => setRemoveCurrentLogo((prev) => !prev)}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    {removeCurrentLogo ? "Mantener logo" : "Quitar logo actual"}
+                  </Button>
+                )}
+              </div>
+
+              {logoError && <p className="text-xs text-destructive">{logoError}</p>}
+
+              {logoPreviewUrl ? (
+                <div className="inline-flex max-w-[240px] items-center justify-center rounded-lg border bg-muted/20 p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={logoPreviewUrl}
+                    alt="Vista previa del logo de la clínica"
+                    className="max-h-24 w-auto object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                  <ImagePlus className="h-4 w-4" />
+                  Sin logo configurado
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -385,12 +497,17 @@ export function EntityForm({
           type="button"
           variant="outline"
           onClick={() => router.back()}
-          disabled={isPending}
+          disabled={isPending || uploadLogoMutation.isPending || deleteLogoMutation.isPending}
         >
           Cancelar
         </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending
+        <Button
+          type="submit"
+          disabled={
+            isPending || uploadLogoMutation.isPending || deleteLogoMutation.isPending
+          }
+        >
+          {isPending || uploadLogoMutation.isPending || deleteLogoMutation.isPending
             ? mode === "create"
               ? "Creando..."
               : "Guardando..."

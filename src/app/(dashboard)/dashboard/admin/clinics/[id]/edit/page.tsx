@@ -38,7 +38,7 @@ export default function EditClinicPage({ params }: EditClinicPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto w-full px-4 space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon-sm" render={<Link href={`/dashboard/admin/clinics/${id}`} />}>
           <ArrowLeft className="h-4 w-4" />

@@ -27,6 +27,7 @@ import { SummaryTile } from "@/components/shared/summary-tile"
 import { toast } from "sonner"
 import { usePatients } from "@/hooks/use-patients"
 import { useMyClinics } from "@/hooks/use-organizations"
+import { useProfile } from "@/hooks/use-users"
 import {
   usePatientOrgMedicalRecord,
   useCreateMedicalRecord,
@@ -47,12 +48,14 @@ import {
   CheckCircle2,
   CircleDashed,
   ClipboardCheck,
+  DollarSign,
 } from "lucide-react"
 
 export default function NewConsultationPage() {
   const router = useRouter()
   const { data: patients = [], isLoading: loadingPatients } = usePatients()
   const { data: clinics = [], isLoading: loadingClinics } = useMyClinics()
+  const { data: profile } = useProfile()
   const createRecord = useCreateMedicalRecord()
   const createConsultation = useCreateConsultation()
 
@@ -64,6 +67,7 @@ export default function NewConsultationPage() {
   const [isNewRecord, setIsNewRecord] = useState(false)
   const [selectionAttempted, setSelectionAttempted] = useState(false)
   const [formSubmitAttempted, setFormSubmitAttempted] = useState(false)
+  const [costOverride, setCostOverride] = useState<string>("")
 
   // Auto-select clinic if only one
   const effectiveClinicId = clinics.length === 1 ? clinics[0].id : (selectedClinicId ?? "")
@@ -121,12 +125,22 @@ export default function NewConsultationPage() {
     setSearch("")
   }
 
+  function resolveDefaultCost(): string {
+    const selectedClinic = clinics.find((c) => c.id === effectiveClinicId)
+    const doctorPrice = profile?.consultationPrice
+    const clinicPrice = selectedClinic?.consultationPrice
+    return (doctorPrice ?? clinicPrice ?? 0).toString()
+  }
+
   async function handleProceed() {
     setSelectionAttempted(true)
     if (!selectedPatientId || !effectiveClinicId) {
       toast.error("Selecciona un paciente y un consultorio")
       return
     }
+
+    const defaultCost = resolveDefaultCost()
+    setCostOverride(defaultCost)
 
     if (existingRecord) {
       setMedicalRecordId(existingRecord.id)
@@ -157,9 +171,11 @@ export default function NewConsultationPage() {
     }
 
     try {
+      const parsedCost = parseFloat(costOverride)
       const result = await createConsultation.mutateAsync({
         medicalRecordId,
         clinicId: effectiveClinicId,
+        cost: !isNaN(parsedCost) ? parsedCost : undefined,
         reasonForVisit: formData.reasonForVisit,
         currentIllness: formData.currentIllness || undefined,
         physicalExamination: formData.physicalExamination || undefined,
@@ -472,6 +488,34 @@ export default function NewConsultationPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Costo de consulta */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Costo de consulta
+              </CardTitle>
+              <CardDescription>
+                Se precarga según el precio del médico o del consultorio. Puedes ajustarlo si aplica un precio preferencial.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="consultationCost">Costo (USD) *</Label>
+                <Input
+                  id="consultationCost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={costOverride}
+                  onChange={(e) => setCostOverride(e.target.value)}
+                  placeholder="0.00"
+                  className="max-w-xs"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Antecedentes — expanded edit for new records, collapsible for existing */}
           {medicalRecordId && (
