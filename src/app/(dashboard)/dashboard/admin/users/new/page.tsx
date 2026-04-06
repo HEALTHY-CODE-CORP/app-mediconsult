@@ -119,7 +119,7 @@ export default function NewUserPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto space-y-6">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
