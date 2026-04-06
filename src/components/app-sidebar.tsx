@@ -44,6 +44,7 @@ import {
   Coins,
   Activity,
   User,
+  BarChart3,
 } from "lucide-react"
 import { logoutAction } from "@/actions/auth.actions"
 import type { Role } from "@/types/auth.model"
@@ -138,6 +139,12 @@ const orgNavigation: NavGroup[] = [
         title: "Ventas",
         href: "/dashboard/pharmacy/sales",
         icon: ShoppingCart,
+        roles: PHARMACY_STAFF,
+      },
+      {
+        title: "Reporte ventas",
+        href: "/dashboard/pharmacy/sales/report",
+        icon: BarChart3,
         roles: PHARMACY_STAFF,
       },
       {

@@ -6,6 +6,7 @@ import type {
   OpenCashSessionRequest,
   CloseCashSessionRequest,
   SaleResponse,
+  SalesReportResponse,
   CreateSaleRequest,
   PatientPurchaseSummaryResponse,
 } from "@/types/sales.model"
@@ -15,6 +16,7 @@ import {
   toCashSessionSummary,
   toSale,
   toSaleList,
+  toSalesReport,
   toPatientPurchaseSummary,
 } from "@/adapters/sales.adapter"
 
@@ -173,6 +175,20 @@ export function usePatientPurchaseSummary(patientId: string) {
       return toPatientPurchaseSummary(data)
     },
     enabled: !!patientId,
+  })
+}
+
+export function useSalesReport(pharmacyId: string, startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: [...SALES_KEY, "report", pharmacyId, startDate, endDate],
+    queryFn: async () => {
+      const { data } = await api.get<SalesReportResponse>(
+        `/sales/pharmacy/${pharmacyId}/report`,
+        { params: { startDate, endDate } }
+      )
+      return toSalesReport(data)
+    },
+    enabled: !!pharmacyId && !!startDate && !!endDate,
   })
 }
 

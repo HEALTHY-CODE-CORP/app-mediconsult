@@ -87,8 +87,11 @@ export interface SaleItemResponse {
   lotNumber?: string
   quantity: number
   unitPrice: number
+  unitCost: number
   discountPercent: number
   subtotal: number
+  totalCost: number
+  profit: number
 }
 
 export interface SaleResponse {
@@ -109,6 +112,8 @@ export interface SaleResponse {
   taxAmount: number
   discountAmount: number
   total: number
+  totalCost: number
+  profit: number
   paymentMethod: PaymentMethod
   paymentReference?: string
   status: SaleStatus
@@ -116,4 +121,23 @@ export interface SaleResponse {
   items: SaleItemResponse[]
   createdAt: string
   updatedAt: string
+}
+
+export interface PaymentMethodSummaryResponse {
+  count: number
+  total: number
+}
+
+export interface SalesReportResponse {
+  pharmacyId: string
+  pharmacyName: string
+  startDate: string
+  endDate: string
+  totalSales: number
+  totalRevenue: number
+  totalCost: number
+  totalProfit: number
+  profitMarginPercent: number
+  salesByPaymentMethod: Record<string, PaymentMethodSummaryResponse>
+  sales: SaleResponse[]
 }

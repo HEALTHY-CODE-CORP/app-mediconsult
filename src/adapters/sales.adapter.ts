@@ -3,6 +3,7 @@ import type {
   CashSessionSummaryResponse,
   SaleResponse,
   SaleItemResponse,
+  SalesReportResponse,
   PatientPurchaseSummaryResponse,
   PaymentMethod,
   SaleStatus,
@@ -107,9 +108,15 @@ export interface SaleItem {
   quantity: number
   unitPrice: number
   unitPriceFormatted: string
+  unitCost: number
+  unitCostFormatted: string
   discountPercent: number
   subtotal: number
   subtotalFormatted: string
+  totalCost: number
+  totalCostFormatted: string
+  profit: number
+  profitFormatted: string
 }
 
 export interface Sale {
@@ -134,6 +141,10 @@ export interface Sale {
   discountAmountFormatted: string
   total: number
   totalFormatted: string
+  totalCost: number
+  totalCostFormatted: string
+  profit: number
+  profitFormatted: string
   paymentMethod: PaymentMethod
   paymentMethodLabel: string
   paymentReference: string | null
@@ -238,9 +249,15 @@ function toSaleItem(raw: SaleItemResponse): SaleItem {
     quantity: raw.quantity,
     unitPrice: raw.unitPrice,
     unitPriceFormatted: fmtRequired(raw.unitPrice),
+    unitCost: raw.unitCost,
+    unitCostFormatted: fmtRequired(raw.unitCost),
     discountPercent: raw.discountPercent,
     subtotal: raw.subtotal,
     subtotalFormatted: fmtRequired(raw.subtotal),
+    totalCost: raw.totalCost,
+    totalCostFormatted: fmtRequired(raw.totalCost),
+    profit: raw.profit,
+    profitFormatted: fmtRequired(raw.profit),
   }
 }
 
@@ -268,6 +285,10 @@ export function toSale(raw: SaleResponse): Sale {
     discountAmountFormatted: fmtRequired(raw.discountAmount),
     total: raw.total,
     totalFormatted: fmtRequired(raw.total),
+    totalCost: raw.totalCost,
+    totalCostFormatted: fmtRequired(raw.totalCost),
+    profit: raw.profit,
+    profitFormatted: fmtRequired(raw.profit),
     paymentMethod: raw.paymentMethod,
     paymentMethodLabel: PAYMENT_METHOD_LABELS[raw.paymentMethod] ?? raw.paymentMethod,
     paymentReference: raw.paymentReference ?? null,
@@ -299,6 +320,57 @@ export interface PatientPurchaseSummary {
   lastPurchaseAt: string | null
   lastPurchaseAtFormatted: string | null
 }
+
+// ─── Sales Report ──────────────────────────────────────────────────
+
+export interface SalesReport {
+  pharmacyId: string
+  pharmacyName: string
+  startDate: string
+  endDate: string
+  totalSales: number
+  totalRevenue: number
+  totalRevenueFormatted: string
+  totalCost: number
+  totalCostFormatted: string
+  totalProfit: number
+  totalProfitFormatted: string
+  profitMarginPercent: number
+  profitMarginFormatted: string
+  salesByPaymentMethod: Record<string, { count: number; total: number; totalFormatted: string }>
+  sales: Sale[]
+}
+
+export function toSalesReport(raw: SalesReportResponse): SalesReport {
+  const byMethod: SalesReport["salesByPaymentMethod"] = {}
+  for (const [method, summary] of Object.entries(raw.salesByPaymentMethod)) {
+    byMethod[method] = {
+      count: summary.count,
+      total: summary.total,
+      totalFormatted: fmtRequired(summary.total),
+    }
+  }
+
+  return {
+    pharmacyId: raw.pharmacyId,
+    pharmacyName: raw.pharmacyName,
+    startDate: raw.startDate,
+    endDate: raw.endDate,
+    totalSales: raw.totalSales,
+    totalRevenue: raw.totalRevenue,
+    totalRevenueFormatted: fmtRequired(raw.totalRevenue),
+    totalCost: raw.totalCost,
+    totalCostFormatted: fmtRequired(raw.totalCost),
+    totalProfit: raw.totalProfit,
+    totalProfitFormatted: fmtRequired(raw.totalProfit),
+    profitMarginPercent: raw.profitMarginPercent,
+    profitMarginFormatted: `${raw.profitMarginPercent.toFixed(1)}%`,
+    salesByPaymentMethod: byMethod,
+    sales: raw.sales.map(toSale),
+  }
+}
+
+// ─── Patient Purchase Summary ───────────────────────────────────────
 
 export function toPatientPurchaseSummary(
   raw: PatientPurchaseSummaryResponse
