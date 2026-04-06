@@ -70,6 +70,33 @@ export interface VitalSignsResponse {
   recordedAt: string
 }
 
+export interface Cie10CodeResponse {
+  id: string
+  code: string
+  description: string
+  version: string
+}
+
+export type DiagnosisType = "PRESUMPTIVE" | "DEFINITIVE"
+export type DiagnosisRole = "PRIMARY" | "SECONDARY"
+
+export interface ConsultationDiagnosisRequest {
+  cie10Id: string
+  diagnosisType: DiagnosisType
+  diagnosisRole: DiagnosisRole
+  notes?: string
+}
+
+export interface ConsultationDiagnosisResponse {
+  id: string
+  cie10Id?: string
+  cie10Code: string
+  cie10Description: string
+  diagnosisType: DiagnosisType
+  diagnosisRole: DiagnosisRole
+  notes?: string
+}
+
 export interface CreateConsultationRequest {
   medicalRecordId: string
   clinicId: string
@@ -83,6 +110,7 @@ export interface CreateConsultationRequest {
   procedures?: string
   treatment?: string
   notes?: string
+  diagnoses?: ConsultationDiagnosisRequest[]
 }
 
 export interface UpdateConsultationRequest {
@@ -120,6 +148,7 @@ export interface ConsultationResponse {
   status: ConsultationStatus
   createdAt: string
   updatedAt: string
+  diagnoses?: ConsultationDiagnosisResponse[]
 }
 
 export interface CreateEvolutionNoteRequest {

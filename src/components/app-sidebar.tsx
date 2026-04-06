@@ -142,12 +142,6 @@ const orgNavigation: NavGroup[] = [
         roles: PHARMACY_STAFF,
       },
       {
-        title: "Reporte ventas",
-        href: "/dashboard/pharmacy/sales/report",
-        icon: BarChart3,
-        roles: PHARMACY_STAFF,
-      },
-      {
         title: "Facturación",
         href: "/dashboard/pharmacy/billing",
         icon: Receipt,

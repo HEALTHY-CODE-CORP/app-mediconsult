@@ -150,12 +150,18 @@ export default function SalesPage() {
             Punto de venta y sesiones de caja
           </p>
         </div>
-        {openSession && (
-          <Button render={<Link href={buildNewSaleUrl()} />}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nueva venta
+        <div className="flex gap-2">
+          <Button variant="outline" render={<Link href="/dashboard/pharmacy/sales/report" />}>
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Reporte
           </Button>
-        )}
+          {openSession && (
+            <Button render={<Link href={buildNewSaleUrl()} />}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva venta
+            </Button>
+          )}
+        </div>
       </div>
 
       <PharmacySelector value={pharmacyId} onChange={setPharmacyId} />

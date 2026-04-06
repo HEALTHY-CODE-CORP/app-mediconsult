@@ -35,6 +35,9 @@ import {
   useLatestVitalSigns,
 } from "@/hooks/use-clinical"
 import { MedicalHistoryCard } from "@/components/clinical/medical-history-card"
+import { Cie10SearchInput } from "@/components/clinical/cie10-search-input"
+import { DiagnosisList, type DiagnosisItem } from "@/components/clinical/diagnosis-list"
+import type { Cie10CodeResponse } from "@/types/clinical.model"
 import {
   ArrowLeft,
   Search,
@@ -99,15 +102,33 @@ export default function NewConsultationPage() {
     reasonForVisit: "",
     currentIllness: "",
     physicalExamination: "",
-    diagnosisCode: "",
-    diagnosisDescription: "",
     procedures: "",
     treatment: "",
     notes: "",
   })
 
+  const [diagnoses, setDiagnoses] = useState<DiagnosisItem[]>([])
+
   function updateField(key: keyof typeof formData, value: string) {
     setFormData((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function handleAddDiagnosis(code: Cie10CodeResponse) {
+    if (diagnoses.some((d) => d.cie10Id === code.id)) {
+      toast.warning("Este diagnóstico ya fue agregado")
+      return
+    }
+    const isFirst = diagnoses.length === 0
+    setDiagnoses((prev) => [
+      ...prev,
+      {
+        cie10Id: code.id,
+        cie10Code: code.code,
+        cie10Description: code.description,
+        diagnosisType: "PRESUMPTIVE",
+        diagnosisRole: isFirst ? "PRIMARY" : "SECONDARY",
+      },
+    ])
   }
 
   function handleSelectPatient(patientId: string) {
@@ -179,11 +200,17 @@ export default function NewConsultationPage() {
         reasonForVisit: formData.reasonForVisit,
         currentIllness: formData.currentIllness || undefined,
         physicalExamination: formData.physicalExamination || undefined,
-        diagnosisCode: formData.diagnosisCode || undefined,
-        diagnosisDescription: formData.diagnosisDescription || undefined,
         procedures: formData.procedures || undefined,
         treatment: formData.treatment || undefined,
         notes: formData.notes || undefined,
+        diagnoses: diagnoses.length > 0
+          ? diagnoses.map((d) => ({
+              cie10Id: d.cie10Id,
+              diagnosisType: d.diagnosisType,
+              diagnosisRole: d.diagnosisRole,
+              notes: d.notes,
+            }))
+          : undefined,
       })
       toast.success("Consulta creada exitosamente")
       router.push(`/dashboard/clinical/consultations/${result.id}`)
@@ -583,32 +610,20 @@ export default function NewConsultationPage() {
                   rows={3}
                 />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="diagnosisCode">Código CIE-10</Label>
-                  <Input
-                    id="diagnosisCode"
-                    value={formData.diagnosisCode}
-                    onChange={(e) =>
-                      updateField("diagnosisCode", e.target.value)
-                    }
-                    placeholder="Ej: J06.9"
-                    maxLength={10}
-                  />
+
+              {/* Diagnósticos CIE-10 */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium">Diagnósticos CIE-10</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Busca y agrega diagnósticos según la clasificación CIE-10
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="diagnosisDescription">
-                    Descripción del diagnóstico
-                  </Label>
-                  <Input
-                    id="diagnosisDescription"
-                    value={formData.diagnosisDescription}
-                    onChange={(e) =>
-                      updateField("diagnosisDescription", e.target.value)
-                    }
-                    placeholder="Diagnóstico descriptivo"
-                  />
-                </div>
+                <Cie10SearchInput
+                  onSelect={(code) => handleAddDiagnosis(code)}
+                  placeholder="Buscar por código o descripción... ej: J06, hipertensión"
+                />
+                <DiagnosisList diagnoses={diagnoses} onChange={setDiagnoses} />
               </div>
             </CardContent>
           </Card>

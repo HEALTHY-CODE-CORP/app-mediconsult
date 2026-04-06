@@ -11,6 +11,8 @@ import type {
   BmiCategory,
   MedicalCertificateStatus,
   SignaturePlacementValue,
+  DiagnosisType,
+  DiagnosisRole,
 } from "@/types/clinical.model"
 import { formatDateEc, formatDateTimeEc } from "@/lib/date"
 
@@ -70,6 +72,16 @@ export const BMI_CATEGORY_COLORS: Record<BmiCategory, string> = {
   OBESE: "text-red-600",
 }
 
+export const DIAGNOSIS_TYPE_LABELS: Record<DiagnosisType, string> = {
+  PRESUMPTIVE: "Presuntivo",
+  DEFINITIVE: "Definitivo",
+}
+
+export const DIAGNOSIS_ROLE_LABELS: Record<DiagnosisRole, string> = {
+  PRIMARY: "Principal",
+  SECONDARY: "Secundario",
+}
+
 // ─── Domain types ────────────────────────────────────────────────────
 
 export interface MedicalRecord {
@@ -115,6 +127,18 @@ export interface VitalSigns {
   recordedAtFormatted: string
 }
 
+export interface ConsultationDiagnosis {
+  id: string
+  cie10Id: string | null
+  cie10Code: string
+  cie10Description: string
+  diagnosisType: "PRESUMPTIVE" | "DEFINITIVE"
+  diagnosisTypeLabel: string
+  diagnosisRole: "PRIMARY" | "SECONDARY"
+  diagnosisRoleLabel: string
+  notes: string | null
+}
+
 export interface Consultation {
   id: string
   medicalRecordId: string
@@ -142,6 +166,7 @@ export interface Consultation {
   statusColor: string
   createdAt: string
   updatedAt: string
+  diagnoses: ConsultationDiagnosis[]
 }
 
 export interface EvolutionNote {
@@ -331,6 +356,17 @@ export function toConsultation(raw: ConsultationResponse): Consultation {
     statusColor: CONSULTATION_STATUS_COLORS[raw.status] ?? "",
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+    diagnoses: (raw.diagnoses ?? []).map((d) => ({
+      id: d.id,
+      cie10Id: d.cie10Id ?? null,
+      cie10Code: d.cie10Code,
+      cie10Description: d.cie10Description,
+      diagnosisType: d.diagnosisType,
+      diagnosisTypeLabel: DIAGNOSIS_TYPE_LABELS[d.diagnosisType] ?? d.diagnosisType,
+      diagnosisRole: d.diagnosisRole,
+      diagnosisRoleLabel: DIAGNOSIS_ROLE_LABELS[d.diagnosisRole] ?? d.diagnosisRole,
+      notes: d.notes ?? null,
+    })),
   }
 }
 
