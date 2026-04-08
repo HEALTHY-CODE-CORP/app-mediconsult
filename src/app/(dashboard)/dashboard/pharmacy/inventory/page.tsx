@@ -17,7 +17,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { DataTable } from "@/components/ui/data-table"
 import { PharmacySelector } from "@/components/inventory/pharmacy-selector"
-import { useProducts, useSearchProductsByName } from "@/hooks/use-inventory"
+import { useProducts, useSearchProducts } from "@/hooks/use-inventory"
 import {
   Plus,
   Search,
@@ -26,6 +26,8 @@ import {
   AlertTriangle,
   BarChart3,
 } from "lucide-react"
+
+const SEARCH_PAGE_SIZE = 20
 
 export default function InventoryPage() {
   return (
@@ -49,13 +51,35 @@ function InventoryContent() {
     searchParams.get("pharmacyId") ?? ""
   )
   const [searchQuery, setSearchQuery] = useState("")
-  const isSearching = searchQuery.length >= 2
+  const [searchPage, setSearchPage] = useState(0)
+  const normalizedQuery = searchQuery.trim()
+  const isSearching = normalizedQuery.length >= 2
 
   const productsQuery = useProducts(pharmacyId)
-  const searchQuery_ = useSearchProductsByName(pharmacyId, searchQuery)
+  const searchProductsQuery = useSearchProducts(
+    pharmacyId,
+    normalizedQuery,
+    searchPage,
+    SEARCH_PAGE_SIZE
+  )
 
-  const activeQuery = isSearching ? searchQuery_ : productsQuery
-  const products = activeQuery.data ?? []
+  function handlePharmacyChange(value: string) {
+    setPharmacyId(value)
+    setSearchPage(0)
+  }
+
+  function handleSearchChange(value: string) {
+    setSearchQuery(value)
+    setSearchPage(0)
+  }
+
+  const activeIsLoading = isSearching
+    ? searchProductsQuery.isLoading
+    : productsQuery.isLoading
+  const products = isSearching
+    ? searchProductsQuery.data?.items ?? []
+    : productsQuery.data ?? []
+  const searchPageData = searchProductsQuery.data
 
   return (
     <div className="space-y-6">
@@ -108,7 +132,7 @@ function InventoryContent() {
       </div>
 
       {/* Pharmacy selector */}
-      <PharmacySelector value={pharmacyId} onChange={setPharmacyId} />
+      <PharmacySelector value={pharmacyId} onChange={handlePharmacyChange} />
 
       {!pharmacyId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
@@ -120,19 +144,26 @@ function InventoryContent() {
       ) : (
         <>
           {/* Search */}
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div className="max-w-sm space-y-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre o código de barras..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {normalizedQuery.length === 1 && (
+              <p className="text-xs text-muted-foreground">
+                Escribe al menos 2 caracteres para buscar
+              </p>
+            )}
           </div>
 
           {/* Products table */}
           <DataTable
-            isLoading={activeQuery.isLoading}
+            isLoading={activeIsLoading}
             isEmpty={products.length === 0}
             emptyIcon={<Package className="h-10 w-10 text-muted-foreground" />}
             emptyMessage={
@@ -239,6 +270,35 @@ function InventoryContent() {
                 ))}
               </TableBody>
             </Table>
+            {isSearching && searchPageData && (
+              <div className="mt-4 flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Mostrando {searchPageData.numberOfElements} de{" "}
+                  {searchPageData.totalElements} resultados
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={searchPageData.first || searchProductsQuery.isFetching}
+                    onClick={() => setSearchPage((prev) => Math.max(prev - 1, 0))}
+                  >
+                    Anterior
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Página {searchPageData.page + 1} de {searchPageData.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={searchPageData.last || searchProductsQuery.isFetching}
+                    onClick={() => setSearchPage((prev) => prev + 1)}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            )}
           </DataTable>
         </>
       )}

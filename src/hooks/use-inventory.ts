@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/axios"
+import type { Product } from "@/adapters/inventory.adapter"
 import type {
   ProductResponse,
   CreateProductRequest,
@@ -9,6 +10,7 @@ import type {
   BulkStockEntryRequest,
   InventoryMovementResponse,
 } from "@/types/inventory.model"
+import type { SpringPage } from "@/types/api"
 import {
   toProduct,
   toProductList,
@@ -19,6 +21,18 @@ import {
 
 function inventoryKey(pharmacyId: string) {
   return ["inventory", pharmacyId]
+}
+
+export interface ProductSearchPage {
+  items: Product[]
+  page: number
+  size: number
+  totalPages: number
+  totalElements: number
+  numberOfElements: number
+  first: boolean
+  last: boolean
+  empty: boolean
 }
 
 // ─── Products ────────────────────────────────────────────────────────
@@ -73,6 +87,39 @@ export function useSearchProductsByName(pharmacyId: string, query: string) {
       return toProductList(data)
     },
     enabled: !!pharmacyId && query.length >= 2,
+  })
+}
+
+export function useSearchProducts(
+  pharmacyId: string,
+  query: string,
+  page: number,
+  size = 20
+) {
+  const normalizedQuery = query.trim()
+
+  return useQuery({
+    queryKey: [...inventoryKey(pharmacyId), "products", "search", normalizedQuery, page, size],
+    queryFn: async () => {
+      const { data } = await api.get<SpringPage<ProductResponse>>(
+        `/pharmacies/${pharmacyId}/inventory/products/search`,
+        { params: { q: normalizedQuery, page, size } }
+      )
+
+      return {
+        items: toProductList(data.content),
+        page: data.number,
+        size: data.size,
+        totalPages: data.totalPages,
+        totalElements: data.totalElements,
+        numberOfElements: data.numberOfElements,
+        first: data.first,
+        last: data.last,
+        empty: data.empty,
+      } satisfies ProductSearchPage
+    },
+    enabled: !!pharmacyId && normalizedQuery.length >= 2,
+    placeholderData: (previousData) => previousData,
   })
 }
 
