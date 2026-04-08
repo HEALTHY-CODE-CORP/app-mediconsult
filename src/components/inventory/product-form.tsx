@@ -61,6 +61,33 @@ export function ProductForm({ pharmacyId, product }: ProductFormProps) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
+  function handleFormKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) {
+      return
+    }
+
+    const target = e.target as HTMLElement
+    const tag = target.tagName.toLowerCase()
+
+    // Prevent barcode scanner "Enter" from submitting the entire form.
+    if (tag === "textarea") {
+      return
+    }
+
+    e.preventDefault()
+
+    const focusableElements = Array.from(
+      e.currentTarget.querySelectorAll<HTMLElement>(
+        'input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => !el.hasAttribute("disabled"))
+
+    const currentIndex = focusableElements.indexOf(target)
+    if (currentIndex >= 0) {
+      focusableElements[currentIndex + 1]?.focus()
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -99,7 +126,7 @@ export function ProductForm({ pharmacyId, product }: ProductFormProps) {
   const isPending = createMutation.isPending || updateMutation.isPending
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
