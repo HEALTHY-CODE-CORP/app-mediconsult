@@ -1,6 +1,6 @@
-"use client"
+﻿"use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import Link from "next/link"
 import {
   Card,
@@ -24,10 +24,11 @@ import {
 } from "@/components/ui/select"
 import { useConsultationPrescriptions, useCreatePrescription } from "@/hooks/use-prescriptions"
 import { usePharmacies } from "@/hooks/use-organizations"
-import { useProducts } from "@/hooks/use-inventory"
-import { Pill, Plus, Trash2, Eye, Package } from "lucide-react"
+import { useSearchProducts } from "@/hooks/use-inventory"
+import { Pill, Plus, Trash2, Eye, Package, Search, X } from "lucide-react"
 import { toast } from "sonner"
 import type { CreatePrescriptionRequest } from "@/types/prescription.model"
+import type { Product } from "@/adapters/inventory.adapter"
 
 interface PrescriptionCardProps {
   consultationId: string
@@ -68,17 +69,9 @@ export function PrescriptionCard({
   const [notes, setNotes] = useState("")
   const [items, setItems] = useState<PrescriptionItemForm[]>([{ ...EMPTY_ITEM }])
 
-  // Products from selected pharmacy
-  const { data: products = [] } = useProducts(selectedPharmacyId)
-
   const pharmacyItems = useMemo(
     () => Object.fromEntries(pharmacies.map((p) => [p.id, p.name])),
     [pharmacies]
-  )
-
-  const productItems = useMemo(
-    () => Object.fromEntries(products.map((p) => [p.id, p.name])),
-    [products]
   )
 
   function addItem() {
@@ -93,13 +86,19 @@ export function PrescriptionCard({
     setItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item
-        const updated = { ...item, [field]: value }
-        // When selecting a product, save its name for display
-        if (field === "productId") {
-          const product = products.find((p) => p.id === value)
-          updated.productName = product?.name ?? ""
+        return { ...item, [field]: value }
+      })
+    )
+  }
+
+  function updateItemProduct(index: number, product: Product | null) {
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item
+        if (!product) {
+          return { ...item, productId: "", productName: "" }
         }
-        return updated
+        return { ...item, productId: product.id, productName: product.name }
       })
     )
   }
@@ -160,7 +159,7 @@ export function PrescriptionCard({
               Recetas
             </CardTitle>
             <CardDescription>
-              Recetas médicas asociadas a esta consulta
+              Recetas mÃ©dicas asociadas a esta consulta
             </CardDescription>
           </div>
           {canAdd && !showForm && (
@@ -215,8 +214,8 @@ export function PrescriptionCard({
               </Select>
               <p className="text-xs text-muted-foreground">
                 {selectedPharmacyId
-                  ? "Los productos se cargarán del inventario de esta farmacia"
-                  : "Puedes asignar la farmacia más tarde"}
+                  ? "Los productos se cargarÃ¡n del inventario de esta farmacia"
+                  : "Puedes asignar la farmacia mÃ¡s tarde"}
               </p>
             </div>
 
@@ -265,45 +264,14 @@ export function PrescriptionCard({
                       >
                         Producto *
                       </Label>
-                      <Select
-                        value={item.productId}
-                        onValueChange={(v) => updateItem(index, "productId", v ?? "")}
-                        items={products.length > 0 ? productItems : {}}
-                      >
-                        <SelectTrigger
-                          id={`prescription-product-${index}`}
-                          aria-label={`Producto ${index + 1}`}
-                          disabled={products.length === 0}
-                        >
-                          <SelectValue
-                            placeholder={
-                              products.length === 0
-                                ? "No hay productos en inventario"
-                                : "Seleccionar producto"
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.length === 0 ? (
-                            <SelectItem value="__no-products__" disabled>
-                              No hay productos disponibles para esta farmacia
-                            </SelectItem>
-                          ) : (
-                            products.map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name}
-                                {product.concentration && ` (${product.concentration})`}
-                                {" — "}Stock: {product.currentStock}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {products.length === 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Agrega productos al inventario de esta farmacia para poder recetar.
-                        </p>
-                      )}
+                      <PrescriptionProductSearch
+                        inputId={`prescription-product-${index}`}
+                        pharmacyId={selectedPharmacyId}
+                        selectedProductId={item.productId}
+                        selectedProductName={item.productName}
+                        onSelect={(product) => updateItemProduct(index, product)}
+                        onClear={() => updateItemProduct(index, null)}
+                      />
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -361,9 +329,9 @@ export function PrescriptionCard({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Duración *</Label>
+                      <Label className="text-xs">DuraciÃ³n *</Label>
                       <Input
-                        placeholder="Ej: 7 días"
+                        placeholder="Ej: 7 dÃ­as"
                         value={item.duration}
                         onChange={(e) =>
                           updateItem(index, "duration", e.target.value)
@@ -467,3 +435,147 @@ export function PrescriptionCard({
     </Card>
   )
 }
+
+interface PrescriptionProductSearchProps {
+  inputId: string
+  pharmacyId: string
+  selectedProductId: string
+  selectedProductName: string
+  onSelect: (product: Product) => void
+  onClear: () => void
+}
+
+function PrescriptionProductSearch({
+  inputId,
+  pharmacyId,
+  selectedProductId,
+  selectedProductName,
+  onSelect,
+  onClear,
+}: PrescriptionProductSearchProps) {
+  const [query, setQuery] = useState("")
+  const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const normalizedQuery = query.trim()
+  const canSearch = normalizedQuery.length >= 2
+  const { data, isFetching } = useSearchProducts(
+    pharmacyId,
+    normalizedQuery,
+    0,
+    10
+  )
+  const results = data?.items ?? []
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  if (selectedProductId && selectedProductName && !isOpen) {
+    return (
+      <div className="flex min-h-[36px] items-center gap-2 rounded-md border bg-muted/30 px-3 py-1.5 text-sm">
+        <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <span className="flex-1 truncate font-medium">{selectedProductName}</span>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setIsOpen(true)
+            setTimeout(() => inputRef.current?.focus(), 0)
+          }}
+        >
+          Cambiar
+        </Button>
+        <Button
+          type="button"
+          size="icon-sm"
+          variant="ghost"
+          onClick={onClear}
+          aria-label="Quitar producto seleccionado"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id={inputId}
+          ref={inputRef}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setIsOpen(true)
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder="Buscar por nombre o código de barras..."
+          className="pl-8"
+          autoComplete="off"
+        />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md">
+          {!canSearch ? (
+            <div className="px-3 py-3 text-xs text-muted-foreground">
+              Escribe al menos 2 caracteres para buscar
+            </div>
+          ) : isFetching ? (
+            <div className="px-3 py-3 text-xs text-muted-foreground">
+              Buscando productos...
+            </div>
+          ) : results.length === 0 ? (
+            <div className="px-3 py-3 text-xs text-muted-foreground">
+              No se encontraron productos
+            </div>
+          ) : (
+            results.map((product) => (
+              <button
+                key={product.id}
+                type="button"
+                onClick={() => {
+                  onSelect(product)
+                  setQuery("")
+                  setIsOpen(false)
+                }}
+                className="flex w-full items-center justify-between gap-2 border-b border-border px-3 py-2 text-left text-sm transition-colors last:border-b-0 hover:bg-muted/40"
+              >
+                <span className="truncate">
+                  {product.name}
+                  {product.concentration ? ` (${product.concentration})` : ""}
+                  {product.barcode ? ` · ${product.barcode}` : ""}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={
+                    product.currentStock === 0
+                      ? "border-red-200 bg-red-50 text-red-600"
+                      : product.isLowStock
+                        ? "border-amber-200 bg-amber-50 text-amber-600"
+                        : "border-green-200 bg-green-50 text-green-600"
+                  }
+                >
+                  {product.currentStock === 0 ? "Sin stock" : `Stock: ${product.currentStock}`}
+                </Badge>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
