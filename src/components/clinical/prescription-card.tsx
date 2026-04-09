@@ -329,9 +329,9 @@ export function PrescriptionCard({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">DuraciÃ³n *</Label>
+                      <Label className="text-xs">Duración *</Label>
                       <Input
-                        placeholder="Ej: 7 dÃ­as"
+                        placeholder="Ej: 7 días"
                         value={item.duration}
                         onChange={(e) =>
                           updateItem(index, "duration", e.target.value)
