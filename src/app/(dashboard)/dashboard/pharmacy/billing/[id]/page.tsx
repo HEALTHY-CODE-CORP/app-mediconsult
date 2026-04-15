@@ -204,7 +204,31 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   function copySriRequest() {
     if (sriRequest) {
       navigator.clipboard.writeText(JSON.stringify(sriRequest, null, 2))
-      toast.success("XML/JSON copiado al portapapeles")
+      toast.success("Datos de envío copiados al portapapeles")
+    }
+  }
+
+  function copySriSubmitResponse() {
+    if (invoice?.sriSubmitResponse) {
+      try {
+        const parsed = JSON.parse(invoice.sriSubmitResponse)
+        navigator.clipboard.writeText(JSON.stringify(parsed, null, 2))
+      } catch {
+        navigator.clipboard.writeText(invoice.sriSubmitResponse)
+      }
+      toast.success("Respuesta de recepción copiada al portapapeles")
+    }
+  }
+
+  function copySriAuthorizeResponse() {
+    if (invoice?.sriAuthorizeResponse) {
+      try {
+        const parsed = JSON.parse(invoice.sriAuthorizeResponse)
+        navigator.clipboard.writeText(JSON.stringify(parsed, null, 2))
+      } catch {
+        navigator.clipboard.writeText(invoice.sriAuthorizeResponse)
+      }
+      toast.success("Respuesta de autorización copiada al portapapeles")
     }
   }
 
@@ -672,6 +696,70 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* SRI API Responses (debugging) */}
+      {(invoice.sriSubmitResponse || invoice.sriAuthorizeResponse) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Respuestas de la API SRI
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {invoice.sriSubmitResponse && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Respuesta de recepción</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copySriSubmitResponse}
+                    >
+                      <Copy className="mr-1 h-3 w-3" />
+                      Copiar
+                    </Button>
+                  </div>
+                  <pre className="max-h-64 overflow-auto rounded-lg border bg-muted/30 p-3 text-xs">
+                    {(() => {
+                      try {
+                        return JSON.stringify(JSON.parse(invoice.sriSubmitResponse!), null, 2)
+                      } catch {
+                        return invoice.sriSubmitResponse
+                      }
+                    })()}
+                  </pre>
+                </div>
+              )}
+              {invoice.sriAuthorizeResponse && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Respuesta de autorización</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copySriAuthorizeResponse}
+                    >
+                      <Copy className="mr-1 h-3 w-3" />
+                      Copiar
+                    </Button>
+                  </div>
+                  <pre className="max-h-64 overflow-auto rounded-lg border bg-muted/30 p-3 text-xs">
+                    {(() => {
+                      try {
+                        return JSON.stringify(JSON.parse(invoice.sriAuthorizeResponse!), null, 2)
+                      } catch {
+                        return invoice.sriAuthorizeResponse
+                      }
+                    })()}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Link to sale */}
       <div className="flex justify-center">

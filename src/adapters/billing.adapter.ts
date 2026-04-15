@@ -102,6 +102,8 @@ export interface Invoice {
   statusColor: string
   sriStatus: string | null
   sriErrors: string | null
+  sriSubmitResponse: string | null
+  sriAuthorizeResponse: string | null
   sriNumeroAutorizacion: string | null
   sriAuthorization: string | null
   sriFechaAutorizacion: string | null
@@ -203,6 +205,8 @@ export function toInvoice(raw: InvoiceResponse): Invoice {
     statusColor: INVOICE_STATUS_COLORS[raw.status] ?? "",
     sriStatus: raw.sriStatus ?? null,
     sriErrors: raw.sriErrors ?? null,
+    sriSubmitResponse: raw.sriSubmitResponse ?? null,
+    sriAuthorizeResponse: raw.sriAuthorizeResponse ?? null,
     sriNumeroAutorizacion: sriAuthorization,
     sriAuthorization,
     sriFechaAutorizacion: sriAuthorizationDate,

@@ -83,6 +83,8 @@ export interface InvoiceResponse {
   status: InvoiceStatus
   sriStatus?: string
   sriErrors?: string
+  sriSubmitResponse?: string
+  sriAuthorizeResponse?: string
   sriAuthorization?: string
   sriAuthorizationDate?: string
   sriNumeroAutorizacion?: string
