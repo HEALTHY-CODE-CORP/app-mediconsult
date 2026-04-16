@@ -198,7 +198,7 @@ export default function ConsultationDetailPage({
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryTile
               icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
-              label="Clínica"
+              label="Consultorio"
               value={consultation.clinicName}
             />
             <SummaryTile

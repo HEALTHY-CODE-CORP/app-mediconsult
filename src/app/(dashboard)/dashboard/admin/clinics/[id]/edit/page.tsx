@@ -29,9 +29,9 @@ export default function EditClinicPage({ params }: EditClinicPageProps) {
   if (!clinic) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <p className="text-muted-foreground">Clínica no encontrada</p>
+        <p className="text-muted-foreground">Consultorio no encontrado</p>
         <Button variant="link" className="mt-2" render={<Link href="/dashboard/admin/clinics" />}>
-          Volver a clínicas
+          Volver a consultorios
         </Button>
       </div>
     )
@@ -44,7 +44,7 @@ export default function EditClinicPage({ params }: EditClinicPageProps) {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Editar clínica</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Editar consultorio</h1>
           <p className="text-muted-foreground">{clinic.name}</p>
         </div>
       </div>

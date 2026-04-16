@@ -26,7 +26,7 @@ export function ClinicSelector({ value, onChange }: ClinicSelectorProps) {
 
   const items = useMemo(
     () => ({
-      [NONE_VALUE]: "Todas las clínicas",
+      [NONE_VALUE]: "Todos los consultorios",
       ...Object.fromEntries(clinics.map((c) => [c.id, c.name])),
     }),
     [clinics]
@@ -84,12 +84,12 @@ export function ClinicSelector({ value, onChange }: ClinicSelectorProps) {
         onValueChange={handleChange}
         items={items}
       >
-        <SelectTrigger aria-label="Seleccionar clínica">
-          <SelectValue placeholder="Selecciona una clínica" />
+        <SelectTrigger aria-label="Seleccionar consultorio">
+          <SelectValue placeholder="Selecciona un consultorio" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={NONE_VALUE} className="text-muted-foreground">
-            Todas las clínicas
+            Todos los consultorios
           </SelectItem>
           <SelectSeparator />
           {clinics.map((c) => (

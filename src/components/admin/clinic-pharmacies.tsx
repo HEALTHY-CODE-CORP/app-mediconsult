@@ -86,7 +86,7 @@ export function ClinicPharmaciesCard({ clinicId }: ClinicPharmaciesCardProps) {
           Farmacias vinculadas
         </CardTitle>
         <CardDescription>
-          Farmacias asociadas a esta clínica
+          Farmacias asociadas a este consultorio
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -139,7 +139,7 @@ export function ClinicPharmaciesCard({ clinicId }: ClinicPharmaciesCardProps) {
                     variant="ghost"
                     size="icon-sm"
                     title="Desvincular farmacia"
-                    description="La farmacia dejará de estar vinculada a esta clínica."
+                    description="La farmacia dejará de estar vinculada a este consultorio."
                     confirmLabel="Desvincular"
                     loadingLabel="Desvinculando..."
                     onConfirm={() => handleUnlink(lp.pharmacy.id)}

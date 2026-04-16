@@ -83,7 +83,7 @@ export default function MedicalRecordsPage() {
               <TableHead>N° Historia</TableHead>
               <TableHead>Paciente</TableHead>
               <TableHead className="hidden sm:table-cell">Cédula</TableHead>
-              <TableHead className="hidden md:table-cell">Clínica de apertura</TableHead>
+              <TableHead className="hidden md:table-cell">Consultorio de apertura</TableHead>
               <TableHead className="hidden lg:table-cell">Fecha de apertura</TableHead>
               <TableHead className="hidden lg:table-cell">Abierto por</TableHead>
               <TableHead className="text-right">Ver</TableHead>

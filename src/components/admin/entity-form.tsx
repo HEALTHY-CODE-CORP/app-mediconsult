@@ -39,7 +39,7 @@ interface EntityFormProps {
 }
 
 const ENTITY_LABELS: Record<EntityType, { singular: string; article: string }> = {
-  clinic: { singular: "Clínica", article: "la clínica" },
+  clinic: { singular: "Consultorio", article: "el consultorio" },
   pharmacy: { singular: "Farmacia", article: "la farmacia" },
 }
 
@@ -186,7 +186,7 @@ export function EntityForm({
             await deleteLogoMutation.mutateAsync(clinicId)
           }
         } catch {
-          toast.error("La clínica se guardó, pero no se pudo actualizar el logo.")
+          toast.error("El consultorio se guardó, pero no se pudo actualizar el logo.")
         }
       }
 
@@ -262,7 +262,7 @@ export function EntityForm({
           {isClinic && (
             <div className="col-span-full space-y-3 rounded-xl border border-dashed p-4">
               <div className="space-y-1">
-                <Label htmlFor="clinic-logo">Logo de la clínica (opcional)</Label>
+                <Label htmlFor="clinic-logo">Logo del consultorio (opcional)</Label>
                 <p className="text-xs text-muted-foreground">
                   Formatos aceptados: PNG, JPG/JPEG, WEBP (máx. 2 MB).
                 </p>
@@ -307,7 +307,7 @@ export function EntityForm({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={logoPreviewUrl}
-                    alt="Vista previa del logo de la clínica"
+                    alt="Vista previa del logo del consultorio"
                     className="max-h-24 w-auto object-contain"
                   />
                 </div>
@@ -327,7 +327,7 @@ export function EntityForm({
           <CardHeader>
             <CardTitle>Configuración de consultas</CardTitle>
             <CardDescription>
-              Precio que se cobra por cada consulta médica en esta clínica
+              Precio que se cobra por cada consulta médica en este consultorio
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -79,7 +79,7 @@ export function OrgDashboard() {
         {/* Revenue by Clinic */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Ingresos por Clínica</CardTitle>
+            <CardTitle className="text-base">Ingresos por Consultorio</CardTitle>
             <CardDescription>Consultas completadas este mes</CardDescription>
           </CardHeader>
           <CardContent>
@@ -89,7 +89,7 @@ export function OrgDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Clínica</TableHead>
+                    <TableHead>Consultorio</TableHead>
                     <TableHead className="text-right">Consultas</TableHead>
                     <TableHead className="text-right">Ingreso</TableHead>
                   </TableRow>

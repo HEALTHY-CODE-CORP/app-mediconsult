@@ -282,7 +282,7 @@ export default function OrganizationDetailPage({
                 <div className="flex items-center gap-3 rounded-lg border p-3">
                   <Building2 className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Clínicas</p>
+                    <p className="text-xs text-muted-foreground">Consultorios</p>
                     <p className="text-lg font-semibold">{org.plan.maxClinics}</p>
                   </div>
                 </div>

@@ -117,7 +117,7 @@ export default function MedicalRecordDetailPage({
           />
           <InfoRow
             icon={<Building2 className="h-4 w-4" />}
-            label="Clínica de apertura"
+            label="Consultorio de apertura"
             value={record.clinicName ?? "—"}
           />
           <InfoRow

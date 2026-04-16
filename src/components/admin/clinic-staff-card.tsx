@@ -96,7 +96,7 @@ export function ClinicStaffCard({ clinicId }: ClinicStaffCardProps) {
   async function handleSetPrimary(userId: string) {
     try {
       await setPrimaryMutation.mutateAsync(userId)
-      toast.success("Clínica establecida como principal para este usuario")
+      toast.success("Consultorio establecido como principal para este usuario")
     } catch {
       toast.error("Error al establecer como principal")
     }
@@ -136,7 +136,7 @@ export function ClinicStaffCard({ clinicId }: ClinicStaffCardProps) {
           Personal asignado
         </CardTitle>
         <CardDescription>
-          Doctores y enfermeros asignados a esta clínica
+          Doctores y enfermeros asignados a este consultorio
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -183,7 +183,7 @@ export function ClinicStaffCard({ clinicId }: ClinicStaffCardProps) {
                         size="icon-sm"
                         onClick={() => handleSetPrimary(cs.user.id)}
                         disabled={setPrimaryMutation.isPending}
-                        title="Establecer como clínica principal"
+                        title="Establecer como consultorio principal"
                       >
                         <Star className="h-4 w-4" />
                       </Button>
@@ -192,7 +192,7 @@ export function ClinicStaffCard({ clinicId }: ClinicStaffCardProps) {
                       variant="ghost"
                       size="icon-sm"
                       title="Desasignar usuario"
-                      description="El usuario dejará de estar asignado a esta clínica."
+                      description="El usuario dejará de estar asignado a este consultorio."
                       confirmLabel="Desasignar"
                       loadingLabel="Desasignando..."
                       onConfirm={() => handleUnassign(cs.user.id)}
@@ -215,7 +215,7 @@ export function ClinicStaffCard({ clinicId }: ClinicStaffCardProps) {
                         min="0"
                         value={editPrice}
                         onChange={(e) => setEditPrice(e.target.value)}
-                        placeholder="Usar precio de clínica"
+                        placeholder="Usar precio de consultorio"
                         className="h-8 w-36 text-sm"
                       />
                     </div>
@@ -262,7 +262,7 @@ export function ClinicStaffCard({ clinicId }: ClinicStaffCardProps) {
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-xs">
-                        Precio de clínica
+                        Precio de consultorio
                       </Badge>
                     )}
                     {cs.consultationPercentage !== null && (
@@ -331,7 +331,7 @@ export function ClinicStaffCard({ clinicId }: ClinicStaffCardProps) {
                     min="0"
                     value={assignPrice}
                     onChange={(e) => setAssignPrice(e.target.value)}
-                    placeholder="Usar precio de clínica"
+                    placeholder="Usar precio de consultorio"
                     className="h-8 w-40 text-sm"
                   />
                 </div>

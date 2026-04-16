@@ -172,7 +172,7 @@ export function toInvoice(raw: InvoiceResponse): Invoice {
       invoiceType === "CONSULTATION"
         ? raw.consultationIssuerType === "DOCTOR"
           ? raw.doctorName ?? "Médico"
-          : raw.clinicName ?? "Clínica"
+          : raw.clinicName ?? "Consultorio"
         : raw.pharmacyName ?? "Farmacia",
 
     numeroFactura: raw.numeroFactura,

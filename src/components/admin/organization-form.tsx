@@ -257,7 +257,7 @@ export function OrganizationForm({
             </Select>
             {selectedPlan && (
               <p className="text-xs text-muted-foreground">
-                {selectedPlan.maxClinics} clínicas, {selectedPlan.maxPharmacies} farmacias,{" "}
+                {selectedPlan.maxClinics} consultorios, {selectedPlan.maxPharmacies} farmacias,{" "}
                 {selectedPlan.maxUsers} usuarios, fee: {selectedPlan.consultationFeeFormatted}/consulta
               </p>
             )}

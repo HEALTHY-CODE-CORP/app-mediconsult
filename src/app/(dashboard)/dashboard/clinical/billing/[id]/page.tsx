@@ -365,7 +365,7 @@ export default function ConsultationInvoiceDetailPage({
           </CardHeader>
           <CardContent className="space-y-3">
             <InfoRow label="N° Factura" value={invoice.numeroFactura} />
-            <InfoRow label="Clínica" value={invoice.clinicName} />
+            <InfoRow label="Consultorio" value={invoice.clinicName} />
             <InfoRow label="Ambiente" value={invoice.ambienteLabel} />
             <InfoRow
               label="Clave de acceso"
@@ -416,7 +416,7 @@ export default function ConsultationInvoiceDetailPage({
           </CardHeader>
           <CardContent className="space-y-3">
             <InfoRow label="Doctor" value={invoice.doctorName} />
-            <InfoRow label="Clínica" value={invoice.clinicName} />
+            <InfoRow label="Consultorio" value={invoice.clinicName} />
           </CardContent>
         </Card>
       )}

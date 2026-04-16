@@ -287,13 +287,13 @@ export function NewConsultationInvoiceContent() {
                 onValueChange={(v) => {
                   if (v) setIssuerType(v as ConsultationIssuerType)
                 }}
-                items={{ CLINIC: "Consultorio / Clínica", DOCTOR: "Médico tratante" }}
+                items={{ CLINIC: "Consultorio", DOCTOR: "Médico tratante" }}
               >
                 <SelectTrigger id="consultation-invoice-issuer-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="CLINIC">Consultorio / Clínica</SelectItem>
+                  <SelectItem value="CLINIC">Consultorio</SelectItem>
                   <SelectItem value="DOCTOR">Médico tratante</SelectItem>
                 </SelectContent>
               </Select>

@@ -117,11 +117,11 @@ export default function ConsultationsPage() {
           {earnings.revenueByClinic.length > 1 && (
             <Card>
               <CardContent className="pt-6">
-                <p className="mb-3 text-sm font-medium">Ingresos por clínica (mes)</p>
+                <p className="mb-3 text-sm font-medium">Ingresos por consultorio (mes)</p>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Clínica</TableHead>
+                      <TableHead>Consultorio</TableHead>
                       <TableHead className="text-right">Consultas</TableHead>
                       <TableHead className="text-right">Ingreso</TableHead>
                     </TableRow>

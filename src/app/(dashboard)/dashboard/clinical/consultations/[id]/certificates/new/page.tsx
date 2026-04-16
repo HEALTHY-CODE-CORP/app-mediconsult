@@ -116,7 +116,7 @@ export default function NewMedicalCertificatePage({ params }: NewMedicalCertific
       patientIdNumber,
       patientAge,
       doctorName: consultation?.doctorName ?? "Doctor",
-      clinicName: consultation?.clinicName ?? "Clinica",
+      clinicName: consultation?.clinicName ?? "Consultorio",
       clinicLogo: "{{clinicLogo}}",
       diagnosisSummary: selectedDiagnosisSummary || "Sin novedad.",
       restDays: String(Math.max(parsedRestDays, 0)),

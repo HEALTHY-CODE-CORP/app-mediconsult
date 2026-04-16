@@ -13,14 +13,14 @@ export default function ClinicsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Clínicas</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Consultorios</h1>
           <p className="text-muted-foreground">
-            Gestión de clínicas de la organización
+            Gestión de consultorios de la organización
           </p>
         </div>
         <Button render={<Link href="/dashboard/admin/clinics/new" />}>
           <Plus className="mr-2 h-4 w-4" />
-          Nueva clínica
+          Nuevo consultorio
         </Button>
       </div>
 

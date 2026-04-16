@@ -34,7 +34,7 @@ const ALLOWED_CERT_EXTENSIONS = [".p12", ".pfx"] as const
 const OWNER_TYPE_LABELS: Record<OwnerType, string> = {
   USER: "Doctor",
   PHARMACY: "Farmacia",
-  CLINIC: "Clínica",
+  CLINIC: "Consultorio",
 }
 
 function isOwnerType(value: string | null): value is OwnerType {
@@ -101,7 +101,7 @@ export default function UploadCertificatePage() {
       ? "No hay doctores disponibles"
       : ownerType === "PHARMACY"
         ? "No hay farmacias disponibles"
-        : "No hay clínicas disponibles"
+        : "No hay consultorios disponibles"
 
   function getApiErrorMessage(error: unknown): string | null {
     if (error && typeof error === "object" && "message" in error) {
@@ -210,7 +210,7 @@ export default function UploadCertificatePage() {
                       if (v) setOwnerType(v as OwnerType)
                       setOwnerId("")
                     }}
-                    items={{ USER: "Doctor", PHARMACY: "Farmacia", CLINIC: "Clínica" }}
+                    items={{ USER: "Doctor", PHARMACY: "Farmacia", CLINIC: "Consultorio" }}
                   >
                     <SelectTrigger id="certificate-owner-type">
                       <SelectValue />
@@ -218,7 +218,7 @@ export default function UploadCertificatePage() {
                     <SelectContent>
                       <SelectItem value="USER">Doctor</SelectItem>
                       <SelectItem value="PHARMACY">Farmacia</SelectItem>
-                      <SelectItem value="CLINIC">Clínica</SelectItem>
+                      <SelectItem value="CLINIC">Consultorio</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -228,7 +228,7 @@ export default function UploadCertificatePage() {
                       ? "Doctor"
                       : ownerType === "PHARMACY"
                         ? "Farmacia"
-                        : "Clínica"}{" "}
+                        : "Consultorio"}{" "}
                     *
                   </Label>
                   <Select

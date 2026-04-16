@@ -42,10 +42,10 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
   async function handleDelete() {
     try {
       await deleteMutation.mutateAsync(id)
-      toast.success("Clínica eliminada")
+      toast.success("Consultorio eliminado")
       router.push("/dashboard/admin/clinics")
     } catch {
-      toast.error("Error al eliminar la clínica")
+      toast.error("Error al eliminar el consultorio")
     }
   }
 
@@ -64,9 +64,9 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
   if (!clinic) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <p className="text-muted-foreground">Clínica no encontrada</p>
+        <p className="text-muted-foreground">Consultorio no encontrado</p>
         <Button variant="link" className="mt-2" render={<Link href="/dashboard/admin/clinics" />}>
-          Volver a clínicas
+          Volver a consultorios
         </Button>
       </div>
     )
@@ -100,9 +100,9 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
           <ConfirmButton
             variant="destructive"
             size="sm"
-            title="Eliminar clínica"
-            description="Esta acción eliminará la clínica de forma permanente."
-            confirmLabel="Eliminar clínica"
+            title="Eliminar consultorio"
+            description="Esta acción eliminará el consultorio de forma permanente."
+            confirmLabel="Eliminar consultorio"
             loadingLabel="Eliminando..."
             onConfirm={handleDelete}
             disabled={deleteMutation.isPending}
@@ -124,7 +124,7 @@ export default function ClinicDetailPage({ params }: ClinicDetailPageProps) {
           <CardContent className="space-y-3">
             {clinic.logoUrl ? (
               <div className="rounded-lg border bg-muted/20 p-3">
-                <p className="mb-2 text-xs text-muted-foreground">Logo de la clínica</p>
+                <p className="mb-2 text-xs text-muted-foreground">Logo del consultorio</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={clinic.logoUrl}

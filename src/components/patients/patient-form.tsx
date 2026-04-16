@@ -328,7 +328,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               <p className="text-xs text-destructive">{fieldErrors.email}</p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Opcional, pero recomendado para comunicación clínica.
+                Opcional, pero recomendado para comunicación del consultorio.
               </p>
             )}
           </div>

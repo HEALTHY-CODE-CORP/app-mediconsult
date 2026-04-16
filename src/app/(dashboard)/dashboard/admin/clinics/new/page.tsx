@@ -9,9 +9,9 @@ export default function NewClinicPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Nueva clínica</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Nuevo consultorio</h1>
         <p className="text-muted-foreground">
-          Registra una nueva clínica en la organización
+          Registra un nuevo consultorio en la organización
         </p>
       </div>
 

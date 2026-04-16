@@ -271,7 +271,7 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
-            <Label htmlFor="maxClinics">Máx. clínicas *</Label>
+            <Label htmlFor="maxClinics">Máx. consultorios *</Label>
             <Input
               id="maxClinics"
               type="number"

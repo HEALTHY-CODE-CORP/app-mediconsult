@@ -137,7 +137,7 @@ export default function ConsultationBillingPage() {
           <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
             <div className="space-y-4">
               <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Clínica</p>
+                <p className="text-xs font-medium text-muted-foreground">Consultorio</p>
                 <ClinicSelector value={clinicId} onChange={setClinicId} />
               </div>
 
@@ -316,7 +316,7 @@ export default function ConsultationBillingPage() {
               <TableHead>Doctor</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Identificación</TableHead>
-              {!clinicId && <TableHead>Clínica</TableHead>}
+              {!clinicId && <TableHead>Consultorio</TableHead>}
               <TableHead className="text-right">Total</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>

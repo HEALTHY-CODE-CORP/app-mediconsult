@@ -80,7 +80,7 @@ const orgNavigation: NavGroup[] = [
     ],
   },
   {
-    label: "Clínica",
+    label: "Consultorio",
     items: [
       {
         title: "Pacientes",
@@ -159,7 +159,7 @@ const orgNavigation: NavGroup[] = [
         roles: ["ADMIN"],
       },
       {
-        title: "Clínicas",
+        title: "Consultorios",
         href: "/dashboard/admin/clinics",
         icon: Building2,
         roles: ["ADMIN"],

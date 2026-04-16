@@ -144,7 +144,7 @@ export default function PlanDetailPage({
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Building2 className="h-4 w-4" />
-                Clínicas
+                Consultorios
               </span>
               <span className="font-semibold">{plan.maxClinics}</span>
             </div>
