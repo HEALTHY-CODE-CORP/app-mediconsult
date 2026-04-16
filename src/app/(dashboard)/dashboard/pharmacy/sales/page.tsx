@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PharmacySelector } from "@/components/inventory/pharmacy-selector"
 import {
   useMyOpenCashSession,
+  usePharmacyOpenCashSession,
   useOpenCashSession,
   useCloseCashSession,
   usePharmacySales,
@@ -54,11 +55,15 @@ import { useSalesEarnings } from "@/hooks/use-dashboard"
 export default function SalesPage() {
   const [pharmacyId, setPharmacyId] = useState("")
 
-  // Cash session
+  // Cash session — my session + pharmacy-level session
   const { data: openSession, isLoading: loadingSession } = useMyOpenCashSession()
+  const { data: pharmacyOpenSession } = usePharmacyOpenCashSession(pharmacyId)
   const openSessionMutation = useOpenCashSession()
   const closeSessionMutation = useCloseCashSession(openSession?.id ?? "")
   const { data: summary } = useCashSessionSummary(openSession?.id ?? "")
+
+  // If another user has the cash session open for this pharmacy
+  const otherUserSession = !openSession && pharmacyOpenSession ? pharmacyOpenSession : null
 
   // Sales — by pharmacy or all org sales
   const { data: pharmacySales = [], isLoading: loadingPharmacySales } = usePharmacySales(pharmacyId)
@@ -405,6 +410,42 @@ export default function SalesPage() {
                 </div>
               )}
             </>
+          ) : otherUserSession ? (
+            /* Another user has the cash session open */
+            <div className="rounded-lg border bg-amber-50 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-amber-600" />
+                  <span className="font-medium text-amber-800">
+                    La caja ya está abierta
+                  </span>
+                </div>
+                <Badge className="bg-amber-100 text-amber-800">
+                  En uso
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Farmacia</p>
+                  <p className="font-medium">{otherUserSession.pharmacyName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Abierta por</p>
+                  <p className="font-medium">{otherUserSession.userName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Apertura</p>
+                  <p className="font-medium">{otherUserSession.openingAmountFormatted}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Desde</p>
+                  <p className="font-medium">{otherUserSession.openedAtFormatted}</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Otro usuario tiene la caja abierta para esta farmacia. Solo puede haber una sesión activa por farmacia.
+              </p>
+            </div>
           ) : (
             /* No open session — show open form */
             <div className="space-y-3">

@@ -50,6 +50,19 @@ export function useMyOpenCashSession() {
   })
 }
 
+export function usePharmacyOpenCashSession(pharmacyId: string) {
+  return useQuery({
+    queryKey: [...CASH_SESSIONS_KEY, "pharmacy", pharmacyId, "open"],
+    queryFn: async () => {
+      const { data } = await api.get<CashRegisterSessionResponse | null>(
+        `/sales/cash-sessions/pharmacy/${pharmacyId}/open`
+      )
+      return data ? toCashSession(data) : null
+    },
+    enabled: !!pharmacyId,
+  })
+}
+
 export function usePharmacyCashSessions(pharmacyId: string) {
   return useQuery({
     queryKey: [...CASH_SESSIONS_KEY, "pharmacy", pharmacyId],
