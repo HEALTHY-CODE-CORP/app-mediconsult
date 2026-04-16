@@ -227,7 +227,7 @@ export default function SalesPage() {
               <Card>
                 <CardContent className="pt-6">
                   <p className="mb-3 text-sm font-medium">Ventas por método de pago (mes)</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-4">
                     {earnings.salesByPaymentMethod.map((pm) => (
                       <div
                         key={pm.method}
