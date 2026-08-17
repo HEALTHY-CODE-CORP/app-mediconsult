@@ -13,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmButton } from "@/components/shared/confirm-button"
 import { EmailRecipientDialog } from "@/components/shared/email-recipient-dialog"
+import { InvoiceBuyerAddress } from "@/components/billing/invoice-buyer-address"
 import {
   useInvoice,
   useSriInvoiceRequest,
@@ -257,6 +258,7 @@ export default function ConsultationInvoiceDetailPage({
   }
 
   const canSubmitSri = invoice.status === "DRAFT"
+  const canEditBuyerAddress = invoice.status === "DRAFT" || invoice.status === "REJECTED"
   const canAuthorizeSri =
     invoice.status === "PENDING" && Boolean(invoice.claveAcceso)
   const canCancel =
@@ -396,9 +398,10 @@ export default function ConsultationInvoiceDetailPage({
               label="Identificación"
               value={invoice.compradorIdentificacion}
             />
-            <InfoRow
-              label="Dirección"
+            <InvoiceBuyerAddress
+              invoiceId={id}
               value={invoice.compradorDireccion}
+              canEdit={canEditBuyerAddress}
             />
             <InfoRow label="Email" value={invoice.compradorEmail} />
           </CardContent>
@@ -515,7 +518,11 @@ export default function ConsultationInvoiceDetailPage({
                   {canSubmitSri && (
                     <Button
                       onClick={handleSubmitToSri}
-                      disabled={sriSubmitMutation.isPending || sriAuthorizeMutation.isPending}
+                      disabled={
+                        sriSubmitMutation.isPending ||
+                        sriAuthorizeMutation.isPending ||
+                        !invoice.compradorDireccion?.trim()
+                      }
                     >
                       <Send className="mr-2 h-4 w-4" />
                       {sriSubmitMutation.isPending ? "Enviando..." : "Enviar al SRI"}

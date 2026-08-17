@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmButton } from "@/components/shared/confirm-button"
 import { EmailRecipientDialog } from "@/components/shared/email-recipient-dialog"
+import { InvoiceBuyerAddress } from "@/components/billing/invoice-buyer-address"
 import {
   useInvoice,
   useSriInvoiceRequest,
@@ -386,6 +387,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   }
 
   const canSubmitSri = invoice.status === "DRAFT"
+  const canEditBuyerAddress = invoice.status === "DRAFT" || invoice.status === "REJECTED"
   const canAuthorizeSri =
     invoice.status === "PENDING" && Boolean(invoice.claveAcceso)
   const canCancel =
@@ -542,9 +544,10 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
               label="Identificación"
               value={invoice.compradorIdentificacion}
             />
-            <InfoRow
-              label="Dirección"
+            <InvoiceBuyerAddress
+              invoiceId={id}
               value={invoice.compradorDireccion}
+              canEdit={canEditBuyerAddress}
             />
             <InfoRow label="Email" value={invoice.compradorEmail} />
           </CardContent>
@@ -649,7 +652,8 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
                       disabled={
                         sriSubmitMutation.isPending ||
                         sriAuthorizeMutation.isPending ||
-                        isAutoFlowRunning
+                        isAutoFlowRunning ||
+                        !invoice.compradorDireccion?.trim()
                       }
                     >
                       <Send className="mr-2 h-4 w-4" />

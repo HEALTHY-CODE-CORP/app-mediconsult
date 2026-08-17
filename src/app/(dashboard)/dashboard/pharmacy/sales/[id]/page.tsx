@@ -366,17 +366,17 @@ function InvoiceCard({ sale }: { sale: Sale }) {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    if (!identificacion || !razonSocial) {
-      toast.error("Completa los campos obligatorios")
+    if (!identificacion.trim() || !razonSocial.trim() || !direccion.trim()) {
+      toast.error("Identificación, razón social y dirección son obligatorias")
       return
     }
     try {
       const createdInvoice = await createMutation.mutateAsync({
         saleId,
         compradorTipoId: tipoId,
-        compradorIdentificacion: identificacion,
-        compradorRazonSocial: razonSocial,
-        compradorDireccion: direccion.trim() || undefined,
+        compradorIdentificacion: identificacion.trim(),
+        compradorRazonSocial: razonSocial.trim(),
+        compradorDireccion: direccion.trim(),
         compradorEmail: email.trim() || undefined,
       })
       toast.success("Factura creada exitosamente")
@@ -542,13 +542,15 @@ function InvoiceCard({ sale }: { sale: Sale }) {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs" htmlFor="sale-invoice-direccion">
-                      Dirección
+                      Dirección *
                     </Label>
                     <Input
                       id="sale-invoice-direccion"
                       value={direccion}
                       onChange={(e) => setDireccion(e.target.value)}
                       placeholder="Dirección del comprador"
+                      maxLength={300}
+                      required
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-2">

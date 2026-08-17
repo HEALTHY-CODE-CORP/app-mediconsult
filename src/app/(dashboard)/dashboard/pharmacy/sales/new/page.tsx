@@ -122,6 +122,7 @@ function NewSaleContent() {
   const [newCustomerLastName, setNewCustomerLastName] = useState("")
   const [newCustomerPhone, setNewCustomerPhone] = useState("")
   const [newCustomerIdNumber, setNewCustomerIdNumber] = useState("")
+  const [newCustomerAddress, setNewCustomerAddress] = useState("")
 
   // Determine the effective patientId for purchase summary
   const effectivePatientId = selectedCustomer?.patientId ?? prescription?.patientId ?? ""
@@ -481,6 +482,15 @@ function NewSaleContent() {
                     placeholder="Opcional"
                   />
                 </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs">Dirección</Label>
+                  <Input
+                    value={newCustomerAddress}
+                    onChange={(e) => setNewCustomerAddress(e.target.value)}
+                    placeholder="Se autocompletará al generar una factura"
+                    maxLength={500}
+                  />
+                </div>
               </div>
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button
@@ -494,6 +504,7 @@ function NewSaleContent() {
                     setNewCustomerLastName("")
                     setNewCustomerPhone("")
                     setNewCustomerIdNumber("")
+                    setNewCustomerAddress("")
                   }}
                 >
                   Cancelar
@@ -510,6 +521,7 @@ function NewSaleContent() {
                         lastName: newCustomerLastName.trim(),
                         phone: newCustomerPhone.trim() || undefined,
                         idNumber: newCustomerIdNumber.trim() || undefined,
+                        address: newCustomerAddress.trim() || undefined,
                       })
                       setSelectedCustomerOverride({
                         id: `customer-${created.id}`,
@@ -528,6 +540,7 @@ function NewSaleContent() {
                       setNewCustomerLastName("")
                       setNewCustomerPhone("")
                       setNewCustomerIdNumber("")
+                      setNewCustomerAddress("")
                       toast.success("Cliente creado")
                     } catch {
                       toast.error("Error al crear el cliente")
