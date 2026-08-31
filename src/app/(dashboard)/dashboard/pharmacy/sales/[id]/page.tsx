@@ -47,6 +47,7 @@ import {
   UserRound,
   DollarSign,
   Package2,
+  Printer,
   RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -70,6 +71,14 @@ export default function SaleDetailPage({ params }: SaleDetailPageProps) {
       toast.success("Venta cancelada")
     } catch {
       toast.error("Error al cancelar la venta")
+    }
+  }
+
+  function handlePrintTicket(format: "A4" | "TICKET_48MM") {
+    const ticketUrl = `/api/bff/v1/sales/${id}/ticket?format=${format}`
+    const ticketWindow = window.open(ticketUrl, "_blank", "noopener,noreferrer")
+    if (!ticketWindow) {
+      toast.error("No se pudo abrir el ticket. Verifica el bloqueo de ventanas emergentes.")
     }
   }
 
@@ -128,21 +137,33 @@ export default function SaleDetailPage({ params }: SaleDetailPageProps) {
             </p>
           </div>
         </div>
-        {canCancel && (
-          <ConfirmButton
-            variant="destructive"
-            size="sm"
-            title="Cancelar venta"
-            description="La venta se marcará como cancelada."
-            confirmLabel="Cancelar venta"
-            loadingLabel="Cancelando..."
-            onConfirm={handleCancel}
-            disabled={cancelMutation.isPending}
-          >
-            <XCircle className="mr-1 h-4 w-4" />
-            Cancelar venta
-          </ConfirmButton>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {canCancel && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => handlePrintTicket("A4")}>
+                <Printer className="mr-1 h-4 w-4" />
+                Ticket A4
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handlePrintTicket("TICKET_48MM")}>
+                <Printer className="mr-1 h-4 w-4" />
+                Ticket 48 mm
+              </Button>
+              <ConfirmButton
+                variant="destructive"
+                size="sm"
+                title="Cancelar venta"
+                description="La venta se marcará como cancelada. Si tiene una factura autorizada, debes gestionar primero el proceso fiscal correspondiente."
+                confirmLabel="Cancelar venta"
+                loadingLabel="Cancelando..."
+                onConfirm={handleCancel}
+                disabled={cancelMutation.isPending}
+              >
+                <XCircle className="mr-1 h-4 w-4" />
+                Cancelar venta
+              </ConfirmButton>
+            </>
+          )}
+        </div>
       </div>
 
       <Card className="border-border/70">
@@ -366,17 +387,17 @@ function InvoiceCard({ sale }: { sale: Sale }) {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    if (!identificacion || !razonSocial) {
-      toast.error("Completa los campos obligatorios")
+    if (!identificacion.trim() || !razonSocial.trim() || !direccion.trim()) {
+      toast.error("Identificación, razón social y dirección son obligatorias")
       return
     }
     try {
       const createdInvoice = await createMutation.mutateAsync({
         saleId,
         compradorTipoId: tipoId,
-        compradorIdentificacion: identificacion,
-        compradorRazonSocial: razonSocial,
-        compradorDireccion: direccion.trim() || undefined,
+        compradorIdentificacion: identificacion.trim(),
+        compradorRazonSocial: razonSocial.trim(),
+        compradorDireccion: direccion.trim(),
         compradorEmail: email.trim() || undefined,
       })
       toast.success("Factura creada exitosamente")
@@ -446,9 +467,9 @@ function InvoiceCard({ sale }: { sale: Sale }) {
             {!showForm ? (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed bg-muted/20 p-4">
                 <div>
-                  <p className="text-sm font-medium">Esta venta aún no tiene factura</p>
+                  <p className="text-sm font-medium">Esta venta aún no tiene factura electrónica</p>
                   <p className="text-xs text-muted-foreground">
-                    Genera la factura electrónica para completar el proceso de cobro.
+                    El ticket de venta ya puede imprimirse. Genera la factura solo si el cliente la solicita.
                   </p>
                 </div>
                 <Button
@@ -542,13 +563,15 @@ function InvoiceCard({ sale }: { sale: Sale }) {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs" htmlFor="sale-invoice-direccion">
-                      Dirección
+                      Dirección *
                     </Label>
                     <Input
                       id="sale-invoice-direccion"
                       value={direccion}
                       onChange={(e) => setDireccion(e.target.value)}
                       placeholder="Dirección del comprador"
+                      maxLength={300}
+                      required
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-2">

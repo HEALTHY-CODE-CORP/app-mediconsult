@@ -105,8 +105,8 @@ export function NewConsultationInvoiceContent() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!compradorIdentificacion || !compradorRazonSocial) {
-      toast.error("Identificación y razón social son obligatorios")
+    if (!compradorIdentificacion.trim() || !compradorRazonSocial.trim() || !compradorDireccion.trim()) {
+      toast.error("Identificación, razón social y dirección son obligatorias")
       return
     }
 
@@ -126,9 +126,9 @@ export function NewConsultationInvoiceContent() {
         consultationId,
         issuerType,
         compradorTipoId,
-        compradorIdentificacion,
-        compradorRazonSocial,
-        compradorDireccion: compradorDireccion || undefined,
+        compradorIdentificacion: compradorIdentificacion.trim(),
+        compradorRazonSocial: compradorRazonSocial.trim(),
+        compradorDireccion: compradorDireccion.trim(),
         compradorEmail: compradorEmail || undefined,
         compradorTelefono: compradorTelefono || undefined,
         consultationPrice: parsedConsultationPrice,
@@ -372,7 +372,7 @@ export function NewConsultationInvoiceContent() {
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <Label>Dirección</Label>
+                <Label>Dirección *</Label>
                 <Input
                   value={compradorDireccion}
                   onChange={(e) =>
@@ -382,6 +382,8 @@ export function NewConsultationInvoiceContent() {
                     }))
                   }
                   placeholder="Dirección del comprador"
+                  maxLength={300}
+                  required
                 />
               </div>
 

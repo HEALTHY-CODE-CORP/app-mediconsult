@@ -13,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmButton } from "@/components/shared/confirm-button"
 import { EmailRecipientDialog } from "@/components/shared/email-recipient-dialog"
+import { InvoiceBuyerAddress } from "@/components/billing/invoice-buyer-address"
 import {
   useInvoice,
   useSriInvoiceRequest,
@@ -141,17 +142,17 @@ export default function ConsultationInvoiceDetailPage({
     }
   }
 
-  function handlePrintInvoice() {
-    const pdfUrl = `/api/bff/v1/billing/invoices/${id}/pdf`
+  function handlePrintInvoice(format: "A4" | "TICKET_48MM") {
+    const pdfUrl = `/api/bff/v1/billing/invoices/${id}/pdf?format=${format}`
     const pdfWindow = window.open(pdfUrl, "_blank", "noopener,noreferrer")
     if (!pdfWindow) {
       toast.error("No se pudo abrir el PDF. Verifica el bloqueo de ventanas emergentes.")
     }
   }
 
-  async function handleDownloadInvoice() {
+  async function handleDownloadInvoice(format: "A4" | "TICKET_48MM" = "A4") {
     try {
-      const response = await fetch(`/api/bff/v1/billing/invoices/${id}/pdf?download=true`, {
+      const response = await fetch(`/api/bff/v1/billing/invoices/${id}/pdf?download=true&format=${format}`, {
         method: "GET",
         credentials: "include",
         headers: {
@@ -179,7 +180,8 @@ export default function ConsultationInvoiceDetailPage({
 
       const blob = await response.blob()
       const disposition = response.headers.get("content-disposition")
-      const fallbackName = `factura-${invoice?.numeroFactura ?? id}.pdf`
+      const ticketSuffix = format === "TICKET_48MM" ? "-ticket-48mm" : ""
+      const fallbackName = `factura-${invoice?.numeroFactura ?? id}${ticketSuffix}.pdf`
       const fileName = getFileNameFromDisposition(disposition) ?? fallbackName
 
       const blobUrl = window.URL.createObjectURL(blob)
@@ -257,6 +259,7 @@ export default function ConsultationInvoiceDetailPage({
   }
 
   const canSubmitSri = invoice.status === "DRAFT"
+  const canEditBuyerAddress = invoice.status === "DRAFT" || invoice.status === "REJECTED"
   const canAuthorizeSri =
     invoice.status === "PENDING" && Boolean(invoice.claveAcceso)
   const canCancel =
@@ -297,18 +300,26 @@ export default function ConsultationInvoiceDetailPage({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handlePrintInvoice}
+                onClick={() => handlePrintInvoice("A4")}
               >
                 <Printer className="mr-1 h-4 w-4" />
-                Imprimir
+                Imprimir A4
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleDownloadInvoice}
+                onClick={() => handlePrintInvoice("TICKET_48MM")}
+              >
+                <Printer className="mr-1 h-4 w-4" />
+                Ticket 48 mm
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownloadInvoice("A4")}
               >
                 <Download className="mr-1 h-4 w-4" />
-                Descargar PDF
+                Descargar A4
               </Button>
             </>
           )}
@@ -396,9 +407,10 @@ export default function ConsultationInvoiceDetailPage({
               label="Identificación"
               value={invoice.compradorIdentificacion}
             />
-            <InfoRow
-              label="Dirección"
+            <InvoiceBuyerAddress
+              invoiceId={id}
               value={invoice.compradorDireccion}
+              canEdit={canEditBuyerAddress}
             />
             <InfoRow label="Email" value={invoice.compradorEmail} />
           </CardContent>
@@ -515,7 +527,11 @@ export default function ConsultationInvoiceDetailPage({
                   {canSubmitSri && (
                     <Button
                       onClick={handleSubmitToSri}
-                      disabled={sriSubmitMutation.isPending || sriAuthorizeMutation.isPending}
+                      disabled={
+                        sriSubmitMutation.isPending ||
+                        sriAuthorizeMutation.isPending ||
+                        !invoice.compradorDireccion?.trim()
+                      }
                     >
                       <Send className="mr-2 h-4 w-4" />
                       {sriSubmitMutation.isPending ? "Enviando..." : "Enviar al SRI"}

@@ -9,7 +9,7 @@ export interface CreateInvoiceRequest {
   compradorTipoId: TipoIdentificacion
   compradorIdentificacion: string
   compradorRazonSocial: string
-  compradorDireccion?: string
+  compradorDireccion: string
   compradorEmail?: string
   compradorTelefono?: string
 }
@@ -20,12 +20,16 @@ export interface CreateConsultationInvoiceRequest {
   compradorTipoId: TipoIdentificacion
   compradorIdentificacion: string
   compradorRazonSocial: string
-  compradorDireccion?: string
+  compradorDireccion: string
   compradorEmail?: string
   compradorTelefono?: string
   consultationPrice?: number
   ambiente?: string
   formaPago?: string
+}
+
+export interface UpdateInvoiceBuyerAddressRequest {
+  compradorDireccion: string
 }
 
 export interface SriAuthorizationResponse {

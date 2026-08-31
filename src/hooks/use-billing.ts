@@ -4,6 +4,7 @@ import type {
   InvoiceResponse,
   CreateInvoiceRequest,
   CreateConsultationInvoiceRequest,
+  UpdateInvoiceBuyerAddressRequest,
   SriAuthorizationResponse,
   SriInvoiceRequest,
   SriSubmitResult,
@@ -226,6 +227,21 @@ export function useCreateConsultationInvoice() {
       const { data } = await api.post<InvoiceResponse>(
         "/billing/invoices/consultation",
         invoice
+      )
+      return toInvoice(data)
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: BILLING_KEY }),
+  })
+}
+
+export function useUpdateInvoiceBuyerAddress(invoiceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (request: UpdateInvoiceBuyerAddressRequest) => {
+      const { data } = await api.patch<InvoiceResponse>(
+        `/billing/invoices/${invoiceId}/buyer-address`,
+        request
       )
       return toInvoice(data)
     },
