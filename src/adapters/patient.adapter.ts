@@ -4,6 +4,8 @@ import type {
   IdType,
   Gender,
   BloodType,
+  MaritalStatus,
+  EducationLevel,
   AllergyType,
   AllergySeverity,
 } from "@/types/patient.model"
@@ -32,6 +34,23 @@ export const BLOOD_TYPE_LABELS: Record<BloodType, string> = {
   AB_NEGATIVE: "AB−",
   O_POSITIVE: "O+",
   O_NEGATIVE: "O−",
+}
+
+export const MARITAL_STATUS_LABELS: Record<MaritalStatus, string> = {
+  SINGLE: "Soltero/a",
+  MARRIED: "Casado/a",
+  COMMON_LAW: "Unión libre",
+  DIVORCED: "Divorciado/a",
+  WIDOWED: "Viudo/a",
+  NOT_SPECIFIED: "No especificado",
+}
+
+export const EDUCATION_LEVEL_LABELS: Record<EducationLevel, string> = {
+  SCHOOL: "Escuela",
+  SECONDARY: "Secundaria",
+  HIGHER: "Superior",
+  NONE: "Ninguna",
+  NOT_SPECIFIED: "No especificado",
 }
 
 export const ALLERGY_TYPE_LABELS: Record<AllergyType, string> = {
@@ -77,6 +96,16 @@ export interface Patient {
   emergencyContactName: string | null
   emergencyContactPhone: string | null
   occupation: string | null
+  maritalStatus: MaritalStatus | null
+  maritalStatusLabel: string | null
+  numberOfChildren: number | null
+  birthCountry: string | null
+  birthProvince: string | null
+  birthCity: string | null
+  residencePlace: string | null
+  currentOccupation: string | null
+  educationLevel: EducationLevel | null
+  educationLevelLabel: string | null
   insuranceProvider: string | null
   insuranceNumber: string | null
   notes: string | null
@@ -133,6 +162,20 @@ export function toPatient(response: PatientResponse): Patient {
     emergencyContactName: response.emergencyContactName ?? null,
     emergencyContactPhone: response.emergencyContactPhone ?? null,
     occupation: response.occupation ?? null,
+    maritalStatus: response.maritalStatus ?? null,
+    maritalStatusLabel: response.maritalStatus
+      ? (MARITAL_STATUS_LABELS[response.maritalStatus] ?? null)
+      : null,
+    numberOfChildren: response.numberOfChildren ?? null,
+    birthCountry: response.birthCountry ?? null,
+    birthProvince: response.birthProvince ?? null,
+    birthCity: response.birthCity ?? null,
+    residencePlace: response.residencePlace ?? null,
+    currentOccupation: response.currentOccupation ?? response.occupation ?? null,
+    educationLevel: response.educationLevel ?? null,
+    educationLevelLabel: response.educationLevel
+      ? (EDUCATION_LEVEL_LABELS[response.educationLevel] ?? null)
+      : null,
     insuranceProvider: response.insuranceProvider ?? null,
     insuranceNumber: response.insuranceNumber ?? null,
     notes: response.notes ?? null,

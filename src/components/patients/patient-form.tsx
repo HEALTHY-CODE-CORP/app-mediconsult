@@ -26,6 +26,8 @@ import {
   ID_TYPE_LABELS,
   GENDER_LABELS,
   BLOOD_TYPE_LABELS,
+  MARITAL_STATUS_LABELS,
+  EDUCATION_LEVEL_LABELS,
 } from "@/adapters/patient.adapter"
 import type { Patient } from "@/adapters/patient.adapter"
 import type {
@@ -33,6 +35,8 @@ import type {
   IdType,
   Gender,
   BloodType,
+  MaritalStatus,
+  EducationLevel,
 } from "@/types/patient.model"
 import { ClipboardCheck, Info } from "lucide-react"
 
@@ -60,6 +64,14 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
     emergencyContactName: patient?.emergencyContactName ?? undefined,
     emergencyContactPhone: patient?.emergencyContactPhone ?? undefined,
     occupation: patient?.occupation ?? undefined,
+    maritalStatus: patient?.maritalStatus ?? undefined,
+    numberOfChildren: patient?.numberOfChildren ?? undefined,
+    birthCountry: patient?.birthCountry ?? undefined,
+    birthProvince: patient?.birthProvince ?? undefined,
+    birthCity: patient?.birthCity ?? undefined,
+    residencePlace: patient?.residencePlace ?? undefined,
+    currentOccupation: patient?.currentOccupation ?? patient?.occupation ?? undefined,
+    educationLevel: patient?.educationLevel ?? undefined,
     insuranceProvider: patient?.insuranceProvider ?? undefined,
     insuranceNumber: patient?.insuranceNumber ?? undefined,
     notes: patient?.notes ?? undefined,
@@ -86,6 +98,10 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
       emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)
         ? "Ingresa un correo electrónico válido."
         : "",
+    numberOfChildren:
+      formData.numberOfChildren != null && formData.numberOfChildren < 0
+        ? "El número de hijos no puede ser negativo."
+        : "",
   }
   const hasValidationErrors = Object.values(fieldErrors).some(Boolean)
 
@@ -94,6 +110,13 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
     value: CreatePatientRequest[K]
   ) {
     setFormData((prev) => ({ ...prev, [key]: value || undefined }))
+  }
+
+  function updateNumberField(key: "numberOfChildren", value: string) {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: value === "" ? undefined : Number(value),
+    }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -158,7 +181,6 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
         </CardContent>
       </Card>
 
-      {/* Identificación */}
       <Card>
         <CardHeader>
           <CardTitle>Identificación</CardTitle>
@@ -229,11 +251,10 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
         </CardContent>
       </Card>
 
-      {/* Datos personales */}
       <Card>
         <CardHeader>
           <CardTitle>Datos personales</CardTitle>
-          <CardDescription>Información demográfica</CardDescription>
+          <CardDescription>Información demográfica general</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
@@ -257,9 +278,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(GENDER_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -268,9 +287,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
             <Label htmlFor="bloodType">Tipo de sangre</Label>
             <Select
               value={formData.bloodType ?? ""}
-              onValueChange={(v) =>
-                updateField("bloodType", (v || undefined) as BloodType | undefined)
-              }
+              onValueChange={(v) => updateField("bloodType", (v || undefined) as BloodType | undefined)}
               items={BLOOD_TYPE_LABELS as Record<string, string>}
             >
               <SelectTrigger id="bloodType" className="w-full">
@@ -278,26 +295,104 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(BLOOD_TYPE_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="occupation">Ocupación</Label>
+            <Label htmlFor="maritalStatus">Estado civil</Label>
+            <Select
+              value={formData.maritalStatus ?? ""}
+              onValueChange={(v) => updateField("maritalStatus", (v || undefined) as MaritalStatus | undefined)}
+              items={MARITAL_STATUS_LABELS as Record<string, string>}
+            >
+              <SelectTrigger id="maritalStatus" className="w-full">
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(MARITAL_STATUS_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="numberOfChildren">Número de hijos</Label>
             <Input
-              id="occupation"
-              value={formData.occupation ?? ""}
-              onChange={(e) => updateField("occupation", e.target.value)}
-              placeholder="Ocupación"
+              id="numberOfChildren"
+              type="number"
+              min="0"
+              value={formData.numberOfChildren ?? ""}
+              onChange={(e) => updateNumberField("numberOfChildren", e.target.value)}
+              aria-invalid={submitAttempted && Boolean(fieldErrors.numberOfChildren)}
             />
+            {submitAttempted && fieldErrors.numberOfChildren && (
+              <p className="text-xs text-destructive">{fieldErrors.numberOfChildren}</p>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Contacto */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Nacimiento y residencia</CardTitle>
+          <CardDescription>Datos complementarios del paciente</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="birthCountry">País de nacimiento</Label>
+            <Input id="birthCountry" value={formData.birthCountry ?? ""} onChange={(e) => updateField("birthCountry", e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="birthProvince">Provincia de nacimiento</Label>
+            <Input id="birthProvince" value={formData.birthProvince ?? ""} onChange={(e) => updateField("birthProvince", e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="birthCity">Ciudad de nacimiento</Label>
+            <Input id="birthCity" value={formData.birthCity ?? ""} onChange={(e) => updateField("birthCity", e.target.value)} />
+          </div>
+          <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+            <Label htmlFor="residencePlace">Lugar de residencia</Label>
+            <Input id="residencePlace" value={formData.residencePlace ?? ""} onChange={(e) => updateField("residencePlace", e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Ocupación e instrucción</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="currentOccupation">Ocupación actual</Label>
+            <Input
+              id="currentOccupation"
+              value={formData.currentOccupation ?? ""}
+              onChange={(e) => updateField("currentOccupation", e.target.value)}
+              placeholder="Ocupación actual"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="educationLevel">Nivel de instrucción</Label>
+            <Select
+              value={formData.educationLevel ?? ""}
+              onValueChange={(v) => updateField("educationLevel", (v || undefined) as EducationLevel | undefined)}
+              items={EDUCATION_LEVEL_LABELS as Record<string, string>}
+            >
+              <SelectTrigger id="educationLevel" className="w-full">
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(EDUCATION_LEVEL_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Contacto</CardTitle>
@@ -306,45 +401,24 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="phone">Teléfono</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={formData.phone ?? ""}
-              onChange={(e) => updateField("phone", e.target.value)}
-              placeholder="0999999999"
-            />
+            <Input id="phone" type="tel" value={formData.phone ?? ""} onChange={(e) => updateField("phone", e.target.value)} placeholder="0999999999" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Correo electrónico</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email ?? ""}
-              onChange={(e) => updateField("email", e.target.value)}
-              placeholder="correo@ejemplo.com"
-              aria-invalid={submitAttempted && Boolean(fieldErrors.email)}
-            />
+            <Input id="email" type="email" value={formData.email ?? ""} onChange={(e) => updateField("email", e.target.value)} placeholder="correo@ejemplo.com" aria-invalid={submitAttempted && Boolean(fieldErrors.email)} />
             {submitAttempted && fieldErrors.email ? (
               <p className="text-xs text-destructive">{fieldErrors.email}</p>
             ) : (
-              <p className="text-xs text-muted-foreground">
-                Opcional, pero recomendado para comunicación del consultorio.
-              </p>
+              <p className="text-xs text-muted-foreground">Opcional, pero recomendado para comunicación del consultorio.</p>
             )}
           </div>
           <div className="col-span-full space-y-2">
             <Label htmlFor="address">Dirección</Label>
-            <Input
-              id="address"
-              value={formData.address ?? ""}
-              onChange={(e) => updateField("address", e.target.value)}
-              placeholder="Dirección completa"
-            />
+            <Input id="address" value={formData.address ?? ""} onChange={(e) => updateField("address", e.target.value)} placeholder="Dirección completa" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Contacto de emergencia */}
       <Card>
         <CardHeader>
           <CardTitle>Contacto de emergencia</CardTitle>
@@ -352,27 +426,15 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="emergencyContactName">Nombre del contacto</Label>
-            <Input
-              id="emergencyContactName"
-              value={formData.emergencyContactName ?? ""}
-              onChange={(e) => updateField("emergencyContactName", e.target.value)}
-              placeholder="Nombre completo"
-            />
+            <Input id="emergencyContactName" value={formData.emergencyContactName ?? ""} onChange={(e) => updateField("emergencyContactName", e.target.value)} placeholder="Nombre completo" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="emergencyContactPhone">Teléfono del contacto</Label>
-            <Input
-              id="emergencyContactPhone"
-              type="tel"
-              value={formData.emergencyContactPhone ?? ""}
-              onChange={(e) => updateField("emergencyContactPhone", e.target.value)}
-              placeholder="0999999999"
-            />
+            <Input id="emergencyContactPhone" type="tel" value={formData.emergencyContactPhone ?? ""} onChange={(e) => updateField("emergencyContactPhone", e.target.value)} placeholder="0999999999" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Seguro */}
       <Card>
         <CardHeader>
           <CardTitle>Seguro médico</CardTitle>
@@ -380,49 +442,26 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="insuranceProvider">Aseguradora</Label>
-            <Input
-              id="insuranceProvider"
-              value={formData.insuranceProvider ?? ""}
-              onChange={(e) => updateField("insuranceProvider", e.target.value)}
-              placeholder="Nombre de la aseguradora"
-            />
+            <Input id="insuranceProvider" value={formData.insuranceProvider ?? ""} onChange={(e) => updateField("insuranceProvider", e.target.value)} placeholder="Nombre de la aseguradora" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="insuranceNumber">Número de póliza</Label>
-            <Input
-              id="insuranceNumber"
-              value={formData.insuranceNumber ?? ""}
-              onChange={(e) => updateField("insuranceNumber", e.target.value)}
-              placeholder="Número de póliza"
-            />
+            <Input id="insuranceNumber" value={formData.insuranceNumber ?? ""} onChange={(e) => updateField("insuranceNumber", e.target.value)} placeholder="Número de póliza" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Notas */}
       <Card>
         <CardHeader>
           <CardTitle>Notas adicionales</CardTitle>
         </CardHeader>
         <CardContent>
-          <Textarea
-            value={formData.notes ?? ""}
-            onChange={(e) => updateField("notes", e.target.value)}
-            placeholder="Observaciones o notas adicionales..."
-            rows={3}
-          />
+          <Textarea value={formData.notes ?? ""} onChange={(e) => updateField("notes", e.target.value)} placeholder="Observaciones o notas adicionales..." rows={3} />
         </CardContent>
       </Card>
 
-      {/* Actions */}
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          disabled={isPending}
-          className="w-full sm:w-auto"
-        >
+        <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending} className="w-full sm:w-auto">
           Cancelar
         </Button>
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">

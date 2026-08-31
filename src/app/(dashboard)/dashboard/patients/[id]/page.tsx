@@ -91,6 +91,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" render={<Link href={`/dashboard/patients/${id}/dental`} />}>
+            <Heart className="mr-1 h-4 w-4" />
+            Odontología
+          </Button>
           <Button variant="outline" size="sm" render={<Link href={`/dashboard/patients/${id}/edit`} />}>
             <Pencil className="mr-1 h-4 w-4" />
             Editar
@@ -169,8 +173,29 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             />
             <InfoRow
               icon={<Briefcase className="h-4 w-4" />}
-              label="Ocupación"
-              value={patient.occupation}
+              label="Ocupación actual"
+              value={patient.currentOccupation ?? patient.occupation}
+            />
+            <InfoRow
+              icon={<User className="h-4 w-4" />}
+              label="Estado civil"
+              value={patient.maritalStatusLabel}
+            />
+            <InfoRow
+              label="Número de hijos"
+              value={patient.numberOfChildren !== null ? String(patient.numberOfChildren) : null}
+            />
+            <InfoRow
+              label="Nivel de instrucción"
+              value={patient.educationLevelLabel}
+            />
+            <InfoRow
+              label="Lugar de nacimiento"
+              value={[patient.birthCountry, patient.birthProvince, patient.birthCity].filter(Boolean).join(" / ") || null}
+            />
+            <InfoRow
+              label="Lugar de residencia"
+              value={patient.residencePlace}
             />
           </CardContent>
         </Card>
@@ -281,3 +306,6 @@ function PatientDetailSkeleton() {
     </div>
   )
 }
+
+
+

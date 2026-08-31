@@ -5,6 +5,8 @@ export type BloodType =
   | "B_POSITIVE" | "B_NEGATIVE"
   | "AB_POSITIVE" | "AB_NEGATIVE"
   | "O_POSITIVE" | "O_NEGATIVE"
+export type MaritalStatus = "SINGLE" | "MARRIED" | "COMMON_LAW" | "DIVORCED" | "WIDOWED" | "NOT_SPECIFIED"
+export type EducationLevel = "SCHOOL" | "SECONDARY" | "HIGHER" | "NONE" | "NOT_SPECIFIED"
 export type AllergyType = "MEDICATION" | "FOOD" | "ENVIRONMENTAL" | "OTHER"
 export type AllergySeverity = "MILD" | "MODERATE" | "SEVERE"
 
@@ -22,6 +24,14 @@ export interface CreatePatientRequest {
   emergencyContactName?: string
   emergencyContactPhone?: string
   occupation?: string
+  maritalStatus?: MaritalStatus
+  numberOfChildren?: number
+  birthCountry?: string
+  birthProvince?: string
+  birthCity?: string
+  residencePlace?: string
+  currentOccupation?: string
+  educationLevel?: EducationLevel
   insuranceProvider?: string
   insuranceNumber?: string
   notes?: string
@@ -47,6 +57,14 @@ export interface PatientResponse {
   emergencyContactName?: string
   emergencyContactPhone?: string
   occupation?: string
+  maritalStatus?: MaritalStatus
+  numberOfChildren?: number
+  birthCountry?: string
+  birthProvince?: string
+  birthCity?: string
+  residencePlace?: string
+  currentOccupation?: string
+  educationLevel?: EducationLevel
   insuranceProvider?: string
   insuranceNumber?: string
   notes?: string

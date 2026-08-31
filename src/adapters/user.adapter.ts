@@ -7,6 +7,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   SUPER_ADMIN: "Super Administrador",
   ADMIN: "Administrador",
   DOCTOR: "Doctor",
+  DENTIST: "Odontólogo/a",
   NURSE: "Enfermero/a",
   PHARMACIST: "Farmacéutico/a",
   CASHIER: "Cajero/a",
@@ -80,3 +81,6 @@ export function toUser(raw: UserResponse): User {
 export function toUserList(raw: UserResponse[]): User[] {
   return raw.map(toUser)
 }
+
+
+

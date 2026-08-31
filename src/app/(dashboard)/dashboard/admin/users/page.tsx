@@ -31,6 +31,7 @@ const ROLE_COLORS: Record<Role, string> = {
   SUPER_ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   ADMIN: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
   DOCTOR: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  DENTIST: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
   NURSE: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   PHARMACIST: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
   CASHIER: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
@@ -39,6 +40,7 @@ const ROLE_COLORS: Record<Role, string> = {
 const FILTERABLE_ROLES: Role[] = [
   "ADMIN",
   "DOCTOR",
+  "DENTIST",
   "NURSE",
   "PHARMACIST",
   "CASHIER",
@@ -265,3 +267,5 @@ export default function UsersPage() {
     </div>
   )
 }
+
+

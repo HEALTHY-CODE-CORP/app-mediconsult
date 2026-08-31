@@ -25,6 +25,7 @@ import { ArrowLeft, X } from "lucide-react"
 const ASSIGNABLE_ROLES: Role[] = [
   "ADMIN",
   "DOCTOR",
+  "DENTIST",
   "NURSE",
   "PHARMACIST",
   "CASHIER",
@@ -264,3 +265,5 @@ export default function NewUserPage() {
     </div>
   )
 }
+
+

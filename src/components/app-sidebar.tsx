@@ -61,8 +61,9 @@ interface NavGroup {
   items: NavItem[]
 }
 
-const ALL_ORG_ROLES: Role[] = ["ADMIN", "DOCTOR", "NURSE", "PHARMACIST", "CASHIER"]
+const ALL_ORG_ROLES: Role[] = ["ADMIN", "DOCTOR", "DENTIST", "NURSE", "PHARMACIST", "CASHIER"]
 const CLINICAL_STAFF: Role[] = ["ADMIN", "DOCTOR", "NURSE"]
+const DENTAL_STAFF: Role[] = ["ADMIN", "DENTIST"]
 const PHARMACY_STAFF: Role[] = ["ADMIN", "PHARMACIST", "CASHIER"]
 
 // ─── Navigation for org-scoped users ────────────────────────────────
@@ -105,6 +106,12 @@ const orgNavigation: NavGroup[] = [
         href: "/dashboard/clinical/records",
         icon: FileHeart,
         roles: CLINICAL_STAFF,
+      },
+      {
+        title: "Odontología",
+        href: "/dashboard/dental",
+        icon: FileHeart,
+        roles: DENTAL_STAFF,
       },
       {
         title: "Recetas",
@@ -355,3 +362,7 @@ export function AppSidebar() {
     </Sidebar>
   )
 }
+
+
+
+

@@ -35,6 +35,7 @@ const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
   ADMIN: "Administrador",
   DOCTOR: "Doctor",
+  DENTIST: "Odontólogo/a",
   NURSE: "Enfermera",
   PHARMACIST: "Farmacéutico",
   CASHIER: "Cajero",
@@ -592,3 +593,5 @@ export default function ProfilePage() {
     </div>
   )
 }
+
+

@@ -25,6 +25,7 @@ import { toast } from "sonner"
 const ASSIGNABLE_ROLES: Role[] = [
   "ADMIN",
   "DOCTOR",
+  "DENTIST",
   "NURSE",
   "PHARMACIST",
   "CASHIER",
@@ -340,3 +341,5 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     </div>
   )
 }
+
+

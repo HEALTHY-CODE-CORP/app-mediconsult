@@ -75,4 +75,5 @@ export interface UserResponse {
   updatedAt: string
 }
 
-export type Role = "SUPER_ADMIN" | "ADMIN" | "DOCTOR" | "NURSE" | "PHARMACIST" | "CASHIER"
+export type Role = "SUPER_ADMIN" | "ADMIN" | "DOCTOR" | "DENTIST" | "NURSE" | "PHARMACIST" | "CASHIER"
+
