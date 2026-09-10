@@ -38,7 +38,7 @@ interface ClinicStaffCardProps {
   clinicId: string
 }
 
-const CLINICAL_ROLES: Role[] = ["DOCTOR", "NURSE"]
+const CLINICAL_ROLES: Role[] = ["DOCTOR", "NURSE", "DENTIST"]
 
 export function ClinicStaffCard({ clinicId }: ClinicStaffCardProps) {
   const { data: assignedStaff = [], isLoading } = useClinicStaff(clinicId)
