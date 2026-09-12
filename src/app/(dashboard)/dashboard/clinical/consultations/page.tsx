@@ -22,16 +22,18 @@ import {
   useOrganizationConsultations,
 } from "@/hooks/use-clinical"
 import { useConsultationEarnings } from "@/hooks/use-dashboard"
-import { Plus, Eye, ClipboardList, DollarSign, TrendingUp } from "lucide-react"
+import { Plus, Eye, ClipboardList, DollarSign, TrendingUp, Zap } from "lucide-react"
 
 export default function ConsultationsPage() {
   const { data: session } = useSession()
   const roles = session?.user?.roles ?? []
   const isDoctor = roles.includes("DOCTOR")
   const isAdmin = roles.includes("ADMIN")
+  const isNurse = roles.includes("NURSE")
   const canCreate = isDoctor || isAdmin
+  const canCreateQuick = isDoctor || isAdmin || isNurse
   // Nurse only sees all org consultations; Doctor/Admin sees their own
-  const isNurseOnly = roles.includes("NURSE") && !isDoctor && !isAdmin
+  const isNurseOnly = isNurse && !isDoctor && !isAdmin
 
   // Doctor/Admin ve sus consultas; Enfermera ve todas las de la organización
   const doctorQuery = useMyConsultations()
@@ -45,7 +47,7 @@ export default function ConsultationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             {isNurseOnly ? "Consultas" : "Mis consultas"}
@@ -56,12 +58,24 @@ export default function ConsultationsPage() {
               : "Historial de consultas médicas realizadas"}
           </p>
         </div>
-        {canCreate && (
-          <Button render={<Link href="/dashboard/clinical/consultations/new" />}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nueva consulta
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {canCreateQuick && (
+            <Button
+              variant="outline"
+              render={<Link href="/dashboard/clinical/consultations/quick" />}
+              className="cursor-pointer border-amber-500/30 hover:bg-amber-500/10 text-amber-900 dark:text-amber-200"
+            >
+              <Zap className="mr-2 h-4 w-4 text-amber-500 fill-amber-500/20" />
+              Consulta rápida
+            </Button>
+          )}
+          {canCreate && (
+            <Button render={<Link href="/dashboard/clinical/consultations/new" />} className="cursor-pointer">
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva consulta
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Earnings Summary */}
@@ -191,9 +205,17 @@ export default function ConsultationsPage() {
                   {c.diagnosisDescription ?? "—"}
                 </TableCell>
                 <TableCell>
-                  <Badge className={c.statusColor}>
-                    {c.statusLabel}
-                  </Badge>
+                  <div className="flex flex-col gap-1 items-start">
+                    <Badge className={c.statusColor}>
+                      {c.statusLabel}
+                    </Badge>
+                    {c.consultationType === "QUICK" && (
+                      <Badge variant="outline" className="text-[10px] py-0 border-amber-500/40 text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300">
+                        <Zap className="mr-0.5 h-2.5 w-2.5" />
+                        Rápida
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <Button

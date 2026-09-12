@@ -8,6 +8,7 @@ import type {
   CreateVitalSignsRequest,
   ConsultationResponse,
   CreateConsultationRequest,
+  CreateQuickConsultationRequest,
   UpdateConsultationRequest,
   EvolutionNoteResponse,
   CreateEvolutionNoteRequest,
@@ -242,6 +243,21 @@ export function useCreateConsultation() {
     mutationFn: async (consultation: CreateConsultationRequest) => {
       const { data } = await api.post<ConsultationResponse>(
         "/clinical/consultations",
+        consultation
+      )
+      return toConsultation(data)
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...CLINICAL_KEY, "consultations"] }),
+  })
+}
+
+export function useCreateQuickConsultation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (consultation: CreateQuickConsultationRequest) => {
+      const { data } = await api.post<ConsultationResponse>(
+        "/clinical/consultations/quick",
         consultation
       )
       return toConsultation(data)

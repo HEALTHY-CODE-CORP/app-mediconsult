@@ -30,6 +30,16 @@ export const CONSULTATION_STATUS_COLORS: Record<ConsultationStatus, string> = {
   CANCELLED: "bg-red-100 text-red-800",
 }
 
+export const CONSULTATION_TYPE_LABELS: Record<string, string> = {
+  STANDARD: "Estándar",
+  QUICK: "Rápida",
+}
+
+export const CONSULTATION_TYPE_COLORS: Record<string, string> = {
+  STANDARD: "bg-slate-100 text-slate-800",
+  QUICK: "bg-amber-100 text-amber-800",
+}
+
 export const REFERRAL_STATUS_LABELS: Record<ReferralStatus, string> = {
   PENDING: "Pendiente",
   SENT: "Enviada",
@@ -164,6 +174,9 @@ export interface Consultation {
   status: ConsultationStatus
   statusLabel: string
   statusColor: string
+  consultationType: "STANDARD" | "QUICK"
+  consultationTypeLabel: string
+  consultationTypeColor: string
   createdAt: string
   updatedAt: string
   diagnoses: ConsultationDiagnosis[]
@@ -354,6 +367,9 @@ export function toConsultation(raw: ConsultationResponse): Consultation {
     status: raw.status,
     statusLabel: CONSULTATION_STATUS_LABELS[raw.status] ?? raw.status,
     statusColor: CONSULTATION_STATUS_COLORS[raw.status] ?? "",
+    consultationType: (raw.consultationType ?? "STANDARD") as "STANDARD" | "QUICK",
+    consultationTypeLabel: CONSULTATION_TYPE_LABELS[raw.consultationType ?? "STANDARD"] ?? "Estándar",
+    consultationTypeColor: CONSULTATION_TYPE_COLORS[raw.consultationType ?? "STANDARD"] ?? "",
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     diagnoses: (raw.diagnoses ?? []).map((d) => ({

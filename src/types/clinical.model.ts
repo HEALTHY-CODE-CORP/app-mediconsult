@@ -125,6 +125,16 @@ export interface UpdateConsultationRequest {
   notes?: string
 }
 
+export type ConsultationType = "STANDARD" | "QUICK"
+
+export interface CreateQuickConsultationRequest {
+  patientId: string
+  clinicId: string
+  procedureName: string
+  cost: number
+  notes?: string
+}
+
 export interface ConsultationResponse {
   id: string
   medicalRecordId: string
@@ -146,6 +156,7 @@ export interface ConsultationResponse {
   treatment?: string
   notes?: string
   status: ConsultationStatus
+  consultationType?: ConsultationType
   createdAt: string
   updatedAt: string
   diagnoses?: ConsultationDiagnosisResponse[]
