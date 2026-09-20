@@ -81,9 +81,9 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
   const isPending = createMutation.isPending || updateMutation.isPending
   const requiredChecklist = [
     { label: "Tipo de identificación", ok: Boolean(formData.idType) },
-    { label: "Número de identificación", ok: Boolean(formData.idNumber.trim()) },
-    { label: "Nombres", ok: Boolean(formData.firstName.trim()) },
-    { label: "Apellidos", ok: Boolean(formData.lastName.trim()) },
+    { label: "Número de identificación", ok: Boolean(formData.idNumber?.trim()) },
+    { label: "Nombres", ok: Boolean(formData.firstName?.trim()) },
+    { label: "Apellidos", ok: Boolean(formData.lastName?.trim()) },
   ]
   const completedRequired = requiredChecklist.filter((item) => item.ok).length
   const progressPercent = Math.round(
@@ -109,7 +109,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
     key: K,
     value: CreatePatientRequest[K]
   ) {
-    setFormData((prev) => ({ ...prev, [key]: value || undefined }))
+    setFormData((prev) => ({ ...prev, [key]: value }))
   }
 
   function updateNumberField(key: "numberOfChildren", value: string) {
@@ -128,13 +128,40 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
       return
     }
 
+    const payload: CreatePatientRequest = {
+      ...formData,
+      idNumber: formData.idNumber?.trim() ?? "",
+      firstName: formData.firstName?.trim() ?? "",
+      lastName: formData.lastName?.trim() ?? "",
+      birthDate: formData.birthDate || undefined,
+      gender: formData.gender || undefined,
+      bloodType: formData.bloodType || undefined,
+      address: formData.address?.trim() || undefined,
+      phone: formData.phone?.trim() || undefined,
+      email: formData.email?.trim() || undefined,
+      emergencyContactName: formData.emergencyContactName?.trim() || undefined,
+      emergencyContactPhone: formData.emergencyContactPhone?.trim() || undefined,
+      occupation: formData.occupation?.trim() || undefined,
+      maritalStatus: formData.maritalStatus || undefined,
+      numberOfChildren: formData.numberOfChildren ?? undefined,
+      birthCountry: formData.birthCountry?.trim() || undefined,
+      birthProvince: formData.birthProvince?.trim() || undefined,
+      birthCity: formData.birthCity?.trim() || undefined,
+      residencePlace: formData.residencePlace?.trim() || undefined,
+      currentOccupation: formData.currentOccupation?.trim() || undefined,
+      educationLevel: formData.educationLevel || undefined,
+      insuranceProvider: formData.insuranceProvider?.trim() || undefined,
+      insuranceNumber: formData.insuranceNumber?.trim() || undefined,
+      notes: formData.notes?.trim() || undefined,
+    }
+
     try {
       if (mode === "create") {
-        const result = await createMutation.mutateAsync(formData)
+        const result = await createMutation.mutateAsync(payload)
         toast.success("Paciente creado exitosamente")
         router.push(`/dashboard/patients/${result.id}`)
       } else {
-        await updateMutation.mutateAsync(formData)
+        await updateMutation.mutateAsync(payload)
         toast.success("Paciente actualizado exitosamente")
         router.push(`/dashboard/patients/${patient!.id}`)
       }
@@ -210,7 +237,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
             <Label htmlFor="idNumber">Número de identificación *</Label>
             <Input
               id="idNumber"
-              value={formData.idNumber}
+              value={formData.idNumber ?? ""}
               onChange={(e) => updateField("idNumber", e.target.value)}
               placeholder="0000000000"
               required
@@ -224,7 +251,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
             <Label htmlFor="firstName">Nombres *</Label>
             <Input
               id="firstName"
-              value={formData.firstName}
+              value={formData.firstName ?? ""}
               onChange={(e) => updateField("firstName", e.target.value)}
               placeholder="Nombres"
               required
@@ -238,7 +265,7 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
             <Label htmlFor="lastName">Apellidos *</Label>
             <Input
               id="lastName"
-              value={formData.lastName}
+              value={formData.lastName ?? ""}
               onChange={(e) => updateField("lastName", e.target.value)}
               placeholder="Apellidos"
               required

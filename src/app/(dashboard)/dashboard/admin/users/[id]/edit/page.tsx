@@ -106,9 +106,9 @@ export default function EditUserPage({ params }: EditUserPageProps) {
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
-    if (!formData.firstName.trim()) newErrors.firstName = "El nombre es requerido"
-    if (!formData.lastName.trim()) newErrors.lastName = "El apellido es requerido"
-    if (!formData.email.trim()) {
+    if (!formData.firstName?.trim()) newErrors.firstName = "El nombre es requerido"
+    if (!formData.lastName?.trim()) newErrors.lastName = "El apellido es requerido"
+    if (!formData.email?.trim()) {
       newErrors.email = "El correo es requerido"
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = "Correo electrónico inválido"
@@ -116,9 +116,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     if (selectedRoles.length === 0) {
       newErrors.roles = "Selecciona al menos un rol"
     }
+    const trimmedConsultationPrice = (formData.consultationPrice ?? "").trim()
     if (
-      formData.consultationPrice.trim() &&
-      !/^\d+(\.\d{1,2})?$/.test(formData.consultationPrice.trim())
+      trimmedConsultationPrice &&
+      !/^\d+(\.\d{1,2})?$/.test(trimmedConsultationPrice)
     ) {
       newErrors.consultationPrice = "Precio inválido (usa hasta 2 decimales)"
     }
@@ -130,14 +131,16 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     e.preventDefault()
     if (!user || hasNonEditableRoles || !validate()) return
 
+    const trimmedConsultationPrice = (formData.consultationPrice ?? "").trim()
+
     try {
       await mutation.mutateAsync({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
-        phone: formData.phone.trim() || undefined,
-        consultationPrice: canConfigureDoctorPrice && formData.consultationPrice.trim()
-          ? Number(formData.consultationPrice.trim())
+        phone: formData.phone?.trim() || undefined,
+        consultationPrice: canConfigureDoctorPrice && trimmedConsultationPrice
+          ? Number(trimmedConsultationPrice)
           : undefined,
         roles: selectedRoles,
       })

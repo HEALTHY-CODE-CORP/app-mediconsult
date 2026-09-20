@@ -92,11 +92,11 @@ export function useSearchProductsByName(pharmacyId: string, query: string) {
 
 export function useSearchProducts(
   pharmacyId: string,
-  query: string,
-  page: number,
+  query?: string,
+  page: number = 0,
   size = 20
 ) {
-  const normalizedQuery = query.trim()
+  const normalizedQuery = query?.trim() ?? ""
 
   return useQuery({
     queryKey: [...inventoryKey(pharmacyId), "products", "search", normalizedQuery, page, size],

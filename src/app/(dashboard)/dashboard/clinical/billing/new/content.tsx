@@ -105,13 +105,13 @@ export function NewConsultationInvoiceContent() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!compradorIdentificacion.trim() || !compradorRazonSocial.trim() || !compradorDireccion.trim()) {
+    if (!compradorIdentificacion?.trim() || !compradorRazonSocial?.trim() || !compradorDireccion?.trim()) {
       toast.error("Identificación, razón social y dirección son obligatorias")
       return
     }
 
     const effectivePrice = consultationPriceOverride ?? (consultation?.cost?.toString() ?? "0")
-    const trimmedPrice = effectivePrice.trim()
+    const trimmedPrice = (effectivePrice ?? "").trim()
     let parsedConsultationPrice: number | undefined
     if (trimmedPrice.length > 0) {
       parsedConsultationPrice = Number(trimmedPrice)
@@ -129,8 +129,8 @@ export function NewConsultationInvoiceContent() {
         compradorIdentificacion: compradorIdentificacion.trim(),
         compradorRazonSocial: compradorRazonSocial.trim(),
         compradorDireccion: compradorDireccion.trim(),
-        compradorEmail: compradorEmail || undefined,
-        compradorTelefono: compradorTelefono || undefined,
+        compradorEmail: compradorEmail?.trim() || undefined,
+        compradorTelefono: compradorTelefono?.trim() || undefined,
         consultationPrice: parsedConsultationPrice,
         formaPago,
       })

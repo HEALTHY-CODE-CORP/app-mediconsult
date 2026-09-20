@@ -73,15 +73,15 @@ export default function NewUserPage() {
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.firstName.trim()) {
+    if (!formData.firstName?.trim()) {
       newErrors.firstName = "El nombre es requerido"
     }
-    if (!formData.lastName.trim()) {
+    if (!formData.lastName?.trim()) {
       newErrors.lastName = "El apellido es requerido"
     }
-    if (!formData.email.trim()) {
+    if (!formData.email?.trim()) {
       newErrors.email = "El correo es requerido"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = "Correo electrónico inválido"
     }
     if (selectedRoles.length === 0) {
@@ -105,10 +105,10 @@ export default function NewUserPage() {
     try {
       await mutation.mutateAsync({
         organizationId,
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone || undefined,
+        email: formData.email.trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.phone?.trim() || undefined,
         roles: selectedRoles,
       })
       toast.success("Usuario creado. Se envió un correo con las credenciales de acceso.")

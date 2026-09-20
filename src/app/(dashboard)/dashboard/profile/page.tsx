@@ -152,7 +152,7 @@ export default function ProfilePage() {
       return
     }
 
-    const trimmedConsultationPrice = billingData.consultationPrice.trim()
+    const trimmedConsultationPrice = (billingData.consultationPrice ?? "").trim()
     if (trimmedConsultationPrice && !/^\d+(\.\d{1,2})?$/.test(trimmedConsultationPrice)) {
       toast.error("El precio de consulta debe ser un número válido (hasta 2 decimales)")
       return

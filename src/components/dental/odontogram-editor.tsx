@@ -54,15 +54,16 @@ const TEMPORARY_LOWER_LEFT = ["71", "72", "73", "74", "75"]
 const PERMANENT_LOWER_RIGHT = ["48", "47", "46", "45", "44", "43", "42", "41"]
 const PERMANENT_LOWER_LEFT = ["31", "32", "33", "34", "35", "36", "37", "38"]
 
+const PERMANENT_UPPER = [...PERMANENT_UPPER_RIGHT, ...PERMANENT_UPPER_LEFT]
+const TEMPORARY_UPPER = [...TEMPORARY_UPPER_RIGHT, ...TEMPORARY_UPPER_LEFT]
+const TEMPORARY_LOWER = [...TEMPORARY_LOWER_RIGHT, ...TEMPORARY_LOWER_LEFT]
+const PERMANENT_LOWER = [...PERMANENT_LOWER_RIGHT, ...PERMANENT_LOWER_LEFT]
+
 const ARCHES = [
-  PERMANENT_UPPER_RIGHT,
-  PERMANENT_UPPER_LEFT,
-  TEMPORARY_UPPER_RIGHT,
-  TEMPORARY_UPPER_LEFT,
-  TEMPORARY_LOWER_RIGHT,
-  TEMPORARY_LOWER_LEFT,
-  PERMANENT_LOWER_RIGHT,
-  PERMANENT_LOWER_LEFT,
+  PERMANENT_UPPER,
+  TEMPORARY_UPPER,
+  TEMPORARY_LOWER,
+  PERMANENT_LOWER,
 ]
 
 const SURFACE_SYMBOLS: SurfaceSymbol[] = ["SEALANT", "FILLING", "CARIES"]
@@ -301,7 +302,7 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
 
     const sequence = sequenceBetween(groupStart, tooth)
     if (!sequence) {
-      toast.error("La prótesis debe iniciar y terminar en piezas secuenciales del mismo grupo dental")
+      toast.error("La prótesis debe iniciar y terminar en piezas de la misma arcada (superior o inferior)")
       setGroupStart(null)
       return
     }
@@ -411,7 +412,7 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className={`grid gap-4 ${readOnly ? "grid-cols-1" : "xl:grid-cols-[minmax(0,1fr)_300px]"}`}>
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>Odontograma</CardTitle>
@@ -435,8 +436,8 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
           </CardContent>
         </Card>
 
-        <div className="space-y-4">
-          {!readOnly && (
+        {!readOnly && (
+          <div className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
@@ -499,31 +500,47 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
                 </Button>
               </CardContent>
             </Card>
-          )}
 
-          {(groups.length > 0 || warnings.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Validaciones</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-xs text-muted-foreground">
-                {warnings.map((warning) => (
-                  <p key={warning}>{warning}</p>
-                ))}
-                {groups.map((group, index) => (
-                  <div key={`${group.type}-${group.teeth.join("-")}-${index}`} className="flex items-center justify-between gap-2 rounded-md border p-2">
-                    <span>{PROSTHESIS_LABELS[group.type]}: {group.teeth.join(", ")}</span>
-                    {!readOnly && (
+            {(groups.length > 0 || warnings.length > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Validaciones</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-xs text-muted-foreground">
+                  {warnings.map((warning) => (
+                    <p key={warning}>{warning}</p>
+                  ))}
+                  {groups.map((group, index) => (
+                    <div key={`${group.type}-${group.teeth.join("-")}-${index}`} className="flex items-center justify-between gap-2 rounded-md border p-2">
+                      <span>{PROSTHESIS_LABELS[group.type]}: {group.teeth.join(", ")}</span>
                       <Button type="button" variant="ghost" size="icon-sm" onClick={() => removeGroup(index)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {readOnly && (groups.length > 0 || warnings.length > 0) && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Prótesis y observaciones registradas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-xs text-muted-foreground">
+              {warnings.map((warning) => (
+                <p key={warning}>{warning}</p>
+              ))}
+              {groups.map((group, index) => (
+                <div key={`${group.type}-${group.teeth.join("-")}-${index}`} className="flex items-center justify-between gap-2 rounded-md border p-2">
+                  <span>{PROSTHESIS_LABELS[group.type]}: {group.teeth.join(", ")}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {showRules && (
@@ -576,23 +593,25 @@ function ToothArch({
       {!compact && <PeriodontalRow label="Movilidad" rows={rows} field="mobility" teeth={teeth} readOnly={readOnly} onChange={onPeriodontalChange} />}
       <div className="grid grid-cols-[80px_1fr] items-start gap-2">
         <span aria-hidden="true" />
-        <div className="flex justify-center gap-6">
-          {rows.map((row, index) => (
-            <div key={index} className="relative flex gap-1.5 pb-5">
-              <ProsthesisOverlay row={row} groups={groups} />
-              {row.map((piece) => (
-                <ToothSvg
-                  key={piece}
-                  piece={piece}
-                  temporary={isTemporary(piece)}
-                  value={teeth[piece]}
-                  readOnly={readOnly}
-                  onSurfaceClick={(surface) => onSurfaceClick(piece, surface)}
-                  onCenterClick={() => onCenterClick(piece)}
-                />
-              ))}
-            </div>
-          ))}
+        <div className="flex justify-center">
+          <div className="relative flex gap-6 pb-5">
+            <ProsthesisOverlay rows={rows} groups={groups} />
+            {rows.map((row, index) => (
+              <div key={index} className="flex gap-1.5">
+                {row.map((piece) => (
+                  <ToothSvg
+                    key={piece}
+                    piece={piece}
+                    temporary={isTemporary(piece)}
+                    value={teeth[piece]}
+                    readOnly={readOnly}
+                    onSurfaceClick={(surface) => onSurfaceClick(piece, surface)}
+                    onCenterClick={() => onCenterClick(piece)}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -617,19 +636,21 @@ function PeriodontalRow({
   return (
     <div className="grid grid-cols-[80px_1fr] items-center gap-2">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <div className="flex justify-center gap-6 overflow-hidden">
-        {rows.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex gap-1.5">
-            {row.map((piece) => (
-              <select key={piece} value={teeth[piece]?.[field] ?? ""} disabled={readOnly} onChange={(event) => onChange(piece, field, event.target.value)} className="h-7 w-9 rounded border bg-background text-xs">
-                <option value=""></option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
-            ))}
-          </div>
-        ))}
+      <div className="flex justify-center">
+        <div className="flex gap-6 overflow-hidden">
+          {rows.map((row, rowIndex) => (
+            <div key={rowIndex} className="flex gap-1.5">
+              {row.map((piece) => (
+                <select key={piece} value={teeth[piece]?.[field] ?? ""} disabled={readOnly} onChange={(event) => onChange(piece, field, event.target.value)} className="h-7 w-9 rounded border bg-background text-xs">
+                  <option value=""></option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                </select>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -742,20 +763,42 @@ function SurfacePolygon({
   )
 }
 
-function ProsthesisOverlay({ row, groups }: { row: string[]; groups: ProsthesisGroup[] }) {
-  const rowGroups = groups.filter((group) => group.teeth.some((piece) => row.includes(piece)))
-  if (rowGroups.length === 0) return null
+function getToothCenterX(piece: string, row0: string[], row1?: string[]): number | null {
+  const i0 = row0.indexOf(piece)
+  if (i0 >= 0) {
+    return i0 * 42 + 18
+  }
+  if (row1) {
+    const i1 = row1.indexOf(piece)
+    if (i1 >= 0) {
+      const q1Start = row0.length * 42 + 18 // row0 width + 24px gap (gap-6)
+      return q1Start + i1 * 42 + 18
+    }
+  }
+  return null
+}
+
+function ProsthesisOverlay({ rows, groups }: { rows: string[][]; groups: ProsthesisGroup[] }) {
+  const row0 = rows[0] ?? []
+  const row1 = rows[1] ?? []
+  const archTeeth = [...row0, ...row1]
+  const archGroups = groups.filter((group) => group.teeth.some((piece) => archTeeth.includes(piece)))
+  if (archGroups.length === 0) return null
 
   return (
-    <svg className="pointer-events-none absolute left-0 top-[54px] h-5 w-full overflow-visible" aria-hidden="true">
-      {rowGroups.map((group, index) => {
-        const includedIndexes = group.teeth.map((piece) => row.indexOf(piece)).filter((item) => item >= 0)
-        if (includedIndexes.length < 2) return null
-        const from = Math.min(...includedIndexes)
-        const to = Math.max(...includedIndexes)
-        const x1 = from * 42 + 18
-        const x2 = to * 42 + 18
+    <svg className="pointer-events-none absolute left-0 top-[54px] h-6 w-full overflow-visible" aria-hidden="true">
+      {archGroups.map((group, index) => {
+        const includedTeeth = group.teeth.filter((piece) => archTeeth.includes(piece))
+        if (includedTeeth.length < 2) return null
+
+        const firstX = getToothCenterX(includedTeeth[0], row0, row1)
+        const lastX = getToothCenterX(includedTeeth[includedTeeth.length - 1], row0, row1)
+        if (firstX === null || lastX === null) return null
+
+        const x1 = Math.min(firstX, lastX)
+        const x2 = Math.max(firstX, lastX)
         const y = 6 + index * 5
+
         return (
           <g key={`${group.type}-${group.teeth.join("-")}-${index}`}>
             {group.type === "TOTAL_PROSTHESIS" ? (
@@ -764,10 +807,18 @@ function ProsthesisOverlay({ row, groups }: { row: string[]; groups: ProsthesisG
                 <line x1={x1} y1={y + 3} x2={x2} y2={y + 3} stroke={tone(group.color)} strokeWidth="2" />
               </>
             ) : (
-              <line x1={x1} y1={y} x2={x2} y2={y} stroke={tone(group.color)} strokeWidth="2" strokeDasharray={group.type === "REMOVABLE_PROSTHESIS" ? "5 3" : undefined} />
+              <line
+                x1={x1}
+                y1={y}
+                x2={x2}
+                y2={y}
+                stroke={tone(group.color)}
+                strokeWidth="2"
+                strokeDasharray={group.type === "REMOVABLE_PROSTHESIS" ? "5 3" : undefined}
+              />
             )}
-            <circle cx={x1} cy={y} r="2" fill={tone(group.color)} />
-            <circle cx={x2} cy={y} r="2" fill={tone(group.color)} />
+            <circle cx={x1} cy={y} r="2.5" fill={tone(group.color)} />
+            <circle cx={x2} cy={y} r="2.5" fill={tone(group.color)} />
           </g>
         )
       })}

@@ -47,9 +47,9 @@ export function ReferralsCard({
 
   async function handleAdd() {
     if (
-      !formData.destinationFacility.trim() ||
-      !formData.destinationService.trim() ||
-      !formData.reason.trim()
+      !formData.destinationFacility?.trim() ||
+      !formData.destinationService?.trim() ||
+      !formData.reason?.trim()
     ) {
       toast.error("Completa los campos requeridos")
       return

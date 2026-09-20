@@ -1,8 +1,8 @@
 "use client"
 
-import { FormEvent, use, useEffect, useMemo, useState } from "react"
+import { FormEvent, use, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Calendar, FileHeart, History, Plus, Save, Stethoscope, User } from "lucide-react"
+import { ArrowLeft, Calendar, Eye, FileHeart, History, Plus, Save, Sparkles, Stethoscope, User, X } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -63,7 +63,7 @@ export default function PatientDentalPage({ params }: DentalPageProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon-sm" render={<Link href={`/dashboard/patients/${id}`} />}>
+          <Button variant="ghost" size="icon-sm" render={<Link href={`/dashboard/dental`} />}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -82,6 +82,15 @@ export default function PatientDentalPage({ params }: DentalPageProps) {
             </p>
           </div>
         </div>
+
+        {dentalRecord && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" render={<Link href={`/dashboard/patients/${id}/dental/record`} />}>
+              <FileHeart className="mr-1.5 h-4 w-4" />
+              Ver apertura de historia
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -227,8 +236,6 @@ function DentalWorkspace({
   const { data: versions = [] } = useOdontogramVersions(dentalRecordId)
   const { data: currentVersion } = useCurrentOdontogramVersion(dentalRecordId)
   const { data: dates = [] } = useDentalDates(dentalRecordId)
-  const createVersion = useCreateOdontogramVersion(dentalRecordId)
-  const [versionData, setVersionData] = useState<OdontogramState | null>(null)
   const [previewVersionId, setPreviewVersionId] = useState<string | null>(null)
 
   const currentData = useMemo(
@@ -236,148 +243,15 @@ function DentalWorkspace({
     [currentVersion]
   )
 
-  const previewVersion = versions.find((version) => version.id === previewVersionId) ?? null
-  const hasPendingOdontogramChange = JSON.stringify(versionData ?? currentData) !== JSON.stringify(currentData)
-
-  async function handleSaveVersion() {
-    try {
-      await createVersion.mutateAsync({
-        data: versionData ?? currentData,
-        notes: "Edición manual del odontograma",
-      })
-      setVersionData(null)
-      toast.success("Nueva versión de odontograma guardada")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo guardar el odontograma")
-    }
-  }
-
-  return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-      <div className="space-y-6">
-        <CreateDentalDateForm dentalRecordId={dentalRecordId} clinics={clinics} currentData={currentData} patientAge={patientAge} />
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              Citas odontológicas
-            </CardTitle>
-            <CardDescription>Sesiones registradas para esta historia odontológica.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {dates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay citas odontológicas registradas.</p>
-            ) : (
-              dates.map((date) => (
-                <div key={date.id} className="rounded-md border p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium">Sesión {date.sessionNumber}</p>
-                      <p className="text-sm text-muted-foreground">{date.sessionDateFormatted} · {date.clinicName}</p>
-                    </div>
-                    <Badge className={date.statusColor}>{date.statusLabel}</Badge>
-                  </div>
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <InfoBlock label="Diagnóstico y complicaciones" value={date.diagnosisAndComplications} />
-                    <InfoBlock label="Procedimiento" value={date.procedureText} />
-                    <InfoBlock label="Prescripciones" value={date.prescriptionsOrRecommendations} />
-                    <InfoBlock label="Notas" value={date.notes} />
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileHeart className="h-5 w-5" />
-              Odontograma actual
-            </CardTitle>
-            <CardDescription>
-              Base para nuevas citas. Si se edita, se crea otra versión.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              Versión actual: {currentVersion ? `#${currentVersion.versionNumber}` : "Sin versión"}
-            </div>
-            <OdontogramEditor
-              value={versionData ?? currentData}
-              onChange={setVersionData}
-              patientAge={patientAge}
-            />
-            <Button className="w-full" onClick={handleSaveVersion} disabled={createVersion.isPending || !hasPendingOdontogramChange}>
-              <Save className="mr-2 h-4 w-4" />
-              Guardar nueva versión
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Historial de odontogramas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {versions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay versiones registradas.</p>
-            ) : (
-              versions.map((version) => (
-                <button
-                  key={version.id}
-                  type="button"
-                  onClick={() => setPreviewVersionId(version.id)}
-                  className="w-full rounded-md border p-3 text-left text-sm hover:bg-muted/50"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span>Versión #{version.versionNumber}</span>
-                    {version.isCurrent && <Badge>Actual</Badge>}
-                  </div>
-                  <p className="text-muted-foreground">{version.createdAtFormatted}</p>
-                  {version.notes && <p className="mt-1 text-xs text-muted-foreground">{version.notes}</p>}
-                </button>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {previewVersion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
-          <div className="max-h-[90vh] w-full max-w-6xl overflow-auto rounded-lg border bg-background p-5 shadow-lg">
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold">Odontograma versión #{previewVersion.versionNumber}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {previewVersion.createdAtFormatted} · {previewVersion.createdByName}
-                </p>
-              </div>
-              <Button type="button" variant="outline" onClick={() => setPreviewVersionId(null)}>
-                Cerrar
-              </Button>
-            </div>
-            <OdontogramEditor value={previewVersion.data as OdontogramState} onChange={() => undefined} patientAge={patientAge} readOnly />
-          </div>
-        </div>
-      )}
-    </div>
+  const nextSessionNumber = useMemo(
+    () => (dates.length > 0 ? Math.max(...dates.map((d) => d.sessionNumber)) + 1 : 1),
+    [dates]
   )
-}
 
-function CreateDentalDateForm({
-  dentalRecordId,
-  clinics,
-  currentData,
-  patientAge,
-}: {
-  dentalRecordId: string
-  clinics: Array<{ id: string; name: string }>
-  currentData: OdontogramState
-  patientAge?: number | null
-}) {
+  const previewVersion =
+    versions.find((version) => version.id === previewVersionId) ??
+    (currentVersion && previewVersionId === currentVersion.id ? currentVersion : null)
+
   const createDate = useCreateDentalDate(dentalRecordId)
   const [clinicId, setClinicId] = useState(clinics[0]?.id ?? "")
   const [diagnosisAndComplications, setDiagnosisAndComplications] = useState("")
@@ -387,12 +261,6 @@ function CreateDentalDateForm({
   const [editOdontogram, setEditOdontogram] = useState(false)
   const [odontogramState, setOdontogramState] = useState<OdontogramState>(currentData)
   const odontogramChanged = editOdontogram && JSON.stringify(odontogramState) !== JSON.stringify(currentData)
-
-  useEffect(() => {
-    if (!editOdontogram) {
-      setOdontogramState(currentData)
-    }
-  }, [currentData, editOdontogram])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -412,6 +280,7 @@ function CreateDentalDateForm({
       setPrescriptionsOrRecommendations("")
       setNotes("")
       setEditOdontogram(false)
+      setOdontogramState(currentData)
       toast.success("Cita odontológica guardada")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo guardar la cita")
@@ -419,65 +288,296 @@ function CreateDentalDateForm({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="h-5 w-5" />
-          Nueva cita odontológica
-        </CardTitle>
-        <CardDescription>
-          Formulario breve de sesión. El motivo inicial pertenece a la apertura de historia.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Consultorio">
-              <select required className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={clinicId} onChange={(e) => setClinicId(e.target.value)}>
-                <option value="">Seleccionar consultorio</option>
-                {clinics.map((clinic) => (
-                  <option key={clinic.id} value={clinic.id}>{clinic.name}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Número de sesión">
-              <Input value="Se asigna automáticamente" disabled />
-            </Field>
-            <Field label="Diagnóstico y complicaciones">
-              <Textarea required value={diagnosisAndComplications} onChange={(e) => setDiagnosisAndComplications(e.target.value)} />
-            </Field>
-            <Field label="Procedimiento">
-              <Textarea required value={procedureText} onChange={(e) => setProcedureText(e.target.value)} />
-            </Field>
-            <Field label="Prescripciones o recomendaciones">
-              <Textarea value={prescriptionsOrRecommendations} onChange={(e) => setPrescriptionsOrRecommendations(e.target.value)} />
-            </Field>
-            <Field label="Notas">
-              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
-            </Field>
-          </div>
-
-          <div className="rounded-md border p-4">
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input type="checkbox" checked={editOdontogram} onChange={(e) => setEditOdontogram(e.target.checked)} />
-              Editar odontograma en esta cita
-            </label>
-            {editOdontogram && (
-              <div className="mt-3">
-                <OdontogramEditor value={odontogramState} onChange={setOdontogramState} patientAge={patientAge} />
+    <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Fila superior de 2 columnas */}
+        <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+          {/* Columna Izquierda: Formulario de Nueva Cita */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Nueva cita odontológica
+              </CardTitle>
+              <CardDescription>
+                Formulario breve de sesión. El motivo inicial pertenece a la apertura de historia.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Consultorio">
+                  <select
+                    required
+                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    value={clinicId}
+                    onChange={(e) => setClinicId(e.target.value)}
+                  >
+                    <option value="">Seleccionar consultorio</option>
+                    {clinics.map((clinic) => (
+                      <option key={clinic.id} value={clinic.id}>{clinic.name}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Número de sesión">
+                  <Input value={`Sesión #${nextSessionNumber}`} disabled className="bg-muted font-medium" />
+                </Field>
+                <Field label="Diagnóstico y complicaciones">
+                  <Textarea
+                    required
+                    value={diagnosisAndComplications}
+                    onChange={(e) => setDiagnosisAndComplications(e.target.value)}
+                  />
+                </Field>
+                <Field label="Procedimiento">
+                  <Textarea
+                    required
+                    value={procedureText}
+                    onChange={(e) => setProcedureText(e.target.value)}
+                  />
+                </Field>
+                <Field label="Prescripciones o recomendaciones">
+                  <Textarea
+                    value={prescriptionsOrRecommendations}
+                    onChange={(e) => setPrescriptionsOrRecommendations(e.target.value)}
+                  />
+                </Field>
+                <Field label="Notas">
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </Field>
               </div>
-            )}
-          </div>
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={createDate.isPending || !clinicId}>
-              <Stethoscope className="mr-2 h-4 w-4" />
-              Guardar cita odontológica
-            </Button>
+              {!editOdontogram ? (
+                <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4 transition-all hover:border-primary/50">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <FileHeart className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">¿Deseas registrar cambios en el Odontograma?</p>
+                        <p className="text-xs text-muted-foreground">
+                          Abre el editor para registrar hallazgos o tratamientos dentales en esta sesión.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-primary/50 text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm transition-all"
+                      onClick={() => {
+                        setOdontogramState(currentData)
+                        setEditOdontogram(true)
+                      }}
+                    >
+                      <Sparkles className="mr-2 h-4 w-4 text-amber-500" />
+                      Editar odontograma en esta cita
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              {!editOdontogram && (
+                <div className="flex justify-end pt-2">
+                  <Button type="submit" disabled={createDate.isPending || !clinicId} className="cursor-pointer">
+                    <Stethoscope className="mr-2 h-4 w-4" />
+                    Guardar cita odontológica
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Columna Derecha: Odontograma actual e Historial scrollable */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileHeart className="h-5 w-5" />
+                  Odontograma actual
+                </CardTitle>
+                <CardDescription>Base para nuevas citas.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Versión actual:</span>
+                    <Badge variant="default">
+                      {currentVersion ? `#${currentVersion.versionNumber}` : "Sin versión"}
+                    </Badge>
+                  </div>
+                  {currentVersion?.createdAtFormatted && (
+                    <p className="text-xs text-muted-foreground">
+                      Actualizado: {currentVersion.createdAtFormatted}
+                    </p>
+                  )}
+                  {currentVersion?.createdByName && (
+                    <p className="text-xs text-muted-foreground">
+                      Por: {currentVersion.createdByName}
+                    </p>
+                  )}
+                  {currentVersion?.notes && (
+                    <p className="text-xs text-muted-foreground italic">
+                      &ldquo;{currentVersion.notes}&rdquo;
+                    </p>
+                  )}
+                </div>
+
+                {currentVersion && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-center cursor-pointer"
+                    onClick={() => setPreviewVersionId(currentVersion.id)}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver odontograma
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Historial de versiones</CardTitle>
+                  <Badge variant="outline">{versions.length} {versions.length === 1 ? "versión" : "versiones"}</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {versions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No hay versiones registradas.</p>
+                ) : (
+                  <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1">
+                    {versions.map((version) => (
+                      <button
+                        key={version.id}
+                        type="button"
+                        onClick={() => setPreviewVersionId(version.id)}
+                        className="w-full rounded-md border p-2.5 text-left text-sm hover:bg-muted/50 transition-colors cursor-pointer block"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium">Versión #{version.versionNumber}</span>
+                          {version.isCurrent && <Badge className="text-xs">Actual</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{version.createdAtFormatted}</p>
+                        {version.notes && <p className="mt-0.5 text-xs text-muted-foreground truncate">{version.notes}</p>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+
+        {/* Cuadro de Edición de Odontograma a Pantalla Completa / Ancho Completo */}
+        {editOdontogram && (
+          <Card className="border-2 border-primary/40 shadow-md">
+            <CardHeader className="border-b bg-muted/20 pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                    <FileHeart className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-base">Edición de Odontograma activa</CardTitle>
+                      <Badge variant="default" className="text-xs">Modificando en esta cita</Badge>
+                    </div>
+                    <CardDescription className="text-xs">
+                      Los cambios se guardarán automáticamente junto con los datos de esta sesión.
+                    </CardDescription>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-destructive cursor-pointer"
+                  onClick={() => {
+                    setEditOdontogram(false)
+                    setOdontogramState(currentData)
+                  }}
+                >
+                  <X className="mr-1.5 h-4 w-4" />
+                  Descartar cambios del odontograma
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <OdontogramEditor
+                value={odontogramState}
+                onChange={setOdontogramState}
+                patientAge={patientAge}
+              />
+              <div className="flex justify-end border-t pt-4">
+                <Button type="submit" disabled={createDate.isPending || !clinicId} className="cursor-pointer">
+                  <Stethoscope className="mr-2 h-4 w-4" />
+                  Guardar cita odontológica con odontograma
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </form>
+
+      {/* Historial de Citas Odontológicas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Citas odontológicas
+          </CardTitle>
+          <CardDescription>Sesiones registradas para esta historia odontológica.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {dates.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay citas odontológicas registradas.</p>
+          ) : (
+            dates.map((date) => (
+              <div key={date.id} className="rounded-md border p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium">Sesión {date.sessionNumber}</p>
+                    <p className="text-sm text-muted-foreground">{date.sessionDateFormatted} · {date.clinicName}</p>
+                  </div>
+                  <Badge className={date.statusColor}>{date.statusLabel}</Badge>
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <InfoBlock label="Diagnóstico y complicaciones" value={date.diagnosisAndComplications} />
+                  <InfoBlock label="Procedimiento" value={date.procedureText} />
+                  <InfoBlock label="Prescripciones" value={date.prescriptionsOrRecommendations} />
+                  <InfoBlock label="Notas" value={date.notes} />
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal de Previsualización para cualquier versión */}
+      {previewVersion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+          <div className="max-h-[90vh] w-full max-w-6xl overflow-auto rounded-lg border bg-background p-5 shadow-lg space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
+              <div>
+                <h2 className="text-lg font-semibold">Odontograma versión #{previewVersion.versionNumber}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {previewVersion.createdAtFormatted} · {previewVersion.createdByName}
+                </p>
+              </div>
+              <Button type="button" variant="outline" className="cursor-pointer" onClick={() => setPreviewVersionId(null)}>
+                Cerrar
+              </Button>
+            </div>
+            <OdontogramEditor value={previewVersion.data as OdontogramState} onChange={() => undefined} patientAge={patientAge} readOnly />
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

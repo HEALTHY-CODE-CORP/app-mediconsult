@@ -127,14 +127,14 @@ export function EntityForm({
     setFormData((prev) => ({ ...prev, sriEnvironment: value }))
   }
 
-  function toOptional(value: string): string | undefined {
-    const trimmed = value.trim()
-    return trimmed.length > 0 ? trimmed : undefined
+  function toOptional(value?: string | null): string | undefined {
+    const trimmed = value?.trim()
+    return trimmed && trimmed.length > 0 ? trimmed : undefined
   }
 
   function toPayload(): FormData {
     const base = {
-      name: formData.name.trim(),
+      name: (formData.name ?? "").trim(),
       address: toOptional(formData.address),
       phone: toOptional(formData.phone),
       email: toOptional(formData.email),

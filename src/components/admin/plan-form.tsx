@@ -57,9 +57,9 @@ export function PlanForm({ plan, mode, onSubmit, isPending }: PlanFormProps) {
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.name.trim()) newErrors.name = "El nombre es requerido"
+    if (!formData.name?.trim()) newErrors.name = "El nombre es requerido"
     if (mode === "create") {
-      if (!formData.code.trim()) {
+      if (!formData.code?.trim()) {
         newErrors.code = "El código es requerido"
       } else if (!/^[A-Z_]+$/.test(formData.code)) {
         newErrors.code = "Solo mayúsculas y guiones bajos (ej: BASIC, PRO_PLUS)"

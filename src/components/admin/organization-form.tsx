@@ -72,17 +72,17 @@ export function OrganizationForm({
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       newErrors.name = "El nombre es requerido"
     }
     if (mode === "create") {
-      if (!formData.ruc.trim()) {
+      if (!formData.ruc?.trim()) {
         newErrors.ruc = "El RUC es requerido"
-      } else if (!/^\d{13}$/.test(formData.ruc)) {
+      } else if (!/^\d{13}$/.test(formData.ruc.trim())) {
         newErrors.ruc = "El RUC debe tener 13 dígitos"
       }
     }
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (formData.email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = "Correo electrónico inválido"
     }
 

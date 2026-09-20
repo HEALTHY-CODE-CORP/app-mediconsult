@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
 import Link from "next/link"
@@ -116,9 +116,9 @@ export function PrescriptionCard({
       (item) =>
         item.productId &&
         parseInt(item.quantity) > 0 &&
-        item.dosage.trim() &&
-        item.frequency.trim() &&
-        item.duration.trim()
+        item.dosage?.trim() &&
+        item.frequency?.trim() &&
+        item.duration?.trim()
     )
 
     if (validItems.length === 0) {
@@ -129,14 +129,14 @@ export function PrescriptionCard({
     const request: CreatePrescriptionRequest = {
       consultationId,
       pharmacyId: selectedPharmacyId || undefined,
-      notes: notes.trim() || undefined,
+      notes: notes?.trim() || undefined,
       items: validItems.map((item) => ({
         productId: item.productId,
         quantity: parseInt(item.quantity),
-        dosage: item.dosage.trim(),
-        frequency: item.frequency.trim(),
-        duration: item.duration.trim(),
-        instructions: item.instructions.trim() || undefined,
+        dosage: item.dosage?.trim() ?? "",
+        frequency: item.frequency?.trim() ?? "",
+        duration: item.duration?.trim() ?? "",
+        instructions: item.instructions?.trim() || undefined,
       })),
     }
 

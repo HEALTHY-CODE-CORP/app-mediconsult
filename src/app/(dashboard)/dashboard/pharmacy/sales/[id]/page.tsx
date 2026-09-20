@@ -387,7 +387,7 @@ function InvoiceCard({ sale }: { sale: Sale }) {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    if (!identificacion.trim() || !razonSocial.trim() || !direccion.trim()) {
+    if (!identificacion?.trim() || !razonSocial?.trim() || !direccion?.trim()) {
       toast.error("Identificación, razón social y dirección son obligatorias")
       return
     }
@@ -398,14 +398,14 @@ function InvoiceCard({ sale }: { sale: Sale }) {
         compradorIdentificacion: identificacion.trim(),
         compradorRazonSocial: razonSocial.trim(),
         compradorDireccion: direccion.trim(),
-        compradorEmail: email.trim() || undefined,
+        compradorEmail: email?.trim() || undefined,
       })
       toast.success("Factura creada exitosamente")
       setShowForm(false)
       const params = new URLSearchParams({
         autoflow: "1",
       })
-      const recipientEmail = email.trim()
+      const recipientEmail = email?.trim() ?? ""
       if (recipientEmail) {
         params.set("recipientEmail", recipientEmail)
       }

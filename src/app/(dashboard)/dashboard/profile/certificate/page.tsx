@@ -78,7 +78,7 @@ export default function MyCertificatePage() {
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
-    if (!alias.trim()) newErrors.alias = "El alias es requerido"
+    if (!alias?.trim()) newErrors.alias = "El alias es requerido"
     if (!password) newErrors.password = "La contraseña del P12 es requerida"
     const fileError = validateP12File(file)
     if (fileError) newErrors.file = fileError

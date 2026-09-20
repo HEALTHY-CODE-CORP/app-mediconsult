@@ -90,7 +90,7 @@ export default function UserDetailPage({ params }: UserDetailPageProps) {
       return
     }
 
-    const trimmedPrice = consultationPriceDraft.trim()
+    const trimmedPrice = (consultationPriceDraft ?? "").trim()
     if (trimmedPrice && !/^\d+(\.\d{1,2})?$/.test(trimmedPrice)) {
       toast.error("Precio inválido (usa hasta 2 decimales)")
       return

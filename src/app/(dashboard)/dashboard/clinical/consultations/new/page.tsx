@@ -186,7 +186,7 @@ export default function NewConsultationPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormSubmitAttempted(true)
-    if (!formData.reasonForVisit.trim()) {
+    if (!formData.reasonForVisit?.trim()) {
       toast.error("El motivo de consulta es requerido")
       return
     }
@@ -197,12 +197,12 @@ export default function NewConsultationPage() {
         medicalRecordId,
         clinicId: effectiveClinicId,
         cost: !isNaN(parsedCost) ? parsedCost : undefined,
-        reasonForVisit: formData.reasonForVisit,
-        currentIllness: formData.currentIllness || undefined,
-        physicalExamination: formData.physicalExamination || undefined,
-        procedures: formData.procedures || undefined,
-        treatment: formData.treatment || undefined,
-        notes: formData.notes || undefined,
+        reasonForVisit: formData.reasonForVisit.trim(),
+        currentIllness: formData.currentIllness?.trim() || undefined,
+        physicalExamination: formData.physicalExamination?.trim() || undefined,
+        procedures: formData.procedures?.trim() || undefined,
+        treatment: formData.treatment?.trim() || undefined,
+        notes: formData.notes?.trim() || undefined,
         diagnoses: diagnoses.length > 0
           ? diagnoses.map((d) => ({
               cie10Id: d.cie10Id,

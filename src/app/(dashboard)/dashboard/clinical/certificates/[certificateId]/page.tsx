@@ -142,7 +142,7 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
 
     try {
       await updateMutation.mutateAsync({
-        title: title.trim(),
+        title: (title ?? "").trim(),
         certificateDate,
         restDays: parsedRestDays,
         restStartDate: restStartDate || undefined,
@@ -171,7 +171,7 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
   async function handleVoid() {
     if (!certificate || isVoided) return
 
-    const reason = voidReason.trim()
+    const reason = (voidReason ?? "").trim()
     if (!reason) {
       toast.error("Debes ingresar el motivo de anulacion")
       return
@@ -263,7 +263,7 @@ export default function MedicalCertificateDetailPage({ params }: MedicalCertific
   }
 
   async function handleSendCertificateByEmail() {
-    const email = recipientEmail.trim()
+    const email = (recipientEmail ?? "").trim()
     try {
       const response = await sendByEmailMutation.mutateAsync(
         email ? { recipientEmail: email } : {}
@@ -617,7 +617,8 @@ function normalizeOptional(value?: string | null): string | undefined {
   return trimmed ? trimmed : undefined
 }
 
-function toEditorHtml(content: string): string {
+function toEditorHtml(content?: string | null): string {
+  if (!content) return ""
   const normalized = decodeEscapedLineBreaks(content)
   const trimmed = normalized.trim()
   if (!trimmed) return ""

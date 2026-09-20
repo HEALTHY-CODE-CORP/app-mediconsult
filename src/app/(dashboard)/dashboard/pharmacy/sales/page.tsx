@@ -110,7 +110,7 @@ export default function SalesPage() {
       await openSessionMutation.mutateAsync({
         pharmacyId,
         openingAmount: parseFloat(openingAmount),
-        notes: openNotes.trim() || undefined,
+        notes: openNotes?.trim() || undefined,
       })
       toast.success("Sesión de caja abierta")
       setOpeningAmount("")
@@ -128,7 +128,7 @@ export default function SalesPage() {
     try {
       await closeSessionMutation.mutateAsync({
         closingAmount: parseFloat(closingAmount),
-        notes: closeNotes.trim() || undefined,
+        notes: closeNotes?.trim() || undefined,
       })
       toast.success("Sesión de caja cerrada")
       setClosingAmount("")

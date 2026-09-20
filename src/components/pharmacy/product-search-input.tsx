@@ -40,7 +40,7 @@ export function ProductSearchInput({
 
   const results = useMemo(() => {
     if (!query || query.length < 1) return []
-    const q = query.toLowerCase().trim()
+    const q = (query ?? "").toLowerCase().trim()
     return products
       .filter((p) => !excludeIds.includes(p.id))
       .filter(

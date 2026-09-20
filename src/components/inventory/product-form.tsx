@@ -101,15 +101,15 @@ export function ProductForm({ pharmacyId, product }: ProductFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (!form.name.trim()) {
+    if (!form.name?.trim()) {
       toast.error("El nombre es obligatorio")
       return
     }
     const lotFields = [
-      form.lotNumber.trim(),
-      form.lotQuantity.trim(),
-      form.lotExpirationDate.trim(),
-      form.lotPurchasePrice.trim(),
+      form.lotNumber?.trim() ?? "",
+      form.lotQuantity?.trim() ?? "",
+      form.lotExpirationDate?.trim() ?? "",
+      form.lotPurchasePrice?.trim() ?? "",
     ]
 
     const someLotFilled = lotFields.some(Boolean)
@@ -122,12 +122,12 @@ export function ProductForm({ pharmacyId, product }: ProductFormProps) {
 
     const payload = {
       pharmacyId,
-      barcode: form.barcode.trim() || undefined,
+      barcode: form.barcode?.trim() || undefined,
       name: form.name.trim(),
-      genericName: form.genericName.trim() || undefined,
-      activeIngredient: form.activeIngredient.trim() || undefined,
-      presentation: form.presentation.trim() || undefined,
-      concentration: form.concentration.trim() || undefined,
+      genericName: form.genericName?.trim() || undefined,
+      activeIngredient: form.activeIngredient?.trim() || undefined,
+      presentation: form.presentation?.trim() || undefined,
+      concentration: form.concentration?.trim() || undefined,
       sellingPrice: parseFloat(form.sellingPrice) || 0,
       minStock: parseInt(form.minStock) || 5,
       requiresPrescription: form.requiresPrescription,
@@ -145,7 +145,7 @@ export function ProductForm({ pharmacyId, product }: ProductFormProps) {
           await api.post(
               `/pharmacies/${pharmacyId}/inventory/products/${createdProduct.id}/lots`,
               {
-                lotNumber: form.lotNumber.trim(),
+                lotNumber: form.lotNumber?.trim() ?? "",
                 quantity: Number(form.lotQuantity),
                 expirationDate: form.lotExpirationDate,
                 purchasePrice: form.lotPurchasePrice

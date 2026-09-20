@@ -171,8 +171,8 @@ export default function MedicalCertificateTemplatesPage() {
   async function submitForm(event: React.FormEvent) {
     event.preventDefault()
 
-    const name = form.name.trim()
-    const description = form.description.trim()
+    const name = (form.name ?? "").trim()
+    const description = (form.description ?? "").trim()
 
     if (!name) {
       toast.error("El nombre de la plantilla es obligatorio")
