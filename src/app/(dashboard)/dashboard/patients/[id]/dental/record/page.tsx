@@ -24,6 +24,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { SummaryTile } from "@/components/shared/summary-tile"
 import { OdontogramEditor } from "@/components/dental/odontogram-editor"
+import { DentalVitalSignsCard } from "@/components/dental/dental-vital-signs-card"
+import { StomatognathicExamEditor } from "@/components/dental/stomatognathic-exam-editor"
 import { usePatient } from "@/hooks/use-patients"
 import {
   usePatientOrgDentalRecord,
@@ -47,8 +49,11 @@ export default function PatientDentalRecordPage({ params }: DentalRecordPageProp
   const [openingReason, setOpeningReason] = useState("")
   const [currentIllness, setCurrentIllness] = useState("")
   const [odontologicalHistory, setOdontologicalHistory] = useState("")
+  const [familyHistory, setFamilyHistory] = useState("")
+  const [pathologicalHistory, setPathologicalHistory] = useState("")
   const [medicalAlerts, setMedicalAlerts] = useState("")
   const [patientType, setPatientType] = useState<DentalPatientType>("AMBULATORY")
+  const [stomatognathicExam, setStomatognathicExam] = useState("")
   const [observations, setObservations] = useState("")
   const [previewInitialOdontogram, setPreviewInitialOdontogram] = useState(false)
 
@@ -60,8 +65,11 @@ export default function PatientDentalRecordPage({ params }: DentalRecordPageProp
     setOpeningReason(dentalRecord.openingReason)
     setCurrentIllness(dentalRecord.currentIllness ?? "")
     setOdontologicalHistory(dentalRecord.odontologicalHistory ?? "")
+    setFamilyHistory(dentalRecord.familyHistory ?? "")
+    setPathologicalHistory(dentalRecord.pathologicalHistory ?? "")
     setMedicalAlerts(dentalRecord.medicalAlerts ?? "")
     setPatientType(dentalRecord.patientType)
+    setStomatognathicExam(dentalRecord.stomatognathicExam ?? "")
     setObservations(dentalRecord.observations ?? "")
     setIsEditing(true)
   }
@@ -74,13 +82,21 @@ export default function PatientDentalRecordPage({ params }: DentalRecordPageProp
     event.preventDefault()
     if (!dentalRecord) return
 
+    if (!stomatognathicExam.trim()) {
+      toast.error("Debe registrar al menos un ítem en el Examen del sistema estomatognático")
+      return
+    }
+
     try {
       await updateMutation.mutateAsync({
         openingReason,
         currentIllness: currentIllness || undefined,
         odontologicalHistory: odontologicalHistory || undefined,
+        familyHistory: familyHistory || undefined,
+        pathologicalHistory: pathologicalHistory || undefined,
         medicalAlerts: medicalAlerts || undefined,
         patientType,
+        stomatognathicExam: stomatognathicExam.trim() || undefined,
         observations: observations || undefined,
       })
       toast.success("Datos de apertura de historia actualizados")
@@ -234,6 +250,8 @@ export default function PatientDentalRecordPage({ params }: DentalRecordPageProp
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <InfoBlock label="Antecedentes patológicos" value={dentalRecord.pathologicalHistory} />
+              <InfoBlock label="Antecedentes familiares" value={dentalRecord.familyHistory} />
               <InfoBlock label="Antecedentes odontológicos" value={dentalRecord.odontologicalHistory} />
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Alertas médicas relevantes</p>
@@ -251,6 +269,18 @@ export default function PatientDentalRecordPage({ params }: DentalRecordPageProp
               <InfoBlock label="Observaciones generales" value={dentalRecord.observations} />
             </CardContent>
           </Card>
+
+          {/* Signos Vitales */}
+          <DentalVitalSignsCard dentalRecordId={dentalRecord.id} initialVitalSigns={dentalRecord.vitalSigns} />
+
+          {/* Examen del Sistema Estomatognático */}
+          <div className="lg:col-span-2">
+            <StomatognathicExamEditor
+              value={dentalRecord.stomatognathicExam ?? ""}
+              onChange={() => undefined}
+              readOnly
+            />
+          </div>
 
           {/* Odontograma Inicial */}
           {initialVersion && (
@@ -323,6 +353,24 @@ export default function PatientDentalRecordPage({ params }: DentalRecordPageProp
                 />
               </Field>
 
+              <Field label="Antecedentes patológicos">
+                <Textarea
+                  value={pathologicalHistory}
+                  onChange={(e) => setPathologicalHistory(e.target.value)}
+                  placeholder="Enfermedades sistémicas previas o actuales, cirugías, alergias..."
+                  rows={3}
+                />
+              </Field>
+
+              <Field label="Antecedentes familiares">
+                <Textarea
+                  value={familyHistory}
+                  onChange={(e) => setFamilyHistory(e.target.value)}
+                  placeholder="Antecedentes médicos y estomatognáticos en familiares directos"
+                  rows={3}
+                />
+              </Field>
+
               <Field label="Antecedentes odontológicos">
                 <Textarea
                   value={odontologicalHistory}
@@ -351,6 +399,11 @@ export default function PatientDentalRecordPage({ params }: DentalRecordPageProp
               </Field>
             </CardContent>
           </Card>
+
+          <StomatognathicExamEditor
+            value={stomatognathicExam}
+            onChange={setStomatognathicExam}
+          />
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={cancelEditing} className="cursor-pointer">

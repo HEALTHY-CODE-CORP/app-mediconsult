@@ -2,7 +2,7 @@
 
 import { FormEvent, use, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Eye, FileHeart, History, Plus, Save, Sparkles, Stethoscope, User, X } from "lucide-react"
+import { ArrowLeft, Activity, Calendar, Eye, FileHeart, History, Plus, Save, Sparkles, Stethoscope, User, X } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { OdontogramEditor } from "@/components/dental/odontogram-editor"
+import { StomatognathicExamEditor } from "@/components/dental/stomatognathic-exam-editor"
 import { useMyClinics } from "@/hooks/use-organizations"
 import { usePatient } from "@/hooks/use-patients"
 import {
@@ -123,13 +124,36 @@ function CreateDentalRecordForm({
   const [openingReason, setOpeningReason] = useState("")
   const [currentIllness, setCurrentIllness] = useState("")
   const [odontologicalHistory, setOdontologicalHistory] = useState("")
+  const [familyHistory, setFamilyHistory] = useState("")
+  const [pathologicalHistory, setPathologicalHistory] = useState("")
   const [medicalAlerts, setMedicalAlerts] = useState("")
   const [patientType, setPatientType] = useState<DentalPatientType>("AMBULATORY")
   const [observations, setObservations] = useState("")
+  const [stomatognathicExam, setStomatognathicExam] = useState("")
+  const [systolicPressure, setSystolicPressure] = useState("")
+  const [diastolicPressure, setDiastolicPressure] = useState("")
+  const [heartRate, setHeartRate] = useState("")
+  const [respiratoryRate, setRespiratoryRate] = useState("")
+  const [temperature, setTemperature] = useState("")
+  const [oxygenSaturation, setOxygenSaturation] = useState("")
+  const [weight, setWeight] = useState("")
+  const [height, setHeight] = useState("")
   const [odontogramState, setOdontogramState] = useState<OdontogramState>(EMPTY_ODONTOGRAM)
+
+  function parseNumber(val: string): number | undefined {
+    const trimmed = val.trim()
+    if (!trimmed) return undefined
+    const num = Number(trimmed)
+    return isNaN(num) ? undefined : num
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!stomatognathicExam.trim()) {
+      toast.error("Debe registrar al menos un ítem en el Examen del sistema estomatognático")
+      return
+    }
+
     try {
       await createRecord.mutateAsync({
         patientId,
@@ -137,9 +161,20 @@ function CreateDentalRecordForm({
         openingReason,
         currentIllness: currentIllness || undefined,
         odontologicalHistory: odontologicalHistory || undefined,
+        familyHistory: familyHistory || undefined,
+        pathologicalHistory: pathologicalHistory || undefined,
         medicalAlerts: medicalAlerts || undefined,
         patientType,
+        stomatognathicExam: stomatognathicExam.trim(),
         observations: observations || undefined,
+        systolicPressure: parseNumber(systolicPressure),
+        diastolicPressure: parseNumber(diastolicPressure),
+        heartRate: parseNumber(heartRate),
+        respiratoryRate: parseNumber(respiratoryRate),
+        temperature: parseNumber(temperature),
+        oxygenSaturation: parseNumber(oxygenSaturation),
+        weight: parseNumber(weight),
+        height: parseNumber(height),
         initialOdontogramData: odontogramState,
         initialOdontogramNotes: "Versión inicial",
       })
@@ -182,19 +217,116 @@ function CreateDentalRecordForm({
           <Field label="Enfermedad actual">
             <Textarea value={currentIllness} onChange={(e) => setCurrentIllness(e.target.value)} placeholder="Resumen del odontólogo sobre el estado actual" />
           </Field>
+          <Field label="Antecedentes patológicos">
+            <Textarea value={pathologicalHistory} onChange={(e) => setPathologicalHistory(e.target.value)} placeholder="Enfermedades sistémicas previas o actuales, cirugías, alergias, etc." />
+          </Field>
+          <Field label="Antecedentes familiares">
+            <Textarea value={familyHistory} onChange={(e) => setFamilyHistory(e.target.value)} placeholder="Antecedentes médicos y bucodentales relevantes en la familia" />
+          </Field>
           <Field label="Antecedentes odontológicos">
-            <Textarea value={odontologicalHistory} onChange={(e) => setOdontologicalHistory(e.target.value)} />
+            <Textarea value={odontologicalHistory} onChange={(e) => setOdontologicalHistory(e.target.value)} placeholder="Tratamientos odontológicos previos, ortodoncia, extracciones..." />
           </Field>
           <Field label="Alertas médicas relevantes">
-            <Textarea value={medicalAlerts} onChange={(e) => setMedicalAlerts(e.target.value)} />
+            <Textarea value={medicalAlerts} onChange={(e) => setMedicalAlerts(e.target.value)} placeholder="Alergias a fármacos, anestésicos, hipertensión, diabetes, etc." />
           </Field>
           <div className="md:col-span-2">
             <Field label="Observaciones generales">
-              <Textarea value={observations} onChange={(e) => setObservations(e.target.value)} />
+              <Textarea value={observations} onChange={(e) => setObservations(e.target.value)} placeholder="Notas adicionales sobre la apertura" />
             </Field>
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Signos vitales
+            </CardTitle>
+            <Badge variant="outline" className="text-xs font-normal">
+              Opcional
+            </Badge>
+          </div>
+          <CardDescription>
+            Registro de signos vitales basales o de control tomados en la apertura.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Field label="Presión sistólica (mmHg)">
+            <Input
+              type="number"
+              value={systolicPressure}
+              onChange={(e) => setSystolicPressure(e.target.value)}
+              placeholder="120"
+            />
+          </Field>
+          <Field label="Presión diastólica (mmHg)">
+            <Input
+              type="number"
+              value={diastolicPressure}
+              onChange={(e) => setDiastolicPressure(e.target.value)}
+              placeholder="80"
+            />
+          </Field>
+          <Field label="Frecuencia cardíaca (lpm)">
+            <Input
+              type="number"
+              value={heartRate}
+              onChange={(e) => setHeartRate(e.target.value)}
+              placeholder="72"
+            />
+          </Field>
+          <Field label="Frecuencia respiratoria (rpm)">
+            <Input
+              type="number"
+              value={respiratoryRate}
+              onChange={(e) => setRespiratoryRate(e.target.value)}
+              placeholder="16"
+            />
+          </Field>
+          <Field label="Temperatura (°C)">
+            <Input
+              type="number"
+              step="0.1"
+              value={temperature}
+              onChange={(e) => setTemperature(e.target.value)}
+              placeholder="36.5"
+            />
+          </Field>
+          <Field label="Saturación SpO₂ (%)">
+            <Input
+              type="number"
+              value={oxygenSaturation}
+              onChange={(e) => setOxygenSaturation(e.target.value)}
+              placeholder="98"
+            />
+          </Field>
+          <Field label="Peso (kg)">
+            <Input
+              type="number"
+              step="0.1"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              placeholder="70"
+            />
+          </Field>
+          <Field label="Talla (cm)">
+            <Input
+              type="number"
+              step="0.1"
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+              placeholder="170"
+            />
+          </Field>
+        </CardContent>
+      </Card>
+
+      <StomatognathicExamEditor
+        value={stomatognathicExam}
+        onChange={setStomatognathicExam}
+      />
 
       <Card>
         <CardHeader>

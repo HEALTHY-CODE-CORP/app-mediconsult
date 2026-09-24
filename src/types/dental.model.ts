@@ -8,13 +8,57 @@ export interface OdontogramState {
   [key: string]: unknown
 }
 
+export interface DentalVitalSignsResponse {
+  id: string
+  dentalRecordId: string
+  dentalDateId?: string | null
+  recordedById: string
+  recordedByName: string
+  systolicPressure?: number | null
+  diastolicPressure?: number | null
+  bloodPressure?: string | null
+  heartRate?: number | null
+  respiratoryRate?: number | null
+  temperature?: number | null
+  oxygenSaturation?: number | null
+  weight?: number | null
+  height?: number | null
+  bmi?: number | null
+  notes?: string | null
+  recordedAt: string
+}
+
+export interface CreateDentalVitalSignsRequest {
+  dentalDateId?: string
+  systolicPressure?: number
+  diastolicPressure?: number
+  heartRate?: number
+  respiratoryRate?: number
+  temperature?: number
+  oxygenSaturation?: number
+  weight?: number
+  height?: number
+  notes?: string
+}
+
 export interface CreateDentalRecordRequest {
   patientId: string
   clinicId?: string
   openingReason: string
   currentIllness?: string
   odontologicalHistory?: string
+  familyHistory?: string
+  pathologicalHistory?: string
   medicalAlerts?: string
+  stomatognathicExam?: string
+  systolicPressure?: number
+  diastolicPressure?: number
+  heartRate?: number
+  respiratoryRate?: number
+  temperature?: number
+  oxygenSaturation?: number
+  weight?: number
+  height?: number
   patientType?: DentalPatientType
   observations?: string
   initialOdontogramData?: OdontogramState
@@ -25,7 +69,10 @@ export interface UpdateDentalRecordRequest {
   openingReason?: string
   currentIllness?: string
   odontologicalHistory?: string
+  familyHistory?: string
+  pathologicalHistory?: string
   medicalAlerts?: string
+  stomatognathicExam?: string
   patientType?: DentalPatientType
   observations?: string
   isActive?: boolean
@@ -43,7 +90,10 @@ export interface DentalRecordResponse {
   openingReason: string
   currentIllness?: string
   odontologicalHistory?: string
+  familyHistory?: string
+  pathologicalHistory?: string
   medicalAlerts?: string
+  stomatognathicExam?: string | null
   patientType: DentalPatientType
   observations?: string
   isActive: boolean
@@ -51,6 +101,8 @@ export interface DentalRecordResponse {
   openedByName: string
   createdAt: string
   updatedAt: string
+  vitalSigns?: DentalVitalSignsResponse[]
+  latestVitalSigns?: DentalVitalSignsResponse | null
 }
 
 export interface CreateDentalDateRequest {
@@ -96,6 +148,7 @@ export interface DentalDateResponse {
   createdAt: string
   updatedAt: string
   odontogramVersion?: OdontogramVersionResponse
+  vitalSigns?: DentalVitalSignsResponse[]
 }
 
 export interface CreateOdontogramVersionRequest {

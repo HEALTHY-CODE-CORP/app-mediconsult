@@ -38,7 +38,7 @@ import type {
   MaritalStatus,
   EducationLevel,
 } from "@/types/patient.model"
-import { ClipboardCheck, Info } from "lucide-react"
+import { ChevronDown, ClipboardCheck, Info, Shield } from "lucide-react"
 
 interface PatientFormProps {
   patient?: Patient
@@ -77,6 +77,9 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
     notes: patient?.notes ?? undefined,
   })
   const [submitAttempted, setSubmitAttempted] = useState(false)
+  const [isInsuranceOpen, setIsInsuranceOpen] = useState(
+    Boolean(patient?.insuranceProvider || patient?.insuranceNumber)
+  )
 
   const isPending = createMutation.isPending || updateMutation.isPending
   const requiredChecklist = [
@@ -463,19 +466,63 @@ export function PatientForm({ patient, mode }: PatientFormProps) {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Seguro médico</CardTitle>
+        <CardHeader
+          className="cursor-pointer select-none transition-colors hover:bg-muted/40"
+          onClick={() => setIsInsuranceOpen((prev) => !prev)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                Seguro médico
+                <span className="text-xs font-normal text-muted-foreground">(Opcional)</span>
+              </CardTitle>
+              <CardDescription>
+                Información de aseguradora o póliza médica del paciente
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="h-8 w-8 text-muted-foreground cursor-pointer"
+              aria-expanded={isInsuranceOpen}
+              aria-label={isInsuranceOpen ? "Contraer seguro médico" : "Desplegar seguro médico"}
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsInsuranceOpen((prev) => !prev)
+              }}
+            >
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${
+                  isInsuranceOpen ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="insuranceProvider">Aseguradora</Label>
-            <Input id="insuranceProvider" value={formData.insuranceProvider ?? ""} onChange={(e) => updateField("insuranceProvider", e.target.value)} placeholder="Nombre de la aseguradora" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="insuranceNumber">Número de póliza</Label>
-            <Input id="insuranceNumber" value={formData.insuranceNumber ?? ""} onChange={(e) => updateField("insuranceNumber", e.target.value)} placeholder="Número de póliza" />
-          </div>
-        </CardContent>
+        {isInsuranceOpen && (
+          <CardContent className="grid gap-4 sm:grid-cols-2 pt-0">
+            <div className="space-y-2">
+              <Label htmlFor="insuranceProvider">Aseguradora</Label>
+              <Input
+                id="insuranceProvider"
+                value={formData.insuranceProvider ?? ""}
+                onChange={(e) => updateField("insuranceProvider", e.target.value)}
+                placeholder="Nombre de la aseguradora"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="insuranceNumber">Número de póliza</Label>
+              <Input
+                id="insuranceNumber"
+                value={formData.insuranceNumber ?? ""}
+                onChange={(e) => updateField("insuranceNumber", e.target.value)}
+                placeholder="Número de póliza"
+              />
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       <Card>

@@ -3,6 +3,7 @@ import type {
   DentalDateResponse,
   DentalDateStatus,
   DentalRecordResponse,
+  DentalVitalSignsResponse,
   OdontogramVersionResponse,
 } from "@/types/dental.model"
 
@@ -18,6 +19,27 @@ export const DENTAL_DATE_STATUS_COLORS: Record<DentalDateStatus, string> = {
   CANCELLED: "bg-red-100 text-red-800",
 }
 
+export interface DentalVitalSigns {
+  id: string
+  dentalRecordId: string
+  dentalDateId: string | null
+  recordedById: string
+  recordedByName: string
+  systolicPressure: number | null
+  diastolicPressure: number | null
+  bloodPressure: string | null
+  heartRate: number | null
+  respiratoryRate: number | null
+  temperature: number | null
+  oxygenSaturation: number | null
+  weight: number | null
+  height: number | null
+  bmi: number | null
+  notes: string | null
+  recordedAt: string
+  recordedAtFormatted: string
+}
+
 export interface DentalRecord {
   id: string
   patientId: string
@@ -30,9 +52,12 @@ export interface DentalRecord {
   openingReason: string
   currentIllness: string | null
   odontologicalHistory: string | null
+  familyHistory: string | null
+  pathologicalHistory: string | null
   medicalAlerts: string | null
   patientType: "AMBULATORY" | "HOSPITALIZATION"
   patientTypeLabel: string
+  stomatognathicExam: string | null
   observations: string | null
   isActive: boolean
   openedAt: string
@@ -40,6 +65,8 @@ export interface DentalRecord {
   openedByName: string
   createdAt: string
   updatedAt: string
+  vitalSigns: DentalVitalSigns[]
+  latestVitalSigns: DentalVitalSigns | null
 }
 
 export interface DentalDate {
@@ -64,6 +91,7 @@ export interface DentalDate {
   createdAt: string
   updatedAt: string
   odontogramVersion: OdontogramVersion | null
+  vitalSigns: DentalVitalSigns[]
 }
 
 export interface OdontogramVersion {
@@ -80,7 +108,53 @@ export interface OdontogramVersion {
   createdAtFormatted: string
 }
 
+export function toDentalVitalSigns(raw: DentalVitalSignsResponse): DentalVitalSigns {
+  const weight = raw.weight != null ? Number(raw.weight) : null
+  const height = raw.height != null ? Number(raw.height) : null
+  let bmi = raw.bmi != null ? Number(raw.bmi) : null
+  if (!bmi && weight && height && height > 0) {
+    const heightM = height / 100
+    bmi = Number((weight / (heightM * heightM)).toFixed(1))
+  }
+
+  const bloodPressure =
+    raw.bloodPressure ??
+    (raw.systolicPressure != null && raw.diastolicPressure != null
+      ? `${raw.systolicPressure}/${raw.diastolicPressure} mmHg`
+      : null)
+
+  return {
+    id: raw.id,
+    dentalRecordId: raw.dentalRecordId,
+    dentalDateId: raw.dentalDateId ?? null,
+    recordedById: raw.recordedById,
+    recordedByName: raw.recordedByName,
+    systolicPressure: raw.systolicPressure ?? null,
+    diastolicPressure: raw.diastolicPressure ?? null,
+    bloodPressure,
+    heartRate: raw.heartRate ?? null,
+    respiratoryRate: raw.respiratoryRate ?? null,
+    temperature: raw.temperature != null ? Number(raw.temperature) : null,
+    oxygenSaturation: raw.oxygenSaturation ?? null,
+    weight,
+    height,
+    bmi,
+    notes: raw.notes ?? null,
+    recordedAt: raw.recordedAt,
+    recordedAtFormatted: formatDateTimeEc(raw.recordedAt, raw.recordedAt),
+  }
+}
+
+export function toDentalVitalSignsList(raw: DentalVitalSignsResponse[]): DentalVitalSigns[] {
+  return raw.map(toDentalVitalSigns)
+}
+
 export function toDentalRecord(raw: DentalRecordResponse): DentalRecord {
+  const vitalSigns = raw.vitalSigns ? raw.vitalSigns.map(toDentalVitalSigns) : []
+  const latestVitalSigns = raw.latestVitalSigns
+    ? toDentalVitalSigns(raw.latestVitalSigns)
+    : vitalSigns[0] ?? null
+
   return {
     id: raw.id,
     patientId: raw.patientId,
@@ -93,9 +167,12 @@ export function toDentalRecord(raw: DentalRecordResponse): DentalRecord {
     openingReason: raw.openingReason,
     currentIllness: raw.currentIllness ?? null,
     odontologicalHistory: raw.odontologicalHistory ?? null,
+    familyHistory: raw.familyHistory ?? null,
+    pathologicalHistory: raw.pathologicalHistory ?? null,
     medicalAlerts: raw.medicalAlerts ?? null,
     patientType: raw.patientType,
     patientTypeLabel: raw.patientType === "HOSPITALIZATION" ? "Hospitalización" : "Ambulatorio",
+    stomatognathicExam: raw.stomatognathicExam ?? null,
     observations: raw.observations ?? null,
     isActive: raw.isActive,
     openedAt: raw.openedAt,
@@ -103,6 +180,8 @@ export function toDentalRecord(raw: DentalRecordResponse): DentalRecord {
     openedByName: raw.openedByName,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+    vitalSigns,
+    latestVitalSigns,
   }
 }
 
@@ -153,6 +232,7 @@ export function toDentalDate(raw: DentalDateResponse): DentalDate {
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     odontogramVersion: raw.odontogramVersion ? toOdontogramVersion(raw.odontogramVersion) : null,
+    vitalSigns: raw.vitalSigns ? raw.vitalSigns.map(toDentalVitalSigns) : [],
   }
 }
 

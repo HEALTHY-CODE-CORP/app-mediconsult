@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Info, Trash2 } from "lucide-react"
+import { Eraser, Info, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,7 +21,7 @@ type ToothSymbol =
   | "CARIES"
 type SurfaceSymbol = "SEALANT" | "FILLING" | "CARIES"
 type ProsthesisType = "FIXED_PROSTHESIS" | "REMOVABLE_PROSTHESIS" | "TOTAL_PROSTHESIS"
-type ActiveTool = ToothSymbol | ProsthesisType
+type ActiveTool = ToothSymbol | ProsthesisType | "ERASER"
 
 type ClinicalMark = { type: ToothSymbol; color: MarkColor }
 type SurfaceMark = { symbols?: Array<{ type: SurfaceSymbol; color: MarkColor }> }
@@ -263,9 +263,21 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
     const current = teeth[tooth] ?? {}
     const symbols = current.symbols ?? []
     const exists = symbols.some((symbol) => symbol.type === tool && symbol.color === activeColor)
-    const nextSymbols = exists
-      ? symbols.filter((symbol) => !(symbol.type === tool && symbol.color === activeColor))
-      : [...symbols, { type: tool as ToothSymbol, color: activeColor }]
+
+    const isToothLossOrExtraction = (t: ToothSymbol) =>
+      t === "EXTRACTION" || t === "LOSS_CARIES" || t === "LOSS_OTHER"
+
+    let nextSymbols: ClinicalMark[]
+    if (exists) {
+      nextSymbols = symbols.filter((symbol) => !(symbol.type === tool && symbol.color === activeColor))
+    } else if (isToothLossOrExtraction(tool as ToothSymbol)) {
+      nextSymbols = [
+        ...symbols.filter((s) => !isToothLossOrExtraction(s.type)),
+        { type: tool as ToothSymbol, color: activeColor },
+      ]
+    } else {
+      nextSymbols = [...symbols, { type: tool as ToothSymbol, color: activeColor }]
+    }
 
     const symbolTypes = nextSymbols.map((symbol) => symbol.type)
     const surfaceHasSealant = surfaceSymbolsForTooth(current).some((symbol) => symbol.type === "SEALANT")
@@ -315,6 +327,19 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
 
     const currentType = tool as ProsthesisType
     const currentArch = prosthesisArchForTooth(groupStart)
+
+    if (currentType === "FIXED_PROSTHESIS" || currentType === "TOTAL_PROSTHESIS") {
+      const hasLostOrExtracted = sequence.some((toothNumber) => {
+        const symbolTypes = (teeth[toothNumber]?.symbols ?? []).map((symbol) => symbol.type)
+        return symbolTypes.includes("EXTRACTION") || symbolTypes.includes("LOSS_CARIES") || symbolTypes.includes("LOSS_OTHER")
+      })
+      if (!hasLostOrExtracted) {
+        toast.error("La prótesis fija o total requiere al menos una pieza con pérdida o extracción dentro del rango para justificar el tratamiento")
+        setGroupStart(null)
+        return
+      }
+    }
+
     const hasOverlappingGroup = groups.some((group) => groupsOverlap(group.teeth, sequence))
     if (hasOverlappingGroup) {
       toast.error("No se puede crear una prótesis sobre un rango que cruza otra prótesis")
@@ -338,8 +363,61 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
     setGroupStart(null)
   }
 
+  function eraseTooth(tooth: string) {
+    if (readOnly) return
+
+    const current = teeth[tooth]
+    const hasSymbols = (current?.symbols ?? []).length > 0
+    const hasSurfaces = Object.values(current?.surfaces ?? {}).some((s) => (s?.symbols ?? []).length > 0)
+    const affectedEndpointGroups = groups.filter(
+      (group) => group.teeth[0] === tooth || group.teeth[group.teeth.length - 1] === tooth
+    )
+
+    if (!current && !hasSymbols && !hasSurfaces && affectedEndpointGroups.length === 0) {
+      return
+    }
+
+    const nextTeeth = { ...teeth }
+    if (current?.mobility != null || current?.recession != null) {
+      nextTeeth[tooth] = {
+        mobility: current.mobility,
+        recession: current.recession,
+        symbols: [],
+        surfaces: {},
+      }
+    } else {
+      delete nextTeeth[tooth]
+    }
+
+    // Solo se borra la prótesis si la pieza es el inicio o el fin del rango de dicha prótesis
+    const nextGroups = groups.filter(
+      (group) => group.teeth[0] !== tooth && group.teeth[group.teeth.length - 1] !== tooth
+    )
+
+    const removedGroupsCount = groups.length - nextGroups.length
+    if (removedGroupsCount > 0) {
+      toast.info(
+        removedGroupsCount === 1
+          ? `Se eliminaron los tratamientos y la prótesis asociada a la pieza ${tooth}`
+          : `Se eliminaron los tratamientos y las prótesis asociadas a la pieza ${tooth}`
+      )
+    } else {
+      toast.success(`Tratamientos eliminados de la pieza ${tooth}`)
+    }
+
+    commit({
+      ...value,
+      teeth: nextTeeth,
+      prosthesisGroups: nextGroups,
+    })
+  }
+
   function handleSurfaceClick(tooth: string, surface: DentalSurface) {
     if (readOnly) return
+    if (tool === "ERASER") {
+      eraseTooth(tooth)
+      return
+    }
     if (isProsthesisTool(tool)) {
       addProsthesis(tooth)
       return
@@ -353,6 +431,10 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
 
   function handleToothCenterClick(tooth: string) {
     if (readOnly) return
+    if (tool === "ERASER") {
+      eraseTooth(tooth)
+      return
+    }
     if (isProsthesisTool(tool)) {
       addProsthesis(tooth)
       return
@@ -401,13 +483,16 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
           <CardDescription>Rojo: patología actual. Azul: tratamiento realizado.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid gap-2 text-sm sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-9">
             <Legend label="Sellante" symbol="SEALANT" />
-            <Legend label="Extracción / pérdida" symbol="EXTRACTION" />
+            <Legend label="Extracción indicada" symbol="EXTRACTION" color="ROJO" />
+            <Legend label="Pérdida por caries" symbol="LOSS_CARIES" color="AZUL" />
+            <Legend label="Pérdida otra causa" symbol="LOSS_OTHER" />
             <Legend label="Endodoncia" symbol="ENDODONTICS" />
             <Legend label="Corona" symbol="CROWN" />
             <Legend label="Obturado / caries" symbol="FILLING" />
-            <Legend label="Prótesis" symbol="FIXED_PROSTHESIS" />
+            <Legend label="Prótesis fija" symbol="FIXED_PROSTHESIS" />
+            <Legend label="Prótesis removible" symbol="REMOVABLE_PROSTHESIS" />
           </div>
         </CardContent>
       </Card>
@@ -419,11 +504,13 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
             <CardDescription>
               {readOnly
                 ? "Vista histórica solo lectura."
-                : groupStart
-                  ? `Seleccione pieza final para la prótesis iniciada en ${groupStart}`
-                  : isSurfaceTool(tool)
-                    ? "Seleccione una superficie de la pieza dental."
-                    : "Seleccione el centro de la pieza o un rango de prótesis."}
+                : tool === "ERASER"
+                  ? "Modo borrador: haga clic sobre una pieza para eliminar sus tratamientos y prótesis asociadas."
+                  : groupStart
+                    ? `Seleccione pieza final para la prótesis iniciada en ${groupStart}`
+                    : isSurfaceTool(tool)
+                      ? "Seleccione una superficie de la pieza dental."
+                      : "Seleccione el centro de la pieza o un rango de prótesis."}
             </CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto px-4 pb-5">
@@ -495,9 +582,22 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
                   </div>
                 </div>
 
-                <Button type="button" variant="outline" className="w-full" onClick={clearOdontogram}>
-                  Limpiar odontograma
-                </Button>
+                <div className="space-y-2 pt-2 border-t">
+                  <Label>Edición y limpieza</Label>
+                  <Button
+                    type="button"
+                    variant={tool === "ERASER" ? "default" : "outline"}
+                    onClick={() => selectTool("ERASER")}
+                    className="w-full justify-start gap-2 text-sm"
+                  >
+                    <Eraser className="h-4 w-4" />
+                    Borrador (quitar tratamientos)
+                  </Button>
+                  <Button type="button" variant="outline" className="w-full justify-start gap-2 text-sm text-destructive hover:bg-destructive/10" onClick={clearOdontogram}>
+                    <Trash2 className="h-4 w-4" />
+                    Limpiar todo el odontograma
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -552,7 +652,8 @@ export function OdontogramEditor({ value, onChange, patientAge, readOnly = false
               <p>Sellante, obturado y caries se registran sobre superficies. Extracción, pérdida, endodoncia y corona se registran sobre la pieza.</p>
               <p>Endodoncia puede combinarse con corona. Prótesis fija o removible puede combinarse con corona o endodoncia.</p>
               <p>Sellante no puede combinarse con extracción. Prótesis no puede aplicarse sobre piezas marcadas como pérdida.</p>
-              <p>Para prótesis, seleccione la herramienta, haga clic en pieza inicial y luego en pieza final del mismo grupo dental.</p>
+              <p>Para prótesis, seleccione la herramienta, haga clic en pieza inicial y luego en pieza final de la misma arcada. La prótesis fija y total requiere al menos una pieza con pérdida o extracción dentro del rango.</p>
+              <p>Herramienta Borrador: permite hacer clic en cualquier pieza para quitar todos sus tratamientos. Si la pieza es inicio o fin de una prótesis, esta prótesis se eliminará automáticamente.</p>
               <p>El odontograma puede guardarse en blanco como versión inicial.</p>
             </div>
             <div className="mt-5 flex justify-end">
@@ -673,8 +774,15 @@ function ToothSvg({
 }) {
   const surfaces = value?.surfaces ?? {}
   const toothMarks = value?.symbols ?? []
-  const visibleMarks = [...toothMarks, ...visibleSurfaceMarks(surfaces)]
-  const isMissing = toothMarks.some((mark) => mark.type === "LOSS_CARIES" || mark.type === "LOSS_OTHER")
+  const centerMarks = [
+    ...toothMarks.filter(
+      (m) => m.type !== "EXTRACTION" && m.type !== "LOSS_CARIES" && m.type !== "LOSS_OTHER"
+    ),
+    ...visibleSurfaceMarks(surfaces),
+  ]
+  const overlayMarks = toothMarks.filter(
+    (m) => m.type === "EXTRACTION" || m.type === "LOSS_CARIES" || m.type === "LOSS_OTHER"
+  )
   const cursor = readOnly ? "cursor-default" : "cursor-pointer"
 
   return (
@@ -686,8 +794,8 @@ function ToothSvg({
         ) : (
           <PermanentTooth surfaces={surfaces} cursor={cursor} onSurfaceClick={onSurfaceClick} onCenterClick={onCenterClick} />
         )}
-        <MarkStack marks={visibleMarks} />
-        {isMissing && <line x1="5" y1="5" x2="39" y2="39" stroke="#111827" strokeWidth="2" className="pointer-events-none" />}
+        <MarkStack marks={centerMarks} />
+        <ToothOverlayMarks marks={overlayMarks} />
       </svg>
     </div>
   )
@@ -797,30 +905,90 @@ function ProsthesisOverlay({ rows, groups }: { rows: string[][]; groups: Prosthe
 
         const x1 = Math.min(firstX, lastX)
         const x2 = Math.max(firstX, lastX)
-        const y = 6 + index * 5
+        const y = 8 + index * 7
+        const color = tone(group.color)
 
-        return (
-          <g key={`${group.type}-${group.teeth.join("-")}-${index}`}>
-            {group.type === "TOTAL_PROSTHESIS" ? (
-              <>
-                <line x1={x1} y1={y - 3} x2={x2} y2={y - 3} stroke={tone(group.color)} strokeWidth="2" />
-                <line x1={x1} y1={y + 3} x2={x2} y2={y + 3} stroke={tone(group.color)} strokeWidth="2" />
-              </>
-            ) : (
+        if (group.type === "TOTAL_PROSTHESIS") {
+          return (
+            <g key={`${group.type}-${group.teeth.join("-")}-${index}`}>
+              <line x1={x1} y1={y - 3} x2={x2} y2={y - 3} stroke={color} strokeWidth="2" />
+              <line x1={x1} y1={y + 3} x2={x2} y2={y + 3} stroke={color} strokeWidth="2" />
+              <circle cx={x1} cy={y} r="3" fill={color} />
+              <circle cx={x2} cy={y} r="3" fill={color} />
+            </g>
+          )
+        }
+
+        if (group.type === "FIXED_PROSTHESIS") {
+          const squareSize = 10
+          return (
+            <g key={`${group.type}-${group.teeth.join("-")}-${index}`}>
               <line
                 x1={x1}
                 y1={y}
                 x2={x2}
                 y2={y}
-                stroke={tone(group.color)}
-                strokeWidth="2"
-                strokeDasharray={group.type === "REMOVABLE_PROSTHESIS" ? "5 3" : undefined}
+                stroke={color}
+                strokeWidth="2.2"
+                strokeDasharray="5 3"
               />
-            )}
-            <circle cx={x1} cy={y} r="2.5" fill={tone(group.color)} />
-            <circle cx={x2} cy={y} r="2.5" fill={tone(group.color)} />
-          </g>
-        )
+              <rect
+                x={x1 - squareSize / 2}
+                y={y - squareSize / 2}
+                width={squareSize}
+                height={squareSize}
+                fill={color}
+                stroke={color}
+                strokeWidth="1"
+                rx="1"
+              />
+              <rect
+                x={x2 - squareSize / 2}
+                y={y - squareSize / 2}
+                width={squareSize}
+                height={squareSize}
+                fill={color}
+                stroke={color}
+                strokeWidth="1"
+                rx="1"
+              />
+            </g>
+          )
+        }
+
+        if (group.type === "REMOVABLE_PROSTHESIS") {
+          return (
+            <g key={`${group.type}-${group.teeth.join("-")}-${index}`}>
+              <line
+                x1={x1}
+                y1={y}
+                x2={x2}
+                y2={y}
+                stroke={color}
+                strokeWidth="2.2"
+                strokeDasharray="5 3"
+              />
+              {/* Paréntesis izquierdo '(' */}
+              <path
+                d={`M ${x1 + 4} ${y - 8} Q ${x1 - 6} ${y} ${x1 + 4} ${y + 8}`}
+                fill="none"
+                stroke={color}
+                strokeWidth="2.8"
+                strokeLinecap="round"
+              />
+              {/* Paréntesis derecho ')' */}
+              <path
+                d={`M ${x2 - 4} ${y - 8} Q ${x2 + 6} ${y} ${x2 - 4} ${y + 8}`}
+                fill="none"
+                stroke={color}
+                strokeWidth="2.8"
+                strokeLinecap="round"
+              />
+            </g>
+          )
+        }
+
+        return null
       })}
     </svg>
   )
@@ -839,7 +1007,14 @@ function visibleSurfaceMarks(surfaces: Partial<Record<DentalSurface, SurfaceMark
 }
 
 function MarkStack({ marks }: { marks: ClinicalMark[] }) {
-  const visibleMarks = marks.filter((mark) => mark.type !== "CARIES" && mark.type !== "FILLING")
+  const visibleMarks = marks.filter(
+    (mark) =>
+      mark.type !== "CARIES" &&
+      mark.type !== "FILLING" &&
+      mark.type !== "EXTRACTION" &&
+      mark.type !== "LOSS_CARIES" &&
+      mark.type !== "LOSS_OTHER"
+  )
   if (visibleMarks.length === 0) return null
 
   const iconSize = visibleMarks.length > 1 ? 13 : 16
@@ -856,6 +1031,39 @@ function MarkStack({ marks }: { marks: ClinicalMark[] }) {
   )
 }
 
+function ToothOverlayMarks({ marks }: { marks: ClinicalMark[] }) {
+  if (marks.length === 0) return null
+
+  return (
+    <g className="pointer-events-none">
+      {marks.map((mark, index) => {
+        const markColor = tone(mark.color)
+
+        if (mark.type === "EXTRACTION" || mark.type === "LOSS_CARIES") {
+          return (
+            <g key={`${mark.type}-${mark.color}-${index}`} stroke={markColor} strokeWidth="3.2" strokeLinecap="round">
+              <line x1="6" y1="6" x2="38" y2="38" />
+              <line x1="38" y1="6" x2="6" y2="38" />
+            </g>
+          )
+        }
+
+        if (mark.type === "LOSS_OTHER") {
+          return (
+            <g key={`${mark.type}-${mark.color}-${index}`} stroke={markColor} fill="none">
+              <circle cx="22" cy="22" r="16" strokeWidth="2.5" />
+              <line x1="10.7" y1="10.7" x2="33.3" y2="33.3" strokeWidth="2.5" strokeLinecap="round" />
+              <line x1="33.3" y1="10.7" x2="10.7" y2="33.3" strokeWidth="2.5" strokeLinecap="round" />
+            </g>
+          )
+        }
+
+        return null
+      })}
+    </g>
+  )
+}
+
 function SymbolGlyph({ symbol, size = 18 }: { symbol: ToothSymbol | ProsthesisType; size?: number }) {
   const scale = size / 24
   return (
@@ -868,16 +1076,16 @@ function SymbolGlyph({ symbol, size = 18 }: { symbol: ToothSymbol | ProsthesisTy
         </g>
       )}
       {(symbol === "EXTRACTION" || symbol === "LOSS_CARIES") && (
-        <g stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-          <line x1="5" y1="5" x2="19" y2="19" />
-          <line x1="19" y1="5" x2="5" y2="19" />
+        <g stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+          <line x1="3.5" y1="3.5" x2="20.5" y2="20.5" />
+          <line x1="20.5" y1="3.5" x2="3.5" y2="20.5" />
         </g>
       )}
       {symbol === "LOSS_OTHER" && (
         <g fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="8" strokeWidth="1.6" />
-          <line x1="7.3" y1="7.3" x2="16.7" y2="16.7" strokeWidth="1.4" />
-          <line x1="16.7" y1="7.3" x2="7.3" y2="16.7" strokeWidth="1.4" />
+          <circle cx="12" cy="12" r="9.5" strokeWidth="1.8" />
+          <line x1="5.3" y1="5.3" x2="18.7" y2="18.7" strokeWidth="1.8" strokeLinecap="round" />
+          <line x1="18.7" y1="5.3" x2="5.3" y2="18.7" strokeWidth="1.8" strokeLinecap="round" />
         </g>
       )}
       {symbol === "ENDODONTICS" && (
@@ -891,17 +1099,17 @@ function SymbolGlyph({ symbol, size = 18 }: { symbol: ToothSymbol | ProsthesisTy
         </g>
       )}
       {symbol === "FIXED_PROSTHESIS" && (
-        <g fill="none" stroke="currentColor" strokeWidth="1.4">
-          <rect x="2" y="10" width="4" height="4" />
-          <rect x="18" y="10" width="4" height="4" />
-          <line x1="6" y1="12" x2="18" y2="12" strokeDasharray="2 2" />
+        <g fill="currentColor" stroke="currentColor">
+          <rect x="2" y="9" width="5.5" height="5.5" stroke="none" rx="0.5" />
+          <rect x="16.5" y="9" width="5.5" height="5.5" stroke="none" rx="0.5" />
+          <line x1="7.5" y1="12" x2="16.5" y2="12" strokeWidth="1.8" strokeDasharray="2.5 1.5" />
         </g>
       )}
       {symbol === "REMOVABLE_PROSTHESIS" && (
         <g fill="none" stroke="currentColor">
-          <path d="M9,4 Q4,12 9,20" strokeWidth="1.6" />
-          <path d="M15,4 Q20,12 15,20" strokeWidth="1.6" />
-          <line x1="9.5" y1="12" x2="14.5" y2="12" strokeWidth="1.4" strokeDasharray="2 2" />
+          <path d="M5,5 Q1,12 5,19" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M19,5 Q23,12 19,19" strokeWidth="2.2" strokeLinecap="round" />
+          <line x1="5" y1="12" x2="19" y2="12" strokeWidth="1.8" strokeDasharray="2.5 1.5" />
         </g>
       )}
       {symbol === "TOTAL_PROSTHESIS" && (
@@ -914,13 +1122,23 @@ function SymbolGlyph({ symbol, size = 18 }: { symbol: ToothSymbol | ProsthesisTy
   )
 }
 
-function Legend({ label, symbol }: { label: string; symbol: ToothSymbol | ProsthesisType }) {
+function Legend({ label, symbol, color }: { label: string; symbol: ToothSymbol | ProsthesisType; color?: MarkColor }) {
   const isColorOnly = symbol === "FILLING" || symbol === "CARIES"
+  const strokeColor = color
+    ? tone(color)
+    : symbol === "EXTRACTION"
+      ? tone("ROJO")
+      : symbol === "LOSS_CARIES"
+        ? tone("AZUL")
+        : undefined
+
   return (
     <div className="flex items-center gap-2 rounded-md border px-2 py-1.5">
       <span className="flex h-6 w-8 items-center justify-center rounded border text-xs">
-        {isColorOnly ? <span className="h-3 w-5 rounded-sm bg-muted" /> : (
-          <svg viewBox="0 0 24 24" className="h-4 w-4 text-foreground">
+        {isColorOnly ? (
+          <span className="h-3 w-5 rounded-sm bg-muted" />
+        ) : (
+          <svg viewBox="0 0 24 24" className="h-4 w-4" style={strokeColor ? { color: strokeColor } : undefined}>
             <SymbolGlyph symbol={symbol} size={24} />
           </svg>
         )}

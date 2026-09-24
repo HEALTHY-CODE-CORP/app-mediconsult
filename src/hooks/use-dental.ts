@@ -3,9 +3,11 @@ import api from "@/lib/axios"
 import type {
   CreateDentalDateRequest,
   CreateDentalRecordRequest,
+  CreateDentalVitalSignsRequest,
   CreateOdontogramVersionRequest,
   DentalDateResponse,
   DentalRecordResponse,
+  DentalVitalSignsResponse,
   OdontogramVersionResponse,
   UpdateDentalDateRequest,
   UpdateDentalRecordRequest,
@@ -15,6 +17,8 @@ import {
   toDentalDateList,
   toDentalRecord,
   toDentalRecordList,
+  toDentalVitalSigns,
+  toDentalVitalSignsList,
   toOdontogramVersion,
   toOdontogramVersionList,
 } from "@/adapters/dental.adapter"
@@ -180,6 +184,88 @@ export function useCreateOdontogramVersion(dentalRecordId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "odontogram-versions", dentalRecordId] })
       queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "odontogram-versions", dentalRecordId, "current"] })
+    },
+  })
+}
+
+export function useDentalRecordVitalSigns(dentalRecordId: string) {
+  return useQuery({
+    queryKey: [...DENTAL_KEY, "vital-signs", "record", dentalRecordId],
+    queryFn: async () => {
+      const { data } = await api.get<DentalVitalSignsResponse[]>(
+        `/dental/records/${dentalRecordId}/vital-signs`
+      )
+      return toDentalVitalSignsList(data)
+    },
+    enabled: !!dentalRecordId,
+  })
+}
+
+export function useCreateDentalRecordVitalSigns(dentalRecordId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: CreateDentalVitalSignsRequest) => {
+      const { data } = await api.post<DentalVitalSignsResponse>(
+        `/dental/records/${dentalRecordId}/vital-signs`,
+        payload
+      )
+      return toDentalVitalSigns(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "vital-signs", "record", dentalRecordId] })
+      queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "records", dentalRecordId] })
+    },
+  })
+}
+
+export function useDentalDateVitalSigns(dentalDateId: string) {
+  return useQuery({
+    queryKey: [...DENTAL_KEY, "vital-signs", "date", dentalDateId],
+    queryFn: async () => {
+      const { data } = await api.get<DentalVitalSignsResponse[]>(
+        `/dental/dates/${dentalDateId}/vital-signs`
+      )
+      return toDentalVitalSignsList(data)
+    },
+    enabled: !!dentalDateId,
+  })
+}
+
+export function useCreateDentalDateVitalSigns(dentalDateId: string, dentalRecordId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: CreateDentalVitalSignsRequest) => {
+      const { data } = await api.post<DentalVitalSignsResponse>(
+        `/dental/dates/${dentalDateId}/vital-signs`,
+        payload
+      )
+      return toDentalVitalSigns(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "vital-signs", "date", dentalDateId] })
+      if (dentalRecordId) {
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "vital-signs", "record", dentalRecordId] })
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "records", dentalRecordId] })
+      }
+    },
+  })
+}
+
+export function useDeleteDentalVitalSigns(dentalRecordId?: string, dentalDateId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/dental/vital-signs/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "vital-signs"] })
+      if (dentalRecordId) {
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "vital-signs", "record", dentalRecordId] })
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "records", dentalRecordId] })
+      }
+      if (dentalDateId) {
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "vital-signs", "date", dentalDateId] })
+      }
     },
   })
 }
