@@ -2,6 +2,9 @@ import { formatDateTimeEc } from "@/lib/date"
 import type {
   DentalDateResponse,
   DentalDateStatus,
+  DentalPsrResponse,
+  DentalPsrScores,
+  DentalPsrSextantSummaries,
   DentalRecordResponse,
   DentalVitalSignsResponse,
   OdontogramVersionResponse,
@@ -40,6 +43,24 @@ export interface DentalVitalSigns {
   recordedAtFormatted: string
 }
 
+export interface DentalPsrEvaluation {
+  id: string
+  dentalRecordId: string
+  dentalDateId: string | null
+  recordedById: string
+  recordedByName: string
+  scores: DentalPsrScores
+  sextantSummaries: DentalPsrSextantSummaries
+  maxScore: string | null
+  code3Count: number
+  code4Count: number
+  requiresPeriodontogram: boolean
+  notes: string | null
+  recordedAt: string
+  recordedAtFormatted: string
+  createdAt: string
+}
+
 export interface DentalRecord {
   id: string
   patientId: string
@@ -67,6 +88,7 @@ export interface DentalRecord {
   updatedAt: string
   vitalSigns: DentalVitalSigns[]
   latestVitalSigns: DentalVitalSigns | null
+  latestPsr: DentalPsrEvaluation | null
 }
 
 export interface DentalDate {
@@ -92,6 +114,7 @@ export interface DentalDate {
   updatedAt: string
   odontogramVersion: OdontogramVersion | null
   vitalSigns: DentalVitalSigns[]
+  psrEvaluations: DentalPsrEvaluation[]
 }
 
 export interface OdontogramVersion {
@@ -149,11 +172,36 @@ export function toDentalVitalSignsList(raw: DentalVitalSignsResponse[]): DentalV
   return raw.map(toDentalVitalSigns)
 }
 
+export function toDentalPsrEvaluation(raw: DentalPsrResponse): DentalPsrEvaluation {
+  return {
+    id: raw.id,
+    dentalRecordId: raw.dentalRecordId,
+    dentalDateId: raw.dentalDateId ?? null,
+    recordedById: raw.recordedById,
+    recordedByName: raw.recordedByName,
+    scores: raw.scores ?? {},
+    sextantSummaries: raw.sextantSummaries ?? {},
+    maxScore: raw.maxScore ?? null,
+    code3Count: raw.code3Count ?? 0,
+    code4Count: raw.code4Count ?? 0,
+    requiresPeriodontogram: raw.requiresPeriodontogram ?? false,
+    notes: raw.notes ?? null,
+    recordedAt: raw.recordedAt,
+    recordedAtFormatted: formatDateTimeEc(raw.recordedAt, raw.recordedAt),
+    createdAt: raw.createdAt,
+  }
+}
+
+export function toDentalPsrEvaluationList(raw: DentalPsrResponse[]): DentalPsrEvaluation[] {
+  return raw.map(toDentalPsrEvaluation)
+}
+
 export function toDentalRecord(raw: DentalRecordResponse): DentalRecord {
   const vitalSigns = raw.vitalSigns ? raw.vitalSigns.map(toDentalVitalSigns) : []
   const latestVitalSigns = raw.latestVitalSigns
     ? toDentalVitalSigns(raw.latestVitalSigns)
     : vitalSigns[0] ?? null
+  const latestPsr = raw.latestPsr ? toDentalPsrEvaluation(raw.latestPsr) : null
 
   return {
     id: raw.id,
@@ -182,6 +230,7 @@ export function toDentalRecord(raw: DentalRecordResponse): DentalRecord {
     updatedAt: raw.updatedAt,
     vitalSigns,
     latestVitalSigns,
+    latestPsr,
   }
 }
 
@@ -233,6 +282,7 @@ export function toDentalDate(raw: DentalDateResponse): DentalDate {
     updatedAt: raw.updatedAt,
     odontogramVersion: raw.odontogramVersion ? toOdontogramVersion(raw.odontogramVersion) : null,
     vitalSigns: raw.vitalSigns ? raw.vitalSigns.map(toDentalVitalSigns) : [],
+    psrEvaluations: raw.psrEvaluations ? raw.psrEvaluations.map(toDentalPsrEvaluation) : [],
   }
 }
 

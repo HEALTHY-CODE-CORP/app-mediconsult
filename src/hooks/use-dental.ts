@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/axios"
 import type {
   CreateDentalDateRequest,
+  CreateDentalPsrRequest,
   CreateDentalRecordRequest,
   CreateDentalVitalSignsRequest,
   CreateOdontogramVersionRequest,
   DentalDateResponse,
+  DentalPsrResponse,
   DentalRecordResponse,
   DentalVitalSignsResponse,
   OdontogramVersionResponse,
@@ -15,6 +17,8 @@ import type {
 import {
   toDentalDate,
   toDentalDateList,
+  toDentalPsrEvaluation,
+  toDentalPsrEvaluationList,
   toDentalRecord,
   toDentalRecordList,
   toDentalVitalSigns,
@@ -265,6 +269,88 @@ export function useDeleteDentalVitalSigns(dentalRecordId?: string, dentalDateId?
       }
       if (dentalDateId) {
         queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "vital-signs", "date", dentalDateId] })
+      }
+    },
+  })
+}
+
+export function useDentalRecordPsr(dentalRecordId: string) {
+  return useQuery({
+    queryKey: [...DENTAL_KEY, "psr", "record", dentalRecordId],
+    queryFn: async () => {
+      const { data } = await api.get<DentalPsrResponse[]>(
+        `/dental/records/${dentalRecordId}/psr`
+      )
+      return toDentalPsrEvaluationList(data)
+    },
+    enabled: !!dentalRecordId,
+  })
+}
+
+export function useCreateDentalRecordPsr(dentalRecordId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: CreateDentalPsrRequest) => {
+      const { data } = await api.post<DentalPsrResponse>(
+        `/dental/records/${dentalRecordId}/psr`,
+        payload
+      )
+      return toDentalPsrEvaluation(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "psr", "record", dentalRecordId] })
+      queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "records", dentalRecordId] })
+    },
+  })
+}
+
+export function useDentalDatePsr(dentalDateId: string) {
+  return useQuery({
+    queryKey: [...DENTAL_KEY, "psr", "date", dentalDateId],
+    queryFn: async () => {
+      const { data } = await api.get<DentalPsrResponse[]>(
+        `/dental/dates/${dentalDateId}/psr`
+      )
+      return toDentalPsrEvaluationList(data)
+    },
+    enabled: !!dentalDateId,
+  })
+}
+
+export function useCreateDentalDatePsr(dentalDateId: string, dentalRecordId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: CreateDentalPsrRequest) => {
+      const { data } = await api.post<DentalPsrResponse>(
+        `/dental/dates/${dentalDateId}/psr`,
+        payload
+      )
+      return toDentalPsrEvaluation(data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "psr", "date", dentalDateId] })
+      if (dentalRecordId) {
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "psr", "record", dentalRecordId] })
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "records", dentalRecordId] })
+      }
+    },
+  })
+}
+
+export function useDeleteDentalPsr(dentalRecordId?: string, dentalDateId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/dental/psr/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "psr"] })
+      if (dentalRecordId) {
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "psr", "record", dentalRecordId] })
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "records", dentalRecordId] })
+      }
+      if (dentalDateId) {
+        queryClient.invalidateQueries({ queryKey: [...DENTAL_KEY, "psr", "date", dentalDateId] })
       }
     },
   })

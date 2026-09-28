@@ -41,6 +41,48 @@ export interface CreateDentalVitalSignsRequest {
   notes?: string
 }
 
+export interface DentalPsrScores {
+  [tooth: string]: string
+}
+
+export interface DentalPsrSextantSummaries {
+  S1?: string | null
+  S2?: string | null
+  S3?: string | null
+  S4?: string | null
+  S5?: string | null
+  S6?: string | null
+  [key: string]: string | null | undefined
+}
+
+export interface DentalPsrResponse {
+  id: string
+  dentalRecordId: string
+  dentalDateId?: string | null
+  recordedById: string
+  recordedByName: string
+  scores: DentalPsrScores
+  sextantSummaries: DentalPsrSextantSummaries
+  maxScore?: string | null
+  code3Count: number
+  code4Count: number
+  requiresPeriodontogram: boolean
+  notes?: string | null
+  recordedAt: string
+  createdAt: string
+}
+
+export interface CreateDentalPsrRequest {
+  dentalDateId?: string
+  scores: DentalPsrScores
+  sextantSummaries?: DentalPsrSextantSummaries
+  maxScore?: string
+  code3Count?: number
+  code4Count?: number
+  requiresPeriodontogram?: boolean
+  notes?: string
+}
+
 export interface CreateDentalRecordRequest {
   patientId: string
   clinicId?: string
@@ -63,6 +105,8 @@ export interface CreateDentalRecordRequest {
   observations?: string
   initialOdontogramData?: OdontogramState
   initialOdontogramNotes?: string
+  initialPsrScores?: DentalPsrScores
+  initialPsrNotes?: string
 }
 
 export interface UpdateDentalRecordRequest {
@@ -103,6 +147,7 @@ export interface DentalRecordResponse {
   updatedAt: string
   vitalSigns?: DentalVitalSignsResponse[]
   latestVitalSigns?: DentalVitalSignsResponse | null
+  latestPsr?: DentalPsrResponse | null
 }
 
 export interface CreateDentalDateRequest {
@@ -116,6 +161,8 @@ export interface CreateDentalDateRequest {
   status?: DentalDateStatus
   odontogramData?: OdontogramState
   odontogramNotes?: string
+  psrScores?: DentalPsrScores
+  psrNotes?: string
 }
 
 export interface UpdateDentalDateRequest {
@@ -149,6 +196,7 @@ export interface DentalDateResponse {
   updatedAt: string
   odontogramVersion?: OdontogramVersionResponse
   vitalSigns?: DentalVitalSignsResponse[]
+  psrEvaluations?: DentalPsrResponse[]
 }
 
 export interface CreateOdontogramVersionRequest {

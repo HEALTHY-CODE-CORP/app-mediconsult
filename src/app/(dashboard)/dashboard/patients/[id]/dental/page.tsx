@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { OdontogramEditor } from "@/components/dental/odontogram-editor"
 import { StomatognathicExamEditor } from "@/components/dental/stomatognathic-exam-editor"
+import { PsrGridEditor } from "@/components/dental/psr-grid-editor"
+import { DentalPsrCard } from "@/components/dental/dental-psr-card"
 import { useMyClinics } from "@/hooks/use-organizations"
 import { usePatient } from "@/hooks/use-patients"
 import {
@@ -24,7 +26,7 @@ import {
   useOdontogramVersions,
   usePatientOrgDentalRecord,
 } from "@/hooks/use-dental"
-import type { DentalPatientType, OdontogramState } from "@/types/dental.model"
+import type { DentalPatientType, DentalPsrScores, OdontogramState } from "@/types/dental.model"
 
 interface DentalPageProps {
   params: Promise<{ id: string }>
@@ -138,6 +140,8 @@ function CreateDentalRecordForm({
   const [oxygenSaturation, setOxygenSaturation] = useState("")
   const [weight, setWeight] = useState("")
   const [height, setHeight] = useState("")
+  const [psrScores, setPsrScores] = useState<DentalPsrScores>({})
+  const [psrNotes, setPsrNotes] = useState("")
   const [odontogramState, setOdontogramState] = useState<OdontogramState>(EMPTY_ODONTOGRAM)
 
   function parseNumber(val: string): number | undefined {
@@ -177,6 +181,8 @@ function CreateDentalRecordForm({
         height: parseNumber(height),
         initialOdontogramData: odontogramState,
         initialOdontogramNotes: "Versión inicial",
+        initialPsrScores: Object.keys(psrScores).length > 0 ? psrScores : undefined,
+        initialPsrNotes: psrNotes.trim() || undefined,
       })
       toast.success("Historia odontológica creada")
     } catch (error) {
@@ -340,6 +346,36 @@ function CreateDentalRecordForm({
         </CardHeader>
         <CardContent>
           <OdontogramEditor value={odontogramState} onChange={setOdontogramState} patientAge={patientAge} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Stethoscope className="h-5 w-5 text-primary" />
+              Evaluación Periodontal (PSR)
+            </CardTitle>
+            <Badge variant="outline" className="text-xs font-normal">
+              Opcional
+            </Badge>
+          </div>
+          <CardDescription>
+            Registro de evaluación periodontal inicial por sextantes con sonda OMS.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <PsrGridEditor scores={psrScores} onChange={setPsrScores} />
+          <div className="space-y-1.5">
+            <Label className="text-xs">Observaciones periodontales (opcional)</Label>
+            <Textarea
+              rows={2}
+              value={psrNotes}
+              onChange={(e) => setPsrNotes(e.target.value)}
+              placeholder="Notas u observaciones sobre el estado periodontal..."
+              className="text-xs"
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -655,6 +691,9 @@ function DentalWorkspace({
           </Card>
         )}
       </form>
+
+      {/* Evaluación Periodontal (PSR) */}
+      <DentalPsrCard dentalRecordId={dentalRecordId} />
 
       {/* Historial de Citas Odontológicas */}
       <Card>

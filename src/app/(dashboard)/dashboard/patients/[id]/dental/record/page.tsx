@@ -26,6 +26,7 @@ import { SummaryTile } from "@/components/shared/summary-tile"
 import { OdontogramEditor } from "@/components/dental/odontogram-editor"
 import { DentalVitalSignsCard } from "@/components/dental/dental-vital-signs-card"
 import { StomatognathicExamEditor } from "@/components/dental/stomatognathic-exam-editor"
+import { DentalPsrCard } from "@/components/dental/dental-psr-card"
 import { usePatient } from "@/hooks/use-patients"
 import {
   usePatientOrgDentalRecord,
@@ -306,6 +307,12 @@ export default function PatientDentalRecordPage({ params }: DentalRecordPageProp
               </CardHeader>
             </Card>
           )}
+
+          {/* Evaluación Periodontal (PSR) */}
+          <DentalPsrCard
+            dentalRecordId={dentalRecord.id}
+            initialPsrEvaluations={dentalRecord.latestPsr ? [dentalRecord.latestPsr] : []}
+          />
         </div>
       ) : (
         /* Formulario de Edición */
