@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
@@ -14,6 +15,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
@@ -38,22 +42,29 @@ import {
   Store,
   UserCog,
   ChevronUp,
+  ChevronDown,
   LogOut,
   CreditCard,
   Shield,
   Coins,
   Activity,
   User,
-  BarChart3,
 } from "lucide-react"
 import { logoutAction } from "@/actions/auth.actions"
 import type { Role } from "@/types/auth.model"
 
-interface NavItem {
+interface NavSubItem {
   title: string
   href: string
+  roles: Role[]
+}
+
+interface NavItem {
+  title: string
+  href?: string
   icon: React.ComponentType<{ className?: string }>
   roles: Role[]
+  items?: NavSubItem[]
 }
 
 interface NavGroup {
@@ -109,9 +120,20 @@ const orgNavigation: NavGroup[] = [
       },
       {
         title: "Odontología",
-        href: "/dashboard/dental",
         icon: FileHeart,
         roles: DENTAL_STAFF,
+        items: [
+          {
+            title: "Consultas",
+            href: "/dashboard/dental/consultations",
+            roles: DENTAL_STAFF,
+          },
+          {
+            title: "Historias clínicas",
+            href: "/dashboard/dental/records",
+            roles: DENTAL_STAFF,
+          },
+        ],
       },
       {
         title: "Recetas",
@@ -219,6 +241,76 @@ function hasAccess(userRoles: string[], requiredRoles: Role[]): boolean {
   return userRoles.some((role) => requiredRoles.includes(role as Role))
 }
 
+function CollapsibleNavItem({
+  item,
+  pathname,
+  userRoles,
+}: {
+  item: NavItem
+  pathname: string
+  userRoles: string[]
+}) {
+  const isChildActive =
+    item.items?.some(
+      (sub) => pathname === sub.href || pathname.startsWith(sub.href + "/")
+    ) ?? false
+
+  const [isOpen, setIsOpen] = useState(
+    isChildActive || (item.href ? pathname.startsWith(item.href) : false)
+  )
+
+  useEffect(() => {
+    if (isChildActive) {
+      setIsOpen(true)
+    }
+  }, [isChildActive])
+
+  const visibleSubItems = (item.items ?? []).filter((sub) =>
+    hasAccess(userRoles, sub.roles)
+  )
+  if (visibleSubItems.length === 0) return null
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        isActive={isChildActive}
+        onClick={() => setIsOpen((prev) => !prev)}
+        tooltip={item.title}
+        className="w-full justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <item.icon className="h-4 w-4" />
+          <span>{item.title}</span>
+        </div>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+            isOpen ? "rotate-0" : "-rotate-90"
+          }`}
+        />
+      </SidebarMenuButton>
+
+      {isOpen && (
+        <SidebarMenuSub>
+          {visibleSubItems.map((sub) => {
+            const isSubActive =
+              pathname === sub.href || pathname.startsWith(sub.href + "/")
+            return (
+              <SidebarMenuSubItem key={sub.href}>
+                <SidebarMenuSubButton
+                  isActive={isSubActive}
+                  render={<Link href={sub.href} />}
+                >
+                  <span>{sub.title}</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )
+          })}
+        </SidebarMenuSub>
+      )}
+    </SidebarMenuItem>
+  )
+}
+
 export function AppSidebar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
@@ -282,18 +374,31 @@ export function AppSidebar() {
                 <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {visibleItems.map((item) => (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton
-                          isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
-                          tooltip={item.title}
-                          render={<Link href={item.href} />}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
+                    {visibleItems.map((item) => {
+                      if (item.items && item.items.length > 0) {
+                        return (
+                          <CollapsibleNavItem
+                            key={item.title}
+                            item={item}
+                            pathname={pathname}
+                            userRoles={userRoles}
+                          />
+                        )
+                      }
+
+                      return (
+                        <SidebarMenuItem key={item.href ?? item.title}>
+                          <SidebarMenuButton
+                            isActive={pathname === item.href || (item.href ? pathname.startsWith(item.href + "/") : false)}
+                            tooltip={item.title}
+                            render={item.href ? <Link href={item.href} /> : undefined}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      )
+                    })}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>

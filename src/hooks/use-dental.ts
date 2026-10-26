@@ -107,6 +107,26 @@ export function useDentalDates(dentalRecordId: string) {
   })
 }
 
+export function useOrganizationDentalDates() {
+  return useQuery({
+    queryKey: [...DENTAL_KEY, "dates", "organization"],
+    queryFn: async () => {
+      const { data } = await api.get<DentalDateResponse[]>("/dental/dates/organization")
+      return toDentalDateList(data)
+    },
+  })
+}
+
+export function useMyDentalDates() {
+  return useQuery({
+    queryKey: [...DENTAL_KEY, "dates", "my"],
+    queryFn: async () => {
+      const { data } = await api.get<DentalDateResponse[]>("/dental/dates/my")
+      return toDentalDateList(data)
+    },
+  })
+}
+
 export function useCreateDentalDate(dentalRecordId: string) {
   const queryClient = useQueryClient()
   return useMutation({
